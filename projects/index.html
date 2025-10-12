@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>Project List</title> <style>
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #1a1a1a;
+            color: #e0e0e0; /* 页面文字颜色已改为 #e0e0e0 */
+            text-align: center;
+        }
+
+        /* 返回主页按钮样式 */
+        #homeButton {
+            position: absolute; /* 绝对定位 */
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            color: #e0e0e0; /* 保持与主页颜色一致 */
+            background-color: #333333;
+            border: 1px solid #778899;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            z-index: 100; /* 确保按钮在最上层 */
+        }
+
+        h1 {
+            color: #e0e0e0; /* 网页中标题颜色已改为 #e0e0e0 */
+            margin-bottom: 50px;
+            font-size: 2.5em;
+        }
+
+        #button-container {
+            display: flex;
+            gap: 30px; 
+        }
+
+        .tool-button {
+            width: 150px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            color: #e0e0e0; 
+            background-color: #333333;
+            border: 2px solid #505050; /* 边框颜色略微调暗 */
+            border-radius: 8px;
+            text-decoration: none;
+            transition: background-color 0.3s, border-color 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .tool-button:hover {
+            background-color: #444444; /* 悬停时稍微变亮 */
+            border-color: #e0e0e0; 
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6);
+        }
+    </style>
+</head>
+<body>
+
+    <a href="../" id="homeButton">← 返回主页</a>
+
+    <h1>选择项目</h1> <div id="button-container">
+        <a href="../encoder_perf_test/" class="tool-button">
+            编码器性能测试
+        </a>
+
+    </div>
+
+</body>
+</html>
