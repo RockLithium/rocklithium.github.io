@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编码器配置参数</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* ------------------------------------------------ */
+        /* 核心全局和表格样式 */
+        /* ------------------------------------------------ */
+        body { 
+            font-family: 'Ubuntu', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin: 20px auto; 
+            background-color: #222222; 
+            color: #E0E0E0;            
+        }
+
+         /* 返回主页按钮样式 */
+        #homeButton {
+            position: absolute; /* 绝对定位 */
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            color: #e0e0e0; /* 保持与主页颜色一致 */
+            background-color: #333333;
+            border: 1px solid #778899;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            z-index: 100; /* 确保按钮在最上层 */
+        }
+        
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 5px;
+            text-align: center; 
+        }
+        p {
+            color: #AAAAAA;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .intro-text-container {
+            width: 95%; 
+            max-width: 800px; 
+            margin: 0 auto 0px auto; 
+            padding: 15px;
+            background-color: #222222; 
+            border: 0 solid #555555; 
+            border-radius: 6px;
+        }
+
+        .intro-text-container p {
+            text-align: left; 
+            font-size: 15px;
+            margin: 0 0;
+            color: #E0E0E0; 
+            text-indent: 2em; 
+        }
+
+        .intro-text-container a:link,
+        .intro-text-container a:visited {
+            color: #E0E0E0 !important; 
+            text-decoration: underline; 
+        }
+
+        .intro-text-container a:hover,
+        .intro-text-container a:active {
+            color: #89CFF0 !important; 
+            text-decoration: underline; 
+        }
+
+        /* ------------------------------------------------ */
+        /* 导航按钮样式 */
+        /* ------------------------------------------------ */
+        .nav-buttons-container {
+            /* 让按钮居中显示，并在按钮容器上下增加间距 */
+            display: flex;
+            justify-content: center;
+            gap: 20px; /* 按钮之间的间距 */
+            margin: 0px auto 20px auto; 
+            width: 100%;
+            max-width: 960px;
+        }
+
+        .nav-button {
+            text-decoration: none;
+            color: #E0E0E0; 
+            background-color: #333333; 
+            border: 2px solid #505050;
+            padding: 5px 3px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 13px;
+            width: 120px; 
+            text-align: center; 
+            display: inline-block; 
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .nav-button:hover {
+            background-color: #444444; 
+            border-color: #e0e0e0; 
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
+        }
+
+        /* 统一的表格容器样式 */
+        .controls-table-container {
+            width: 95%; 
+            max-width: 1650px; 
+            margin-top: 0px;
+            margin-bottom: 40px;
+            background-color: #333333; 
+            border: 3px solid #777777; 
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            overflow-x: auto; 
+            overflow-y: auto; 
+        }
+        
+        .controls-table {
+            width: 100%;
+            min-width: 1650px; 
+            border-collapse: collapse; 
+            text-align: center;
+            border: none; 
+            table-layout: fixed; 
+        }
+        
+        .controls-table th, .controls-table td {
+            color: #E0E0E0;
+            font-size: 14px; 
+            border: 1px solid #555555; 
+            vertical-align: middle; /* 垂直居中 */
+            text-align: center; /* 水平居中 */
+            padding: 8px 5px;
+            height: auto; 
+            box-sizing: border-box; 
+            background-color: #333333; 
+            line-height: 1.5;
+        }
+
+        /* ------------------------------------------------ */
+        /* 固定和宽度控制 */
+        /* ------------------------------------------------ */
+
+        /* 表头行 - 固定顶部 */
+        .controls-table thead th {
+            background-color: #444444; 
+            font-weight: bold;
+            padding: 10px 5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* 针对所有非命令行的配置详情单元格设置最小高度 */
+        .controls-table tbody tr:not(.command-row) td {
+            height: 55px; /* 设置一个固定高度来模拟两行空间 */
+            box-sizing: border-box;
+        }
+
+        /* 排除第一列，因为它有 rowspan 和不同的背景色 */
+        .controls-table tbody tr:not(.command-row) td:first-child {
+            height: auto; /* 保持第一列的高度根据 rowspan 自动计算 */
+        }
+
+        /* 第一列 (编码器名称) - 固定左侧，两行合并 */
+        .controls-table td:first-child[rowspan], 
+        .controls-table th:first-child {
+            width: 6%; 
+            min-width: 60px;
+            position: sticky;
+            left: 0;
+            z-index: 15; 
+            background-color: #444444; 
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5); 
+            font-weight: bold;
+            text-align: center;
+            vertical-align: middle; 
+        }
+        
+        /* 16 列宽度定义 (保持不变) */
+        .controls-table thead th:nth-child(2) { width: 4.5%; min-width: 40px; } /* 编码 */
+        .controls-table thead th:nth-child(3) { width: 5.0%; min-width: 40px; } /* 分辨率 */
+        .controls-table thead th:nth-child(4) { width: 2.5%; min-width: 30px; } /* 帧率 */
+        .controls-table thead th:nth-child(5) { width: 3.0%; min-width: 30px; } /* 封装 */
+        .controls-table thead th:nth-child(6) { width: 5.0%; min-width: 40px; } /* 色度采样 */
+        .controls-table thead th:nth-child(7) { width: 3.5%; min-width: 30px; } /* 色深 */
+        .controls-table thead th:nth-child(8) { width: 5.0%; min-width: 40px; } /* 色域 */
+        .controls-table thead th:nth-child(9) { width: 5.0%; min-width: 40px; } /* Preset */
+        .controls-table thead th:nth-child(10) { width: 4.5%; min-width: 40px; } /* Profile */
+        .controls-table thead th:nth-child(11) { width: 3.0%; min-width: 30px; } /* Level */
+        .controls-table thead th:nth-child(12) { width: 3.0%; min-width: 30px; } /* Tier */
+        .controls-table thead th:nth-child(13) { width: 20.0%; min-width: 160px; } /* 其他 (Wider) */
+        .controls-table thead th:nth-child(14) { width: 3.0%; min-width: 40px; } /* RC */
+        .controls-table thead th:nth-child(15) { width: 16.0%; min-width: 120px; } /* 测试硬件 (Wider) */
+        .controls-table thead th:nth-child(16) { width: 5.5%; min-width: 40px; } /* Speed */
+
+        /* ------------------------------------------------ */
+        /* 命令行样式 */
+        /* ------------------------------------------------ */
+        .command-row td {
+            text-align: left !important;
+            padding-left: 5px !important;
+            padding-top: 5px !important;
+            padding-right: 5px !important;
+            padding-bottom: 5px !important;
+            background-color: #2D2D2D !important; 
+            font-size: 13px;
+            color: #F2F2F2; 
+            vertical-align: top; 
+        }
+        
+        .command-row code {
+            font-family: 'Consolas', 'PingFang SC', monospace;
+            white-space: pre-wrap; 
+            word-break: break-all;
+            line-height: 1.5;
+        }
+
+        /* 代码高亮规则 */
+        .code-ffmpeg {
+            color: #FFFF00; /* 黄色 */
+            font-weight: bold;
+        }
+        .code-param {
+            color: #AEAAAA; /* 浅灰色 */
+        }
+    </style>
+</head>
+<body>
+
+    <a href="../projects/" id="homeButton">← 返回上一级</a>
+    
+    <h1>编码器配置参数</h1>
+    <p>以下表格展示了性能测试中所使用的各编码器详细配置参数和对应的 FFmpeg 命令行。</p>
+
+    <div class="intro-text-container">
+    <p>FFmpeg版本 N-120856-g9893d66add-20250831。</p>
+    <p>本实验在测完x265、SVT-AV1和VVenC后才进行VP9的测试，在预实验中发现VPX-VP9编码器的速度与VVenC几乎处于同一水平，而质量却显著低于x265，故不做测试。SVT-VP9编码器理论上能提供快于x265的速度，但发行版FFmpeg并没有原生支持该编码器，故也不进行测试。</p>
+    <p>预设的选择：由于硬件编码和x264软件编码速度较快，故使用最慢的Preset并尽可能使用两次编码。而x265、 AV1、VVC的软件编码速度很慢，故采用质量尽可能接近最慢档时较快的Preset，x265使用slower而不是veryslow，AV1使用3而不是0，VVC使用slow而不是slower。</p>
+    <p>所有视频均由使用Prores 422 HQ压缩的3840x2160 60fps HDR 10bit 422原片压制而来，故全部使用了 -pix_fmt yuv420p10le指令将其转为10bit 420 HDR。</p>
+    <p>由于CPU算力不足，软件解码ProRes速度小于编码器编码速度，第九代QSV编码器在Ultra 5 125H上和HEVC_AMF_4.0在Ryzen 7 7840H上的测得速率相比其极限速率偏小。如果使用拥有同代编码器却具有更强大CPU的配置，则能获得更大的速率。怀疑由于CPU瓶颈导致编码速率偏低的数据，在表中使用*标注。</p>
+    <p>由于使用核显编码时更容易遇到3D瓶颈，核显编码速度可能比搭载同代编码器的独立显卡更慢。</p>
+    <p>测试视频为DJI 悟3与索尼FX3、FX6拍摄的的ProRes 422 HQ素材，包含大量复杂运动，细节极多，压缩难度较大，得到的VMAF分数相较于普通视频和电影的结果偏低。曲线主要反映不同编码器的相对质量，并不能作为视频压制码率选择的绝对参考。</p>
+    <p><br></p>
+    <p>素材来源：<a href="https://www.ysjf.com/material" target="_blank">影视飓风官网</a>&ensp;&ensp;&ensp;&ensp;流媒体：<a href="https://www.bilibili.com/video/BV1YmpRzEE38/" target="_blank">哔哩哔哩</a>&ensp;&ensp;<a href="https://youtu.be/OHoMmjgSc4U" target="_blank">YouTube</a></p>
+    </div>
+
+    <div class="nav-buttons-container">
+        <a href="./" class="nav-button">查看编码器性能曲线</a>
+        <a href="data.html" class="nav-button">查看数据</a>
+    </div>
+
+
+    <div class="controls-table-container">
+        <table class="controls-table">
+            <thead>
+                <tr>
+                    <th>编码器</th>
+                    <th>编码</th>
+                    <th>分辨率</th>
+                    <th>帧率</th>
+                    <th>封装</th>
+                    <th>色度采样</th>
+                    <th>色深</th>
+                    <th>色域</th>
+                    <th>Preset</th>
+                    <th>Profile</th>
+                    <th>Level</th>
+                    <th>Tier</th>
+                    <th>其他</th>
+                    <th>RC</th>
+                    <th>测试硬件</th>
+                    <th>Speed (20000kbps)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="2">x264</td>
+                    <td>H.264</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>veryslow</td>
+                    <td>high10</td>
+                    <td>5.2</td>
+                    <td>-</td>
+                    <td>前向预测帧=100; 两次编码; 慢速第一次编码</td>
+                    <td>ABR</td>
+                    <td>Ryzen 9 7950X@118W -5mV</td>
+                    <td>0.252x</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> libx264 <span class="code-param">-preset</span> veryslow <span class="code-param">-profile:v</span> high10 <span class="code-param">-level</span> 5.2 <span class="code-param">-rc-lookahead</span> 100 <span class="code-param">-fastfirstpass</span> 0 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">H264_NVENC</td>
+                    <td>H.264</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>p7(slowest)</td>
+                    <td>high10</td>
+                    <td>5.2</td>
+                    <td>-</td>
+                    <td>高质量; 完全分辨率多次编码; AQ强度=12</td>
+                    <td>VBR</td>
+                    <td>GeForce RTX 5090</td>
+                    <td>1.17x (9th)</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> h264_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-tune</span> hq <span class="code-param">-level</span> 5.2 <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="2">x265</td>
+                    <td>H.265</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>slower</td>
+                    <td>main10</td>
+                    <td>5.1</td>
+                    <td>(自动)</td>
+                    <td>-</td>
+                    <td>ABR</td>
+                    <td>Ryzen 9 7950X@118W -5mV</td>
+                    <td>0.0448x</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> libx265 <span class="code-param">-preset</span> slower <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">HEVC_NVENC</td>
+                    <td>H.265</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>p7(slowest)</td>
+                    <td>main10</td>
+                    <td>5.1</td>
+                    <td>high</td>
+                    <td>完全分辨率多次编码; RC前向预测=50; AQ强度=12</td>
+                    <td>VBR</td>
+                    <td>GeForce RTX 3080 Ti (7th)<br>GeForce RTX 4060 Laptop GPU (8th)<br>GeForce RTX 5090 (9th)</td>
+                    <td>0.537x (7th)<br>0.672x (8th)<br>0.645x (9th)</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> hevc_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-tier</span> high <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">HEVC_QSV</td>
+                    <td>H.265</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>veryslow</td>
+                    <td>main10</td>
+                    <td>(自动)</td>
+                    <td>high</td>
+                    <td>前向预测帧=100; 码率限制 关; 节能 关</td>
+                    <td>VBR</td>
+                    <td>Intel UHD Graphics (Core i9-13900HX) (V8)<br>Intel Arc Graphics (Core Ultra 5 125H) (V9)</td>
+                    <td>0.332x (V8)<br>1.03x (V9)*</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> hevc_qsv <span class="code-param">-bitrate_limit</span> 0 <span class="code-param">-look_ahead_depth</span> 100 <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-profile:v</span> main10 <span class="code-param">-tier</span> high <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">HEVC_AMF</td>
+                    <td>H.265</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>quality</td>
+                    <td>main10</td>
+                    <td>(自动)</td>
+                    <td>high</td>
+                    <td>预编码 开; 前向预测帧=41</td>
+                    <td>VBR</td>
+                    <td>Radeon Graphics (Ryzen 9 7950X) (3.1)<br>Radeon 780M (Ryzen 7 7840H) (4.0)</td>
+                    <td>1.17x (3.1)<br>1.06x (4.0)*</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> hevc_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-profile_tier</span> high <span class="code-param">-preset</span> quality <span class="code-param">-preencode</span> true <span class="code-param">-pa_lookahead_buffer_depth</span> 41 <span class="code-param">-b:v</span> 7000k <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">VP9</td>
+                    <td>VP9</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>(deadline) good</td>
+                    <td>profile 2</td>
+                    <td>5.1</td>
+                    <td>-</td>
+                    <td>CPU占用=0; 前向预测帧=25; 线程数=16</td>
+                    <td>ABR</td>
+                    <td>Ryzen 9 7950X@118W -5mV</td>
+                    <td>-</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> libvpx-vp9 <span class="code-param">-profile:v</span> 2 <span class="code-param">-deadline</span> best <span class="code-param">-level</span> 5.1 <span class="code-param">-cpu-used</span> 0 <span class="code-param">-rc_lookahead</span> 25 <span class="code-param">-threads</span> 16 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">VP9_QSV</td>
+                    <td>VP9</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>veryslow</td>
+                    <td>profile 2</td>
+                    <td>(自动)</td>
+                    <td>-</td>
+                    <td>节能 关</td>
+                    <td>VBR</td>
+                    <td>Intel UHD Graphics (Core i9-13900HX) (V8)<br>Intel Arc Graphics (Core Ultra 5 125H) (V9)</td>
+                    <td>0.713x (V8)<br>0.637x (V9)*</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> vp9_qsv <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-profile:v</span> profile2 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">SVT-AV1</td>
+                    <td>AV1</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>3</td>
+                    <td>(自动)</td>
+                    <td>(自动)</td>
+                    <td>-</td>
+                    <td>前向预测帧=50</td>
+                    <td>VBR</td>
+                    <td>Ryzen 9 7950X@118W -5mV</td>
+                    <td>0.0587x</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> libsvtav1 <span class="code-param">-svtav1-params</span> "preset=3:lookahead=50" <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">AV1_NVENC</td>
+                    <td>AV1</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>p7(slowest)</td>
+                    <td>(自动)</td>
+                    <td>5.1</td>
+                    <td>1</td>
+                    <td>完全分辨率多次编码; RC前向预测=50; AQ强度=12</td>
+                    <td>VBR</td>
+                    <td>GeForce RTX 4060 Laptop GPU (8th)<br>GeForce RTX 5090 (9th)</td>
+                    <td>1.12x (8th)<br>1.13x (9th)</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> av1_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-level</span> 5.1 <span class="code-param">-tier</span> 1 <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">AV1_QSV</td>
+                    <td>AV1</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>p7(slowest)</td>
+                    <td>(自动)</td>
+                    <td>(自动)</td>
+                    <td>-</td>
+                    <td>前向预测帧=100; 码率限制 关; 节能 关</td>
+                    <td>VBR</td>
+                    <td>Intel Arc Graphics (Core Ultra 5 125H) (V9)</td>
+                    <td>0.995x (V9)*</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> av1_qsv <span class="code-param">-bitrate_limit</span> 0 <span class="code-param">-look_ahead_depth</span> 100 <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频你)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">AV1_AMF</td>
+                    <td>AV1</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>high_quality</td>
+                    <td>(自动)</td>
+                    <td>5.1</td>
+                    <td>(自动)</td>
+                    <td>质量 高质量; 预编码 开; 前向预测帧=41</td>
+                    <td>VBR</td>
+                    <td>Radeon 780M (Ryzen 7 7840H) (4.0)</td>
+                    <td>0.457x (4.0)*</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-I</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> av1_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-level</span> 5.1 <span class="code-param">-quality</span> high_quality <span class="code-param">-preset</span> high_quality <span class="code-param">-preencode</span> true <span class="code-param">-pa_lookahead_buffer_depth</span> 41 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">VVenC</td>
+                    <td>H.266</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>slow</td>
+                    <td>(自动)</td>
+                    <td>(自动)</td>
+                    <td>(自动)</td>
+                    <td>线程数=16</td>
+                    <td>VBR</td>
+                    <td>Ryzen 9 7950X@118W -5mV</td>
+                    <td>0.00485x</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> libvvenc <span class="code-param">-preset</span> slow <span class="code-param">-threads</span> 16 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">HEVC_NVENC</td>
+                    <td>H.265无损</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>p7(slowest)</td>
+                    <td>main10</td>
+                    <td>6.2</td>
+                    <td>high</td>
+                    <td>Tune=无损; RC前向预测=50; AQ强度=12</td>
+                    <td>VBR</td>
+                    <td>GeForce RTX 5090</td>
+                    <td>0.777 (9th)</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> hevc_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-profile:v</span> main10 <span class="code-param">-tune</span> lossless <span class="code-param">-level</span> 6.2 <span class="code-param">-tier</span> high <span class="code-param">-rc</span> vbr <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

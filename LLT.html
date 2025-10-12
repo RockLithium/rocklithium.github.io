@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>主从式梅森素数检验</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* 字体定义与配色基础 */
+        body {
+            /* 苹方（中文）和等宽字体（英文/数字） */
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Ubuntu Mono', Consolas, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #1a1a1a; /* 柔和深灰 */
+            color: #d3d3d3; /* 浅灰白 */
+        }
+        
+        /* 返回主页按钮样式 */
+        #homeButton {
+            position: absolute; /* 绝对定位 */
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            color: #e0e0e0; /* 保持与主页颜色一致 */
+            background-color: #333333;
+            border: 1px solid #778899;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            z-index: 100; /* 确保按钮在最上层 */
+        }
+
+        #homeButton:hover {
+            background-color: #444444;
+        }
+
+        h1 {
+            color: #aae0e0; /* 柔和浅蓝 */
+            text-shadow: 0 0 5px rgba(170, 224, 224, 0.3); /* 柔和阴影 */
+            font-weight: 900; 
+        }
+        
+        /* 控制区域 - 固定宽度 */
+        #controls {
+            margin-bottom: 25px;
+            background: rgba(40, 40, 40, 0.8); /* 略透明的深灰背景 */
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #778899; /* 柔和的边框 */
+            text-align: center;
+            width: 95%; 
+            max-width: 450px; /* 固定最大宽度 */
+        }
+
+        #configGroup {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-line {
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             gap: 10px;
+             margin-bottom: 5px;
+        }
+
+        #workerCountInput, #exponentInput {
+            background: #333333;
+            color: #d3d3d3;
+            border: 1px solid #778899;
+            padding: 5px;
+            width: 60px;
+            border-radius: 3px;
+            font-family: 'Ubuntu Mono', Consolas, monospace;
+            text-align: center;
+        }
+
+        #workerCountInput:disabled, #exponentInput:disabled {
+             background: #555555;
+             color: #999999;
+             cursor: not-allowed;
+        }
+        
+        #limitDisplay {
+            color: #90ee90;
+            font-weight: bold;
+            font-family: 'PingFang SC', 'Helvetica Neue', sans-serif; 
+        }
+
+        /* 单按钮样式 */
+        #stageButton {
+            padding: 10px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        
+        /* 蓝色开始/重置 */
+        #stageButton.start-btn {
+            background-color: #40a0a0; 
+        }
+        /* 红色停止 */
+        #stageButton.stop-btn {
+            background-color: #cc6666; 
+        }
+
+        /* 消息提示框 */
+        #stageMessage {
+            color: #778899; 
+            min-height: 40px; 
+            padding: 5px 0;
+            margin: 0;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            word-wrap: break-word; /* 保证换行 */
+        }
+
+        /* 状态区域 */
+        #statusArea {
+            width: 95%; 
+            max-width: 1200px;
+            margin-top: 15px;
+            padding: 20px;
+            background: rgba(40, 40, 40, 0.8);
+            border-radius: 10px;
+        }
+        
+        .status-line {
+            margin: 10px 0;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        /* 突出显示的数值 */
+        .value {
+            color: #90ee90; 
+            font-weight: bold;
+            font-family: 'Ubuntu Mono', Consolas, monospace; 
+        }
+
+        /* 循环统计文本和图表容器 */
+        #historyContainer {
+            margin-top: 30px;
+            width: 100%;
+        }
+        .cycle-stats-style {
+            text-align: center;
+            font-size: 1.1em;
+            color: #d3d3d3;
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Ubuntu Mono', Consolas, monospace;
+            margin: 15px auto; /* 居中 */
+            padding: 10px;
+            border: 1px dashed #444444; 
+            border-radius: 5px;
+            max-width: 500px; /* 限制宽度让居中效果更明显 */
+        }
+        
+        /* 图表容器样式 */
+        #chartContainer {
+            width: 90%;
+            max-width: 800px; /* 限制最大宽度 */
+            height: 350px; /* 固定高度 */
+            margin: 20px auto 0;
+            background-color: rgba(30, 30, 30, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+
+        /* 总进度条 */
+        .progress-bar-container {
+            height: 12px;
+            background-color: #333333;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 5px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #40e0d0; 
+            line-height: 12px;
+            color: #1a1a1a;
+            font-size: 0.7em;
+            text-align: center;
+            transition: width 0.1s ease-out;
+        }
+        
+        /* 核心状态网格布局 */
+        #coreProgress {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px dashed #444444;
+        }
+        
+        #coreStatusContainers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 15px;
+        }
+        
+        .core-status {
+            padding: 8px;
+            border: 1px solid #383838;
+            border-radius: 5px;
+            background: rgba(50, 50, 50, 0.6); 
+        }
+        
+        .core-label {
+            font-weight: bold;
+            color: #aae0e0; 
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+            font-size: 0.9em;
+        }
+        
+        .core-p-value {
+            color: #90ee90; 
+            font-family: 'Ubuntu Mono', Consolas, monospace;
+        }
+
+        /* 进度条颜色根据状态变化 */
+        .core-status .progress-fill {
+            background-color: #40e0d0; 
+        }
+        .core-status.completed .progress-fill {
+            background-color: #3CB371 !important; 
+        }
+    </style>
+</head>
+<body onload="initializeChart()">
+
+    <a href="./stress_tests/" id="homeButton">← 返回上一级</a>
+
+    <h1>主从式梅森素数检验 (LLT)</h1>
+
+    <div id="controls">
+        <div id="configGroup">
+            <div class="config-line">
+                <label for="workerCountInput" style="color: #aae0e0;">指定线程数：</label>
+                <input type="number" id="workerCountInput" min="1" max="4" value="4">
+            </div>
+            <span id="autoDetectHint" style="font-size: 0.8em; color: #778899; margin-bottom: 10px;"></span>
+
+            <div class="config-line">
+                <label for="exponentInput" style="color: #aae0e0;">质数查找上限 (2^N), N=</label>
+                <input type="number" id="exponentInput" value="12" oninput="updateLimitDisplay()">
+                <span id="limitDisplay"> (上限: 4,096)</span>
+            </div>
+        </div>
+        
+        <button id="stageButton" class="start-btn" onclick="handleStageControl()">开始运行</button>
+        <p id="stageMessage">点击**开始运行**：先预计算素数表 (2 到 2^12)，完成后自动进行 LLT 检验。</p>
+    </div>
+    
+    <div id="statusArea">
+        <div class="status-line">
+            <span>当前循环次数：</span>
+            <span id="cycleCount" class="value">0</span>
+        </div>
+        <div class="status-line">
+            <span>累计已用时间：</span>
+            <span id="elapsedTime" class="value">0.000s</span>
+        </div>
+        <div class="status-line">
+            <span id="progressLabel">当前已检验项:</span>
+            <span id="currentProgress" class="value">0</span>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-fill" id="progressFill">0%</div>
+        </div>
+
+        <div id="historyContainer">
+            <h3 style="color: #40e0d0; margin-top: 5px; text-align: center; margin-bottom: 15px;">循环耗时统计</h3>
+            <p id="cycleStatsText" class="cycle-stats-style">
+                已循环次数: <span class="value">0</span> &nbsp;&nbsp;&nbsp; 
+                平均循环时间: <span class="value">0.000 s</span>
+            </p>
+
+            <div id="chartContainer">
+                <canvas id="cycleChart"></canvas>
+            </div>
+        </div>
+
+        <div id="coreProgress">
+            <h3 style="color: #40e0d0; margin-top: 5px;">线程 LLT 实时状态</h3>
+            <div id="coreStatusContainers"></div>
+        </div>
+    </div>
+
+    <script>
+        // 常量设置
+        const LLT_REPORT_STEP = 1000;
+        const PRIME_SEARCH_STEP = 100000; 
+        const MIN_EXPONENT = 10; 
+        const MAX_EXPONENT = 24;
+        const DEFAULT_EXPONENT = 12; 
+
+        // DOM 元素引用
+        const stageButton = document.getElementById('stageButton');
+        const stageMessage = document.getElementById('stageMessage');
+        const currentProgress = document.getElementById('currentProgress');
+        const progressFill = document.getElementById('progressFill');
+        const autoDetectHint = document.getElementById('autoDetectHint');
+        const coreStatusContainers = document.getElementById('coreStatusContainers');
+        const workerCountInput = document.getElementById('workerCountInput');
+        const elapsedTimeDisplay = document.getElementById('elapsedTime');
+        const progressLabel = document.getElementById('progressLabel');
+        const cycleCountDisplay = document.getElementById('cycleCount');
+        const exponentInput = document.getElementById('exponentInput');
+        const limitDisplay = document.getElementById('limitDisplay');
+        const cycleStatsText = document.getElementById('cycleStatsText'); 
+
+        // --- 动态配置 ---
+        let SYSTEM_CORE_COUNT = navigator.hardwareConcurrency || 4;
+        let STAGE_MAX_NUMBER = Math.pow(2, DEFAULT_EXPONENT); 
+        let currentExponent = DEFAULT_EXPONENT; 
+        let WORKER_COUNT = SYSTEM_CORE_COUNT;
+
+        // --- 状态变量 ---
+        let workers = [];
+        // 0: 停止/待机, 1: Stage 1 运行, 2: Stage 2 运行
+        let currentStageIndex = 0; 
+        let isRunning = false;
+        
+        let totalCounted = 0; 
+        let totalPrimes = 0;
+        let workersFinished = 0; 
+        let stage1PrimesMap = new Map(); 
+        let stage1Primes = []; 
+        let isStage1Done = false;
+        
+        let nextPrimeIndex = 0;
+        let checksCompleted = 0;
+        let totalLLTChecks = 0; 
+
+        // 计时和循环相关变量
+        let totalTimeElapsed = 0; 
+        let timerInterval = null;
+        let cycleStartTime = 0; 
+        let cycleNumber = 0; 
+        let cycleTimes = []; 
+        
+        let coreStatuses = [];
+        
+        // --- 图表变量 ---
+        let cycleChart;
+        let chartData = {
+            labels: [], // 循环次数
+            data: []    // 所用时间 (秒)
+        };
+
+        // --- Chart.js 初始化 ---
+
+        function initializeChart() {
+            const ctx = document.getElementById('cycleChart').getContext('2d');
+            cycleChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    // Chart.js 引用了 chartData 数组的内存地址，保证了后续更新的同步
+                    labels: chartData.labels, 
+                    datasets: [{
+                        label: '单次循环时间 (秒)',
+                        data: chartData.data,
+                        borderColor: '#40e0d0', 
+                        backgroundColor: 'rgba(64, 224, 208, 0.2)',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        tension: 0.3, // 曲线平滑
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, 
+                    animation: {
+                        duration: 500, 
+                        easing: 'linear'
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '已循环次数',
+                                color: '#d3d3d3'
+                            },
+                            ticks: {
+                                color: '#d3d3d3',
+                                callback: function(value, index, ticks) {
+                                    // 只显示整数循环次数
+                                    return Number.isInteger(chartData.labels[index]) ? chartData.labels[index] : '';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '循环时间 (秒)',
+                                color: '#d3d3d3'
+                            },
+                            ticks: {
+                                color: '#d3d3d3',
+                                callback: function(value) {
+                                    return value.toFixed(2) + 's';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            min: 0
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: '#d3d3d3'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y.toFixed(3) + 's';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+
+        // --- UI 和状态控制 ---
+
+        function updateLimitDisplay() {
+            let exp = parseInt(exponentInput.value);
+            
+            if (isNaN(exp)) {
+                exp = DEFAULT_EXPONENT;
+            }
+
+            const clampedExp = Math.max(MIN_EXPONENT, Math.min(exp, MAX_EXPONENT)); 
+            
+            currentExponent = clampedExp; 
+            STAGE_MAX_NUMBER = Math.pow(2, currentExponent);
+
+            const formattedLimit = STAGE_MAX_NUMBER.toLocaleString();
+            
+            let displayExp = exp < MIN_EXPONENT ? `${exp} (使用 N=${MIN_EXPONENT})` : exp;
+
+            limitDisplay.textContent = ` (上限: ${formattedLimit})`;
+            
+            if (currentStageIndex === 0) {
+                 stageMessage.textContent = ``;
+            }
+        }
+        
+        function updateWorkerCountInput() {
+            const maxCores = SYSTEM_CORE_COUNT;
+            workerCountInput.max = maxCores;
+            
+            let requestedCount = parseInt(workerCountInput.value);
+            requestedCount = Math.max(1, Math.min(requestedCount, maxCores));
+            workerCountInput.value = requestedCount;
+            WORKER_COUNT = requestedCount;
+            updateCoreStatusArray(WORKER_COUNT);
+        }
+
+        function updateButtonUI() {
+            if (currentStageIndex === 0) {
+                stageButton.textContent = '开始运行';
+                stageButton.classList.remove('stop-btn');
+                stageButton.classList.add('start-btn');
+                stageButton.disabled = false; 
+                workerCountInput.disabled = false;
+                exponentInput.disabled = false;
+            } else if (currentStageIndex === 1 || currentStageIndex === 2) {
+                stageButton.textContent = '停止运行';
+                stageButton.classList.remove('start-btn');
+                stageButton.classList.add('stop-btn');
+                stageButton.disabled = false; 
+                workerCountInput.disabled = true;
+                exponentInput.disabled = true;
+            } 
+        }
+        
+        function initializeUI() {
+            workerCountInput.value = SYSTEM_CORE_COUNT;
+            workerCountInput.oninput = updateWorkerCountInput; 
+            exponentInput.value = DEFAULT_EXPONENT; 
+            autoDetectHint.textContent = `(系统检测到 ${SYSTEM_CORE_COUNT} 个线程)`;
+            updateWorkerCountInput(); 
+            updateLimitDisplay(); 
+            updateButtonUI();
+        }
+
+        function updateCoreStatusArray(count) {
+            coreStatuses = Array(count).fill(null).map((_, i) => ({
+                id: i,
+                currentP: 'N/A',
+                progress: 0
+            }));
+        }
+
+        // --- 计时器和历史记录逻辑 ---
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateElapsedTime, 10); 
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function updateElapsedTime() {
+            if (!isRunning || currentStageIndex === 0) return;
+            
+            const now = Date.now();
+            const currentCycleElapsed = now - cycleStartTime;
+            totalTimeElapsed = cycleTimes.reduce((a, b) => a + b, 0) + currentCycleElapsed;
+            elapsedTimeDisplay.textContent = (totalTimeElapsed / 1000).toFixed(3) + 's';
+        }
+        
+        function recordCycleTime(timeMs) {
+            cycleNumber++;
+            cycleTimes.push(timeMs);
+            
+            // 计算平均时间 (秒)
+            const total = cycleTimes.reduce((a, b) => a + b, 0);
+            const averageSeconds = (total / cycleNumber) / 1000;
+            const cycleRunSeconds = timeMs / 1000;
+
+
+            cycleCountDisplay.textContent = cycleNumber.toLocaleString();
+
+            // 1. 更新统计文本
+            cycleStatsText.innerHTML = `
+                已循环次数: <span class="value">${cycleNumber.toLocaleString()}</span> &nbsp;&nbsp;&nbsp; 
+                平均循环时间: <span class="value">${averageSeconds.toFixed(3)} s</span>
+            `;
+
+            // 2. 更新图表数据
+            chartData.labels.push(cycleNumber);
+            chartData.data.push(cycleRunSeconds);
+            
+            // 3. 动态刷新图表
+            if (cycleChart) {
+                cycleChart.update('none'); 
+            }
+        }
+        
+        // --- Worker Script ---
+        function getWorkerScript() {
+            return `
+                let isWorkerRunning = false;
+                let workerId = -1;
+                let localPrimes = []; 
+
+                self.onmessage = function(e) {
+                    if (e.data.command === 'stop') {
+                        isWorkerRunning = false;
+                        localPrimes = []; 
+                    } else if (e.data.command === 'start_stage1') {
+                        isWorkerRunning = true;
+                        localPrimes = [];
+                        startStage1(e.data.start, e.data.end);
+                    } else if (e.data.command === 'start_stage2') {
+                        isWorkerRunning = true;
+                        workerId = e.data.workerId;
+                        self.postMessage({ command: 'request_task', workerId: workerId });
+                    } else if (e.data.command === 'task_assigned') {
+                        if (e.data.p_value) {
+                            runLLT(e.data.p_value);
+                        } else {
+                            isWorkerRunning = false;
+                            self.postMessage({ command: 'task_complete', workerId: workerId, finished: true });
+                        }
+                    }
+                };
+
+                function startStage1(startNum, endNum) {
+                    let count = 0;
+                    const END_BIGINT = BigInt(endNum);
+                    const REPORT_STEP = BigInt(${PRIME_SEARCH_STEP});
+                    const START_BIGINT = BigInt(startNum);
+
+                    for (let n = START_BIGINT; n <= END_BIGINT && isWorkerRunning; n++) {
+                        if (isPrime(n)) {
+                            localPrimes.push(Number(n)); 
+                        }
+                        count++;
+                        
+                        if (count % Number(REPORT_STEP) === 0) {
+                            self.postMessage({ command: 'progress1', count: Number(REPORT_STEP) });
+                        }
+                    }
+                    
+                    const remainingCount = count % Number(REPORT_STEP);
+
+                    const int32Array = new Int32Array(localPrimes);
+                    const buffer = int32Array.buffer;
+
+                    self.postMessage({ 
+                        command: 'finished1', 
+                        count: remainingCount, 
+                        primesBuffer: buffer 
+                    }, [buffer]);
+
+                    localPrimes = []; 
+                }
+
+                function isPrime(n) {
+                    if (n <= 1n) return false;
+                    if (n <= 3n) return true;
+                    if (n % 2n === 0n || n % 3n === 0n) return false;
+                    
+                    for (let i = 5n; i * i <= n; i = i + 6n) {
+                        if (n % i === 0n || n % (i + 2n) === 0n) return false;
+                    }
+                    return true;
+                }
+
+                function runLLT(p) {
+                    const pBigInt = BigInt(p);
+                    if (pBigInt <= 3n) {
+                        self.postMessage({ command: 'task_complete', workerId: workerId, finished: false, p: p, is_prime: true });
+                        self.postMessage({ command: 'request_task', workerId: workerId });
+                        return;
+                    }
+                    
+                    const maxIter = pBigInt - 2n;
+                    const M = (1n << pBigInt) - 1n; 
+                    let S = 4n;               
+                    let currentIteration = 1n;
+                    
+                    const CHUNK_SIZE_WORKER = ${LLT_REPORT_STEP}; 
+
+                    while (currentIteration <= maxIter && isWorkerRunning) {
+                        
+                        for (let j = 0; j < CHUNK_SIZE_WORKER && currentIteration <= maxIter; j++) {
+                            S = (S * S - 2n) % M;
+                            currentIteration++;
+                        }
+
+                        self.postMessage({ 
+                            command: 'llt_progress',
+                            workerId: workerId,
+                            p: p,
+                            iteration: Number(currentIteration),
+                            max_iter: Number(maxIter)
+                        });
+                    }
+                    
+                    if (isWorkerRunning) {
+                        self.postMessage({ 
+                            command: 'task_complete', 
+                            workerId: workerId, 
+                            finished: false, 
+                            p: p, 
+                            is_prime: S === 0n 
+                        });
+                        self.postMessage({ command: 'request_task', workerId: workerId });
+                    }
+                }
+            `;
+        }
+
+
+        function handleWorkerMessage(e) {
+            const data = e.data;
+            const workerId = data.workerId;
+            if (!isRunning && currentStageIndex !== 2) return; 
+            
+            if (data.command === 'progress1') {
+                if (currentStageIndex !== 1) return;
+                totalCounted += data.count;
+                updateOverallProgress();
+
+            } else if (data.command === 'finished1') {
+                if (currentStageIndex !== 1) return;
+
+                totalCounted += data.count;
+                workersFinished++;
+                
+                if(data.primesBuffer) {
+                    const receivedArray = new Int32Array(data.primesBuffer);
+                    receivedArray.forEach(p => stage1PrimesMap.set(p, true));
+                }
+
+                if (workersFinished === WORKER_COUNT) {
+                    const finalPrimes = Array.from(stage1PrimesMap.keys()).sort((a, b) => a - b);
+                    stage1Primes = finalPrimes;
+                    totalPrimes = finalPrimes.length; 
+                    
+                    workers.forEach(w => w.terminate());
+                    workers = [];
+                    isStage1Done = true;
+
+                    finishStage1(); 
+                }
+                updateOverallProgress();
+
+            } else if (data.command === 'request_task') {
+                if (currentStageIndex !== 2) return;
+                
+                const nextP = getNextTask();
+                if (nextP !== null) {
+                    workers[workerId].postMessage({ command: 'task_assigned', p_value: nextP });
+                    
+                    coreStatuses[workerId].currentP = nextP.toLocaleString();
+                    coreStatuses[workerId].progress = 0;
+                    updateCoreStatusUI(workerId);
+                } else {
+                    workers[workerId].postMessage({ command: 'task_assigned', p_value: null });
+                }
+
+            } else if (data.command === 'llt_progress') {
+                if (currentStageIndex !== 2) return;
+                const progress = (data.iteration / data.max_iter) * 100;
+                coreStatuses[workerId].progress = progress;
+                updateCoreStatusUI(workerId);
+
+            } else if (data.command === 'task_complete') {
+                if (currentStageIndex !== 2) return;
+                
+                if (!data.finished) {
+                    checksCompleted++; 
+                    
+                    coreStatuses[workerId].currentP = data.p.toLocaleString() + ' (OK)';
+                    coreStatuses[workerId].progress = 0;
+                    updateCoreStatusUI(workerId);
+                }
+                
+                updateOverallProgress();
+
+                if (checksCompleted === totalLLTChecks) { 
+                    workers.forEach(w => w.terminate());
+                    workers = [];
+                    finishStage2(); 
+                }
+            }
+        }
+        
+        function getNextTask() {
+            if (nextPrimeIndex < stage1Primes.length) {
+                const p = stage1Primes[nextPrimeIndex];
+                nextPrimeIndex++;
+                return p;
+            }
+            return null; 
+        }
+
+        function initializeCoreStatusContainers(count) {
+            coreStatusContainers.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const statusDiv = document.createElement('div');
+                statusDiv.className = 'core-status';
+                statusDiv.id = `core-${i}`;
+                statusDiv.innerHTML = `
+                    <div class="core-label">
+                        <span>线程 ${i} 检验 p = <span class="core-p-value">N/A</span></span>
+                        <span class="core-progress-percent">0.00%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-fill" style="width: 0%;"></div>
+                    </div>
+                `;
+                coreStatusContainers.appendChild(statusDiv);
+            }
+        }
+        
+        function updateCoreStatusUI(workerId) {
+            const status = coreStatuses[workerId];
+            const coreElement = document.getElementById(`core-${workerId}`);
+            if (!coreElement) return;
+
+            const pValueSpan = coreElement.querySelector('.core-p-value');
+            const percentSpan = coreElement.querySelector('.core-progress-percent');
+            const progressFill = coreElement.querySelector('.progress-fill');
+            
+            const isCompleted = status.currentP === 'LLT 循环完成';
+            const isFinishedOk = status.currentP.includes('(OK)');
+            const pValueColor = isCompleted ? '#aae0e0' : (isFinishedOk ? '#778899' : '#90ee90');
+            
+            pValueSpan.textContent = status.currentP;
+            pValueSpan.style.color = pValueColor;
+            percentSpan.textContent = `${status.progress.toFixed(2)}%`;
+            progressFill.style.width = `${status.progress}%`;
+
+            if (isCompleted) {
+                coreElement.classList.add('completed');
+            } else {
+                coreElement.classList.remove('completed');
+            }
+        }
+
+
+        function updateOverallProgress() {
+            let currentCount = 0;
+            let totalTasks = 0;
+            let progressPercentage = 0;
+
+            if (currentStageIndex === 1) {
+                totalTasks = STAGE_MAX_NUMBER - 2; 
+                currentCount = totalCounted;
+                progressPercentage = Math.min(100, (currentCount / totalTasks) * 100);
+                
+                progressLabel.textContent = `已扫描素数项 (总 ${STAGE_MAX_NUMBER.toLocaleString()}):`;
+
+            } else if (currentStageIndex === 2) {
+                totalTasks = totalLLTChecks;
+                currentCount = checksCompleted;
+                progressPercentage = Math.min(100, (currentCount / totalTasks) * 100);
+                progressLabel.textContent = `LLT 第 ${cycleNumber + 1} 循环已检验项:`; 
+
+            } else {
+                progressLabel.textContent = `当前已检验项:`;
+            }
+
+            currentProgress.textContent = currentCount.toLocaleString();
+            progressFill.style.width = progressPercentage.toFixed(2) + '%';
+            progressFill.textContent = progressPercentage.toFixed(2) + '%';
+        }
+
+        // --- 状态重置函数 ---
+
+        function fullReset() {
+            // 状态变量重置
+            totalTimeElapsed = 0; 
+            cycleNumber = 0; 
+            cycleTimes = []; 
+            
+            // LLT 任务重置
+            nextPrimeIndex = 0;
+            checksCompleted = 0;
+            totalLLTChecks = 0;
+
+            // Stage 1 任务重置
+            totalCounted = 0; 
+            totalPrimes = 0;
+            workersFinished = 0; 
+            stage1PrimesMap.clear(); 
+            stage1Primes = []; 
+            isStage1Done = false; 
+            
+            // 图表数据重置
+            chartData.labels.length = 0;
+            chartData.data.length = 0;
+            if (cycleChart) {
+                cycleChart.update();
+            }
+
+
+            // UI 重置
+            elapsedTimeDisplay.textContent = '0.000s';
+            cycleCountDisplay.textContent = '0';
+            
+            // 重置统计文本
+            cycleStatsText.innerHTML = `
+                已循环次数: <span class="value">0</span> &nbsp;&nbsp;&nbsp; 
+                平均循环时间: <span class="value">0.000 s</span>
+            `;
+            
+            updateOverallProgress(); 
+            currentProgress.textContent = '0'; 
+            progressFill.style.width = '0%';
+            progressFill.textContent = '0%';
+            
+            // 应用配置
+            updateWorkerCountInput(); 
+            updateLimitDisplay(); 
+        }
+
+        function startStage1() {
+            if (isRunning) return;
+            
+            workerCountInput.disabled = true;
+            exponentInput.disabled = true;
+
+            isRunning = true;
+            currentStageIndex = 1;
+            
+            updateWorkerCountInput();
+            updateLimitDisplay(); 
+            
+            updateCoreStatusArray(WORKER_COUNT);
+            initializeCoreStatusContainers(WORKER_COUNT);
+            
+            stageMessage.textContent = `阶段 1 运行中：预计算素数表 (2 到 2^${currentExponent})。`;
+            updateButtonUI(); 
+            
+            workers = [];
+            const chunkSize = Math.floor(STAGE_MAX_NUMBER / WORKER_COUNT);
+            
+            for (let i = 0; i < WORKER_COUNT; i++) {
+                const start = i * chunkSize + (i === 0 ? 2 : 1);
+                const end = (i === WORKER_COUNT - 1) ? STAGE_MAX_NUMBER : (i + 1) * chunkSize;
+
+                const worker = new Worker(URL.createObjectURL(new Blob([getWorkerScript()])));
+                worker.onmessage = handleWorkerMessage;
+                workers.push(worker);
+                
+                worker.postMessage({ command: 'start_stage1', start: start, end: end });
+            }
+            updateOverallProgress();
+        }
+
+        function finishStage1() {
+            stageMessage.textContent = `✅ 阶段 1 完成。共收集 ${totalPrimes.toLocaleString()} 个素数。正在自动启动 LLT 循环 1...`;
+            
+            isStage1Done = true;
+            startStage2(); 
+        }
+        
+        function startStage2() {
+            if (isRunning && currentStageIndex === 2) return; 
+            
+            workerCountInput.disabled = true;
+            exponentInput.disabled = true;
+            
+            isRunning = true;
+            currentStageIndex = 2;
+            
+            startTimer();
+            cycleStartTime = Date.now(); 
+            
+            nextPrimeIndex = 0;
+            checksCompleted = 0;
+            totalLLTChecks = stage1Primes.length;
+            
+            stageMessage.textContent = `LLT 循环 ${cycleNumber + 1} 运行中。`;
+            updateButtonUI(); 
+            
+            coreStatuses.forEach(s => { 
+                if (s.currentP === 'LLT 循环完成') {
+                    s.currentP = 'N/A'; s.progress = 0;
+                }
+            });
+            initializeCoreStatusContainers(WORKER_COUNT); 
+
+            workers = [];
+            for (let i = 0; i < WORKER_COUNT; i++) {
+                const worker = new Worker(URL.createObjectURL(new Blob([getWorkerScript()])));
+                worker.onmessage = handleWorkerMessage;
+                workers.push(worker);
+                
+                worker.postMessage({ 
+                    command: 'start_stage2', 
+                    workerId: i
+                });
+            }
+            updateOverallProgress();
+        }
+
+        function finishStage2() {
+            const cycleRunTime = Date.now() - cycleStartTime;
+            recordCycleTime(cycleRunTime);
+            
+            stageMessage.textContent = `✅ LLT 循环 ${cycleNumber} 完成。`; 
+            coreStatuses.forEach(s => { s.currentP = 'LLT 循环完成'; s.progress = 100; });
+            for (let i = 0; i < WORKER_COUNT; i++) {
+                updateCoreStatusUI(i);
+            }
+            
+            workers.forEach(w => w.terminate());
+            workers = [];
+            stopTimer(); 
+
+            isRunning = false; 
+            currentStageIndex = 2; 
+
+            startStage2(); 
+        }
+
+        function stopStressTest() {
+            isRunning = false;
+            currentStageIndex = 0; 
+            
+            workers.forEach(worker => {
+                try { worker.postMessage({ command: 'stop' }); worker.terminate(); } catch (e) { /* ignore */ }
+            });
+            workers = []; 
+
+            stopTimer(); 
+            
+            const frozenTime = (totalTimeElapsed / 1000).toFixed(3);
+            elapsedTimeDisplay.textContent = `${frozenTime}s (已停止)`; 
+
+            workerCountInput.disabled = false;
+            exponentInput.disabled = false;
+
+            stageMessage.textContent = '程序已停止。您可以修改配置后再次点击“开始运行”。';
+            updateButtonUI(); 
+
+            coreStatusContainers.innerHTML = '';
+        }
+
+        function handleStageControl() {
+            if (currentStageIndex === 1 || currentStageIndex === 2) {
+                stopStressTest();
+            } else if (currentStageIndex === 0) {
+                if (!isStage1Done || cycleNumber > 0) {
+                    fullReset();
+                }
+                
+                if (isStage1Done) {
+                    startStage2();
+                } else {
+                    startStage1();
+                }
+            }
+        }
+
+        initializeUI();
+    </script>
+
+</body>
+</html>
