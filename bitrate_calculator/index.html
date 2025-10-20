@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Rate Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Condensed&display=swap" rel="stylesheet">
+    
+    <style>
+        /* 引入 Unispace 粗体字体 */
+        @font-face {
+            font-family: 'Unispace Custom';
+            src: url('Unispace Bd.otf') format('opentype');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* 根样式 */
+        body {
+            background-color: #1a1a1a;
+            color: #E0E0E0;
+            margin: 0;
+            padding: 0;
+            font-family: 'Ubuntu Condensed', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 返回主页按钮样式 */
+        #homeButton {
+            position: absolute; /* 绝对定位 */
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            color: #e0e0e0; /* 保持与主页颜色一致 */
+            background-color: #2A2A2A;
+            border: 0.5px solid #505050;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            z-index: 100; /* 确保按钮在最上层 */
+        }
+
+        #homeButton:hover {
+            background-color: #333333; /* 悬停时稍微变亮 */
+            border-color: #FF7E00;
+            box-shadow: 0 0 5px rgba(255, 126, 0, 0.5);
+        }
+
+        /* 渐变文本颜色混合 */
+        .gradient-text {
+            background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent; /* Fallback for browsers that don't support clipping */
+        }
+
+        /* 主容器 */
+        .container {
+            width: 800px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        /* 标题样式 */
+        h1 {
+            font-family: 'Ubuntu Condensed', sans-serif;
+            font-size: 44px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Tab 头部样式 */
+        .tab-headers {
+            display: flex;
+            justify-content: space-around;
+            border-bottom: 2px solid #2A2A2A;
+            margin-bottom: 20px;
+        }
+
+        .tab-header {
+            font-family: 'Ubuntu Condensed', sans-serif;
+            font-size: 18px;
+            color: #888888;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: color 0.3s, text-shadow 0.3s;
+            user-select: none;
+        }
+
+        .tab-header.active {
+            color: #E0E0E0;
+            text-shadow: 0.3px 0.3px 0 #E0E0E0,
+                         -0.3px 0.3px 0 #E0E0E0,
+                         0.3px -0.3px 0 #E0E0E0,
+                         -0.3px -0.3px 0 #E0E0E0;
+        }
+
+        /* Tab 内容容器 */
+        .tab-content {
+            background-color: #1a1a1a;
+            width: 100%;
+            padding: 0;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* 输入框和小标题布局 */
+        .input-group {
+            margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* 小标题字号和左侧对齐 */
+        .input-title {
+            font-family: 'Ubuntu Condensed', sans-serif;
+            font-size: 18px;
+            color: #E0E0E0;
+            margin-bottom: 5px;
+            text-align: left;
+            /* REMOVED: padding-left: 10px; */
+        }
+        
+        /* Unispace 字体定义 */
+        .input-field, .unit-select, .time-input, .unit-label, 
+        .result-number, .result-unit, .size-result-unit-select,
+        .resolution-input, .framerate-input, .color-depth-input {
+            font-family: 'Unispace Custom', monospace; 
+        }
+
+        /* 固定高度设置 (60px) */
+
+        /* 输入框的通用样式 */
+        .input-field, .unit-select, .time-input,
+        .resolution-input, .framerate-input, .color-depth-input {
+            background-color: #2A2A2A;
+            border: none;
+            border-radius: 4px;
+            color: #E0E0E0;
+            text-align: center;
+            /* 设定固定高度 60px */
+            height: 60px; 
+            padding: 0 10px; 
+            line-height: 50px; 
+            box-sizing: border-box;
+            outline: none;
+            font-size: 22px; 
+        }
+        /* 禁用 input number 的上下箭头 */
+        .input-field::-webkit-outer-spin-button,
+        .input-field::-webkit-inner-spin-button,
+        .time-input::-webkit-outer-spin-button,
+        .time-input::-webkit-inner-spin-button,
+        .resolution-input::-webkit-outer-spin-button,
+        .resolution-input::-webkit-inner-spin-button,
+        .framerate-input::-webkit-outer-spin-button,
+        .framerate-input::-webkit-inner-spin-button,
+        .color-depth-input::-webkit-outer-spin-button,
+        .color-depth-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .input-field[type=number], .time-input[type=number],
+        .resolution-input[type=number], .framerate-input[type=number], 
+        .color-depth-input[type=number] {
+            -moz-appearance: textfield; /* Firefox */
+        }
+
+        /* 宽度和布局控制 */
+        
+        .bitrate-input-group {
+            display: flex;
+            width: 100%; 
+        }
+        
+        .bitrate-input-group .input-field {
+            flex-grow: 1; 
+            padding: 0 10px;
+            text-align: left;
+        }
+
+        .bitrate-input-group .unit-select {
+            width: 90px;
+            font-size: 16px;
+            margin-left: 5px;
+            appearance: none;
+            background-color: #2A2A2A; 
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23E0E0E0"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>');
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 12px;
+            padding-right: 25px;
+            text-align: center;
+            text-align-last: center;
+        }
+        
+        .time-input-group {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-left: -2px;
+        }
+
+        .time-input-group .time-field {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            justify-content: space-between;
+        }
+        
+        .time-input-group .time-input {
+            width: calc(33.333% - 25px);
+            padding: 0 10px;
+            margin: 0 2px;
+            text-align: left;
+        }
+        
+        .time-input-group .unit-label {
+            font-size: 16px;
+            color: #E0E0E0;
+            margin: 0 5px 0 2px;
+        }
+
+
+        /* 计算按钮样式 */
+        .calculate-button {
+            padding: 10px 20px;
+            font-size: 20px;
+            cursor: pointer;
+            color: #E0E0E0;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+            font-family: 'Ubuntu Condensed', sans-serif;
+            background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
+            text-shadow: 0.3px 0.3px 0 #E0E0E0,
+                         -0.3px 0.3px 0 #E0E0E0,
+                         0.3px -0.3px 0 #E0E0E0,
+                         -0.3px -0.3px 0 #E0E0E0;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* 结果框样式 */
+
+        .result-group {
+            margin-bottom: 20px;
+            max-width: 600px; /* 统一宽度 */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .two-result-fields {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+        }
+        
+        .result-field-wrapper {
+            flex: 1;
+        }
+
+        .result-field {
+            background-color: #2A2A2A;
+            border: none;
+            border-radius: 4px;
+            /* 设定固定高度 60px */
+            height: 60px; 
+            padding: 0 10px; 
+            box-sizing: border-box;
+            width: 100%;
+            text-align: left;
+        }
+        
+        .result-value-container {
+            display: flex;
+            align-items: baseline;
+            height: 100%;
+        }
+
+        .result-number {
+            font-size: 22px;
+            line-height: 1; 
+            padding-top: 20px; 
+        }
+
+        .result-unit-spacer {
+            width: 11px;
+            display: inline-block;
+        }
+
+        .result-unit {
+            font-size: 16px;
+            line-height: 1;
+            padding-top: 15px; 
+        }
+
+        /* SIZE 大结果框 */
+        .size-result-field {
+            background-color: #2A2A2A;
+            border: none;
+            border-radius: 4px;
+            /* 设定固定高度 60px */
+            height: 60px; 
+            padding: 0 10px;
+            width: 580px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .size-result-value {
+            display: flex;
+            align-items: baseline;
+            margin-right: auto;
+            height: 100%;
+        }
+        
+        /* 结果单位下拉菜单样式：深色背景 + 渐变文本 + 16px 字号 */
+        .size-result-unit-select {
+            font-size: 16px;
+            background-color: #2A2A2A; 
+            border: none;
+            outline: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23E0E0E0"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>');
+            background-repeat: no-repeat;
+            background-position: right 0px center;
+            background-size: 12px;
+            padding-right: 15px;
+            cursor: pointer;
+            text-align: center;
+            text-align-last: center;
+            
+            /* 应用渐变文本 */
+            background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            
+            /* 设定固定高度 */
+            height: 60px; 
+            width: 90px;
+            line-height: 50px; 
+            
+        }
+        /* 修复单位选择栏背景白色问题，确保 option 本身不继承渐变或文本颜色 */
+        .size-result-unit-select option {
+            background-color: #2A2A2A;
+            color: #E0E0E0;
+            /* 禁用 option 的渐变 */
+            -webkit-text-fill-color: #E0E0E0; 
+            color: #E0E0E0;
+        }
+
+        /* Bitrate 页面的 SIZE 输入单位选择字号 */
+        .filesize-unit-select {
+             width: 90px;
+             font-size: 16px;
+             margin-left: 5px;
+             appearance: none;
+             background-color: #2A2A2A;
+             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23E0E0E0"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>');
+             background-repeat: no-repeat;
+             background-position: right 8px center;
+             background-size: 12px;
+             padding-right: 25px;
+        }
+
+        /* 结果框底部提示 */
+        .result-tip {
+             font-family: 'Ubuntu Condensed', sans-serif;
+             font-size: 18px;
+             color: #888888;
+             text-align: end;
+             margin-right: 100px;
+             margin-top: -10px;
+        }
+        
+        /* Record Time 结果中的时间格式 */
+        .time-result-group {
+            display: flex;
+            align-items: baseline;
+            margin-right: auto;
+            height: 100%;
+        }
+        .time-result-group .result-number {
+             font-size: 22px;
+        }
+        .time-result-group .result-unit {
+             font-size: 16px;
+             margin-right: 10px;
+        }
+        .time-result-group .result-unit:last-child {
+            margin-right: 0;
+        }
+        .time-result-group .result-unit-spacer {
+            width: 8px;
+        }
+
+        /* =================== Comp. Ratio 样式 =================== */
+
+        /* 分辨率输入框组 */
+        .resolution-input-group {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            justify-content: space-between;
+        }
+        .resolution-input-group .resolution-input {
+            width: calc(50% - 20px); 
+            text-align: center;
+            padding: 0;
+        }
+        .resolution-input-group .unit-label {
+            font-size: 24px;
+            color: #E0E0E0;
+            margin: 0;
+        }
+
+        /* 无单位输入框 */
+        .framerate-input {
+            width: 100%;
+            text-align: center;
+            padding-left: 10px;
+        }
+        
+        /* 颜色深度输入框组 */
+        .color-depth-input-group {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .color-depth-input-group .color-depth-input {
+            flex-grow: 1;
+            text-align: center;
+            padding-left: 10px;
+        }
+        .color-depth-input-group .unit-label {
+             font-family: 'Unispace Custom', monospace; 
+             font-size: 16px;
+             color: #E0E0E0;
+             margin-left: 10px;
+        }
+
+        /* 按钮容器 - 2行4个/6个 */
+        .cr-button-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        /* 每行4个的项宽度 */
+        .cr-button-grid.cols-4 > .cr-button {
+             width: calc(25% - 7.5px); 
+        }
+        /* 每行6个的项宽度 */
+        .cr-button-grid.cols-6 > .cr-button {
+             width: calc(16.666% - 8.333px);
+        }
+        /* 仅一行3个的项宽度 */
+        .cr-button-grid.cols-3 > .cr-button {
+             width: calc(33.333% - 6.666px);
+        }
+        
+        /* 按钮样式 */
+        .cr-button {
+            background-color: #2A2A2A;
+            height: 40px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Unispace Custom', monospace;
+            font-size: 20px; /* 略微调整以适应40px高度 */
+            color: #888888;
+            text-shadow: none;
+            
+            /* 模拟边框 */
+            border: 0.5px solid #888888;
+            box-sizing: border-box;
+            
+            /* 字体填充为透明 */
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: #888888;
+            color: #888888;
+        }
+
+        /* 按钮激活时的渐变样式 */
+        .cr-button.active {
+            background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent; 
+            border: 0.5px solid transparent; 
+            box-shadow: 0 0 5px rgba(255, 126, 0, 0.5); /* 可选的光晕效果 */
+        }
+        
+        /* 帧率提示信息 */
+        .framerate-tip {
+             font-family: 'Ubuntu Condensed', sans-serif;
+             font-size: 18px;
+             color: #888888;
+             text-align: center;
+             margin-bottom: 20px;
+        }
+
+        /* 统一结果框布局 */
+        .two-large-result-fields {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* 大结果框样式 */
+        .large-result-field {
+            background-color: #2A2A2A;
+            border: none;
+            border-radius: 4px;
+            height: 80px; 
+            padding: 24px 10px; 
+            box-sizing: border-box;
+            width: 100%;
+            text-align: left;
+        }
+        
+        /* 大结果框的数值和单位 */
+        .large-result-field .result-value-container {
+             align-items: bottom; 
+        }
+        .large-result-field .result-number {
+            font-size: 36px;
+            line-height: 1; 
+            padding-top: 0; 
+        }
+        .large-result-field .result-unit {
+            font-size: 24px;
+            line-height: 1;
+            padding-top: 0; 
+        }
+        /* 压缩率的单位样式 */
+        .cr-ratio-unit {
+             font-family: 'Unispace Custom', monospace; 
+             font-size: 36px;
+             line-height: 1;
+             padding-top: 0;
+             background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
+             -webkit-background-clip: text;
+             -webkit-text-fill-color: transparent;
+             background-clip: text;
+             color: transparent;
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <a href="../tools/" id="homeButton">← Go Back</a>
+
+    <div class="container">
+        <h1 class="gradient-text">Data Rate Calculator</h1>
+
+        <div class="tab-headers">
+            <div class="tab-header active" data-tab="file-size">File Size</div>
+            <div class="tab-header" data-tab="bitrate">Bitrate</div>
+            <div class="tab-header" data-tab="record-time">Record Time</div>
+            <div class="tab-header" data-tab="comp-rate">Comp. Ratio</div>
+        </div>
+
+        <div class="tab-content">
+            
+            <div id="file-size" class="tab-pane active">
+                
+                <div class="input-group">
+                    <div class="input-title">BITRATE</div>
+                    <div class="bitrate-input-group">
+                        <input type="number" id="fs-bitrate-value" class="input-field" placeholder="0">
+                        <select id="fs-bitrate-unit" class="unit-select">
+                            <option value="Kbps" selected>Kbps</option>
+                            <option value="Mbps">Mbps</option>
+                            <option value="Gbps">Gbps</option>
+                            <option value="Kibps">Kibps</option>
+                            <option value="Mibps">Mibps</option>
+                            <option value="Gibps">Gibps</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <div class="input-title">TIME</div>
+                    <div class="time-input-group">
+                        <div class="time-field">
+                            <input type="number" id="fs-time-h" class="time-input" placeholder="0"><span class="unit-label">h</span>
+                            <input type="number" id="fs-time-m" class="time-input" placeholder="0"><span class="unit-label">m</span>
+                            <input type="number" id="fs-time-s" class="time-input" placeholder="0"><span class="unit-label">s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-container">
+                    <button class="calculate-button" onclick="calculateFileSize()">Calculate</button>
+                </div>
+
+                <div class="result-group">
+                    <div class="two-result-fields">
+                        <div class="result-field-wrapper">
+                            <div class="input-title">TIME</div>
+                            <div class="result-field">
+                                <div class="result-value-container">
+                                    <span id="fs-result-time-num" class="result-number gradient-text">0.000</span>
+                                    <span class="result-unit-spacer"></span>
+                                    <span class="result-unit gradient-text">s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="result-field-wrapper">
+                            <div class="input-title">BITRATE</div>
+                            <div class="result-field">
+                                <div class="result-value-container">
+                                    <span id="fs-result-bitrate-num" class="result-number gradient-text">0.000</span>
+                                    <span class="result-unit-spacer"></span>
+                                    <span id="fs-result-bitrate-unit" class="result-unit gradient-text">Kbps</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-group">
+                    <div class="input-title">SIZE</div>
+                    <div class="size-result-field">
+                        <div class="size-result-value">
+                            <span id="fs-result-size-num" class="result-number gradient-text">0.000</span>
+                            <span class="result-unit-spacer"></span>
+                        </div>
+                        <select id="fs-result-size-unit" class="size-result-unit-select">
+                            <option value="KB" selected>KB</option>
+                            <option value="MB">MB</option>
+                            <option value="GB">GB</option>
+                            <option value="TB">TB</option>
+                            <option value="KiB">KiB</option>
+                            <option value="MiB">MiB</option>
+                            <option value="GiB">GiB</option>
+                            <option value="TiB">TiB</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="result-tip">Press "KB" to select units.</div>
+            </div>
+
+            <div id="bitrate" class="tab-pane">
+                 <div class="input-group">
+                    <div class="input-title">FILE SIZE</div>
+                    <div class="bitrate-input-group">
+                        <input type="number" id="br-filesize-value" class="input-field" placeholder="0">
+                        <select id="br-filesize-unit" class="unit-select filesize-unit-select">
+                            <option value="KB" selected>KB</option>
+                            <option value="MB">MB</option>
+                            <option value="GB">GB</option>
+                            <option value="TB">TB</option>
+                            <option value="KiB">KiB</option>
+                            <option value="MiB">MiB</option>
+                            <option value="GiB">GiB</option>
+                            <option value="TiB">TiB</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <div class="input-title">TIME</div>
+                    <div class="time-input-group">
+                        <div class="time-field">
+                            <input type="number" id="br-time-h" class="time-input" placeholder="0"><span class="unit-label">h</span>
+                            <input type="number" id="br-time-m" class="time-input" placeholder="0"><span class="unit-label">m</span>
+                            <input type="number" id="br-time-s" class="time-input" placeholder="0"><span class="unit-label">s</span>
+                        </div>
+                    </div>
+                </div>
+                
+                 <div class="button-container">
+                    <button class="calculate-button" onclick="calculateBitrate()">Calculate</button>
+                </div>
+                
+                <div class="result-group">
+                    <div class="two-result-fields">
+                        <div class="result-field-wrapper">
+                            <div class="input-title">FILE SIZE</div>
+                            <div class="result-field">
+                                <div class="result-value-container">
+                                    <span id="br-result-filesize-num" class="result-number gradient-text">0.000</span>
+                                    <span class="result-unit-spacer"></span>
+                                    <span id="br-result-filesize-unit" class="result-unit gradient-text">KB</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="result-field-wrapper">
+                            <div class="input-title">TIME</div>
+                            <div class="result-field">
+                                <div class="result-value-container">
+                                    <span id="br-result-time-num" class="result-number gradient-text">0.000</span>
+                                    <span class="result-unit-spacer"></span>
+                                    <span class="result-unit gradient-text">s</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-group">
+                    <div class="input-title">MAXIMUM AVERAGE BITRATE</div>
+                    <div class="size-result-field">
+                        <div class="size-result-value">
+                            <span id="br-result-bitrate-num" class="result-number gradient-text">0.000</span>
+                            <span class="result-unit-spacer"></span>
+                        </div>
+                        <select id="br-result-bitrate-unit" class="size-result-unit-select">
+                            <option value="Kbps" selected>Kbps</option>
+                            <option value="Mbps">Mbps</option>
+                            <option value="Gbps">Gbps</option>
+                            <option value="Kibps">Kibps</option>
+                            <option value="Mibps">Mibps</option>
+                            <option value="Gibps">Gibps</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="result-tip">Press "Kbps" to select units.</div>
+            </div>
+
+            <div id="record-time" class="tab-pane">
+                <div class="input-group">
+                    <div class="input-title">STORAGE SIZE</div>
+                    <div class="bitrate-input-group">
+                        <input type="number" id="rt-storage-size-value" class="input-field" placeholder="0">
+                        <select id="rt-storage-size-unit" class="unit-select filesize-unit-select">
+                            <option value="KB" selected>KB</option>
+                            <option value="MB">MB</option>
+                            <option value="GB">GB</option>
+                            <option value="TB">TB</option>
+                            <option value="KiB">KiB</option>
+                            <option value="MiB">MiB</option>
+                            <option value="GiB">GiB</option>
+                            <option value="TiB">TiB</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <div class="input-title">BITRATE</div>
+                    <div class="bitrate-input-group">
+                        <input type="number" id="rt-bitrate-value" class="input-field" placeholder="0">
+                        <select id="rt-bitrate-unit" class="unit-select">
+                            <option value="Kbps" selected>Kbps</option>
+                            <option value="Mbps">Mbps</option>
+                            <option value="Gbps">Gbps</option>
+                            <option value="Kibps">Kibps</option>
+                            <option value="Mibps">Mibps</option>
+                            <option value="Gibps">Gibps</option>
+                        </select>
+                    </div>
+                </div>
+                
+                 <div class="button-container">
+                    <button class="calculate-button" onclick="calculateRecordTime()">Calculate</button>
+                </div>
+                
+                <div class="result-group">
+                    <div class="two-result-fields">
+                        <div class="result-field-wrapper">
+                            <div class="input-title">STORAGE SIZE</div>
+                            <div class="result-field">
+                                <div class="result-value-container">
+                                    <span id="rt-result-storage-num" class="result-number gradient-text">0.000</span>
+                                    <span class="result-unit-spacer"></span>
+                                    <span id="rt-result-storage-unit" class="result-unit gradient-text">KB</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="result-field-wrapper">
+                            <div class="input-title">BITRATE</div>
+                            <div class="result-field">
+                                <div class="result-value-container">
+                                    <span id="rt-result-bitrate-num" class="result-number gradient-text">0.000</span>
+                                    <span class="result-unit-spacer"></span>
+                                    <span id="rt-result-bitrate-unit" class="result-unit gradient-text">Kbps</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-group">
+                    <div class="input-title">MAXIMUM RECORD TIME</div>
+                    <div class="size-result-field">
+                        <div class="time-result-group">
+                            <span id="rt-result-h" class="result-number gradient-text">0</span>
+                            <span class="result-unit-spacer"></span>
+                            <span class="result-unit gradient-text">h</span>
+                            <span id="rt-result-m" class="result-number gradient-text">0</span>
+                            <span class="result-unit-spacer"></span>
+                            <span class="result-unit gradient-text">m</span>
+                            <span id="rt-result-s" class="result-number gradient-text">0.000</span>
+                            <span class="result-unit-spacer"></span>
+                            <span class="result-unit gradient-text">s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="comp-rate" class="tab-pane">
+                
+                <div class="input-group">
+                    <div class="input-title">RESOLUTION</div>
+                    <div class="resolution-input-group">
+                        <input type="number" id="cr-res-w" class="resolution-input" placeholder="" min="0" max="16384" step="1" oninput="validateInput(this, 0, 16384, true); updateCompRatio(); checkResolutionButton()">
+                        <span class="unit-label">x</span>
+                        <input type="number" id="cr-res-h" class="resolution-input" placeholder="" min="0" max="16384" step="1" oninput="validateInput(this, 0, 16384, true); updateCompRatio(); checkResolutionButton()">
+                    </div>
+                    <div class="cr-button-grid cols-4" id="cr-resolution-buttons">
+                        <div class="cr-button" data-res="1280x720">HD 720p</div>
+                        <div class="cr-button" data-res="1920x1080">FHD</div>
+                        <div class="cr-button" data-res="2048x1080">2K DCI</div>
+                        <div class="cr-button" data-res="2560x1440">WQHD</div>
+                        <div class="cr-button" data-res="3840x2160">4K UHD</div>
+                        <div class="cr-button" data-res="4096x2160">4K DCI</div>
+                        <div class="cr-button" data-res="7680x4320">8K UHD</div>
+                        <div class="cr-button" data-res="8192x4320">8K DCI</div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <div class="input-title">FRAMERATE (FPS)</div>
+                    <input type="number" id="cr-framerate" class="framerate-input" placeholder="" min="0" max="1024" step="any" oninput="validateInput(this, 0, 1024, false); updateCompRatio(); checkFramerateButton()">
+                    <p class="framerate-tip">For interlaced videos, you need to divide the frame rate by 2.</p>
+                    <div class="cr-button-grid cols-6" id="cr-framerate-buttons">
+                        <div class="cr-button" data-fps="23.976">23.976</div>
+                        <div class="cr-button" data-fps="24">24</div>
+                        <div class="cr-button" data-fps="25">25</div>
+                        <div class="cr-button" data-fps="29.97">29.97</div>
+                        <div class="cr-button" data-fps="30">30</div>
+                        <div class="cr-button" data-fps="50">50</div>
+                        <div class="cr-button" data-fps="59.94">59.94</div>
+                        <div class="cr-button" data-fps="60">60</div>
+                        <div class="cr-button" data-fps="100">100</div>
+                        <div class="cr-button" data-fps="119.88">119.88</div>
+                        <div class="cr-button" data-fps="120">120</div>
+                        <div class="cr-button" data-fps="240">240</div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <div class="input-title">COLOR DEPTH</div>
+                    <div class="color-depth-input-group">
+                        <input type="number" id="cr-color-depth" class="color-depth-input" placeholder="24" value="" min="0" max="48" step="1" oninput="validateInput(this, 0, 48, true); updateCompRatio(); checkColorDepthButton(); checkChromaSubButton()">
+                        <span class="unit-label">bit</span>
+                    </div>
+                    <div class="cr-button-grid cols-4" id="cr-color-depth-buttons">
+                        <div class="cr-button" data-cd="8">8 bit</div>
+                        <div class="cr-button" data-cd="24">24 bpc</div>
+                        <div class="cr-button" data-cd="30">30 bpc</div>
+                        <div class="cr-button" data-cd="36">36 bpc</div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <div class="input-title">CHROMA SUBSAMPLING</div>
+                    <div class="cr-button-grid cols-3" id="cr-chroma-sub-buttons">
+                        <div class="cr-button active" data-chroma="444">RGB/YUV444</div>
+                        <div class="cr-button" data-chroma="422">YUV422</div>
+                        <div class="cr-button" data-chroma="420">YUV420</div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-title">COMPRESSED VIDEO DATA RATE</div>
+                    <div class="bitrate-input-group">
+                        <input type="number" id="cr-compressed-rate-value" class="input-field" placeholder="0" oninput="updateCompRatio()">
+                        <select id="cr-compressed-rate-unit" class="unit-select" onchange="updateCompRatio()">
+                            <option value="Kbps" selected>Kbps</option>
+                            <option value="Mbps">Mbps</option>
+                            <option value="Gbps">Gbps</option>
+                            <option value="Kibps">Kibps</option>
+                            <option value="Mibps">Mibps</option>
+                            <option value="Gibps">Gibps</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="result-group">
+                    <div class="two-large-result-fields">
+                        <div class="result-field-wrapper">
+                            <div class="input-title">UNCOMPRESSED VIDEO DATA RATE</div>
+                            <div class="large-result-field">
+                                <div class="result-value-container">
+                                    <span id="cr-result-uncompressed-num" class="result-number gradient-text">0.000</span>
+                                    <span class="result-unit-spacer"></span>
+                                    <span id="cr-result-uncompressed-unit" class="result-unit gradient-text">Kbps</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="result-field-wrapper">
+                            <div class="input-title">COMPRESSION RATIO</div>
+                            <div class="large-result-field">
+                                <div class="result-value-container">
+                                    <span id="cr-result-ratio-num" class="result-number gradient-text">0.00</span>
+                                    <span class="result-unit-spacer"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        // Tab 切换逻辑
+        document.querySelectorAll('.tab-header').forEach(header => {
+            header.addEventListener('click', function() {
+                document.querySelectorAll('.tab-header').forEach(h => h.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+                this.classList.add('active');
+
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+                
+                if (tabId === 'file-size') calculateFileSize(false);
+                else if (tabId === 'bitrate') calculateBitrate(false);
+                else if (tabId === 'record-time') calculateRecordTime(false);
+                else if (tabId === 'comp-rate') updateCompRatio(); // 激活 Comp. Ratio 时运行计算
+            });
+        });
+
+        // 通用转换函数
+        
+        function timeToSeconds(h, m, s) {
+            const hours = parseFloat(h) || 0;
+            const minutes = parseFloat(m) || 0;
+            const seconds = parseFloat(s) || 0;
+            return hours * 3600 + minutes * 60 + seconds;
+        }
+
+        function secondsToHMS(totalSeconds) {
+            let s = parseFloat(totalSeconds);
+            const h = Math.floor(s / 3600);
+            s %= 3600;
+            const m = Math.floor(s / 60);
+            s = s % 60;
+            return { h, m, s: s.toFixed(3) };
+        }
+
+        function bitrateToKbps(value, unit) {
+            const val = parseFloat(value) || 0;
+            if (unit === 'Kbps') return val;
+            
+            let bps = val;
+            if (unit.includes('i')) {
+                // Kibps, Mibps, Gibps -> bps
+                bps = val * Math.pow(1024, unit.startsWith('K') ? 1 : unit.startsWith('M') ? 2 : 3);
+            } else {
+                // Mbps, Gbps -> bps
+                bps = val * Math.pow(1000, unit.startsWith('K') ? 1 : unit.startsWith('M') ? 2 : 3);
+            }
+            
+            return (bps / 1000); // -> Kbps
+        }
+
+        function filesizeToKB(value, unit) {
+            const val = parseFloat(value) || 0;
+            if (unit === 'KB') return val;
+
+            let exponent = 0;
+            if (unit.includes('M')) exponent = 2;
+            else if (unit.includes('G')) exponent = 3;
+            else if (unit.includes('T')) exponent = 4;
+            else if (unit.includes('K')) exponent = 1;
+
+            if (unit.includes('i')) { 
+                // KiB, MiB, GiB, TiB -> KB
+                return (val * Math.pow(1024, exponent) / 1000);
+            } else {
+                // MB, GB, TB -> KB
+                return (val * Math.pow(1000, exponent - 1));
+            }
+        }
+        
+        function KBToTargetFilesize(valueInKB, targetUnit) {
+            const val = parseFloat(valueInKB) || 0;
+            if (targetUnit === 'KB') return val;
+
+            let exponent = 0;
+            if (targetUnit.includes('M')) exponent = 2;
+            else if (targetUnit.includes('G')) exponent = 3;
+            else if (targetUnit.includes('T')) exponent = 4;
+            else if (targetUnit.includes('K')) exponent = 1;
+
+            if (targetUnit.includes('i')) {
+                // KB -> KiB, MiB, GiB, TiB
+                return (val * 1000 / Math.pow(1024, exponent));
+            } else {
+                // KB -> MB, GB, TB
+                return (val / Math.pow(1000, exponent - 1));
+            }
+        }
+        
+        function KbpsToTargetBitrate(valueInKbps, targetUnit) {
+            const val = parseFloat(valueInKbps) || 0;
+            if (targetUnit === 'Kbps') return val;
+
+            let exponent = 0;
+            if (targetUnit.includes('M')) exponent = 2;
+            else if (targetUnit.includes('G')) exponent = 3;
+            else if (targetUnit.includes('K')) exponent = 1;
+
+            if (targetUnit.includes('i')) {
+                // Kbps -> Kibps, Mibps, Gibps
+                return (val * 1000 / Math.pow(1024, exponent));
+            } else {
+                // Kbps -> Mbps, Gbps
+                return (val / Math.pow(1000, exponent - 1));
+            }
+        }
+        
+        // Uncompressed Bitrate 转换和格式化 (Comp. Ratio 专用)
+        function formatUncompressedBitrate(bitrateInKbps) {
+            if (bitrateInKbps >= 1000000) { // >= 1000 Mbps
+                return { 
+                    num: (bitrateInKbps / 1000000).toFixed(3), 
+                    unit: 'Gbps' 
+                };
+            } else if (bitrateInKbps >= 1000) { // >= 1 Mbps
+                return { 
+                    num: (bitrateInKbps / 1000).toFixed(3), 
+                    unit: 'Mbps' 
+                };
+            } else {
+                return { 
+                    num: bitrateInKbps.toFixed(3), 
+                    unit: 'Kbps' 
+                };
+            }
+        }
+
+
+        // File Size 计算逻辑
+
+        function calculateFileSize(fillZeros = true) {
+            // 1. 获取输入并处理空值
+            let h = document.getElementById('fs-time-h');
+            let m = document.getElementById('fs-time-m');
+            let s = document.getElementById('fs-time-s');
+            let bitrateInput = document.getElementById('fs-bitrate-value');
+            
+            // 如果计算，则将空值设为 '0' 并更新输入框
+            if (fillZeros) {
+                if (h.value.trim() === '') h.value = '0';
+                if (m.value.trim() === '') m.value = '0';
+                if (s.value.trim() === '') s.value = '0';
+                if (bitrateInput.value.trim() === '') bitrateInput.value = '0';
+            }
+
+            const bitrateUnit = document.getElementById('fs-bitrate-unit').value;
+            const targetSizeUnit = document.getElementById('fs-result-size-unit').value;
+            
+            // 2. 转换 TIME 为总秒数 (s)
+            const totalSeconds = timeToSeconds(h.value, m.value, s.value);
+            document.getElementById('fs-result-time-num').textContent = totalSeconds.toFixed(3);
+
+            // 3. 转换 BITRATE 为 Kbps
+            const bitrateInKbps = bitrateToKbps(bitrateInput.value, bitrateUnit);
+            const bitrateNumElement = document.getElementById('fs-result-bitrate-num');
+            if (bitrateInKbps > 1e11) {
+                bitrateNumElement.textContent = bitrateInKbps.toExponential(9);
+            } else {
+                bitrateNumElement.textContent = bitrateInKbps.toFixed(3);
+            }
+            document.getElementById('fs-result-bitrate-unit').textContent = 'Kbps';
+            
+            // 4. 计算文件大小 (KB)
+            const sizeInKB = (bitrateInKbps * totalSeconds / 8);
+
+            // 5. 转换文件大小为目标单位
+            const finalSize = KBToTargetFilesize(sizeInKB, targetSizeUnit);
+            document.getElementById('fs-result-size-num').textContent = finalSize.toFixed(3);
+        }
+        
+        document.getElementById('fs-result-size-unit').addEventListener('change', () => calculateFileSize(false));
+        
+        
+        // Bitrate 计算逻辑
+        
+        function calculateBitrate(fillZeros = true) {
+            // 1. 获取输入并处理空值
+            let filesizeInput = document.getElementById('br-filesize-value');
+            let h = document.getElementById('br-time-h');
+            let m = document.getElementById('br-time-m');
+            let s = document.getElementById('br-time-s');
+            
+            if (fillZeros) {
+                if (filesizeInput.value.trim() === '') filesizeInput.value = '0';
+                if (h.value.trim() === '') h.value = '0';
+                if (m.value.trim() === '') m.value = '0';
+                if (s.value.trim() === '') s.value = '0';
+            }
+            
+            const filesizeUnit = document.getElementById('br-filesize-unit').value;
+            const targetBitrateUnit = document.getElementById('br-result-bitrate-unit').value;
+
+            // 2. 转换 TIME 为总秒数 (s)
+            const totalSeconds = timeToSeconds(h.value, m.value, s.value);
+            document.getElementById('br-result-time-num').textContent = totalSeconds.toFixed(3);
+
+            // 3. 转换 FILE SIZE 为 KB
+            const sizeInKB = filesizeToKB(filesizeInput.value, filesizeUnit);
+            const filesizeNumElement = document.getElementById('br-result-filesize-num');
+            if (sizeInKB > 1e11) {
+                filesizeNumElement.textContent = sizeInKB.toExponential(9);
+            } else {
+                filesizeNumElement.textContent = sizeInKB.toFixed(3);
+            }
+            document.getElementById('br-result-filesize-unit').textContent = 'KB';
+
+            // 4. 计算码率 (Kbps)
+            const bitrateInKbps = (sizeInKB * 8) / (totalSeconds || 1e-9);
+
+            // 5. 转换码率为目标单位
+            const finalBitrate = KbpsToTargetBitrate(bitrateInKbps, targetBitrateUnit);
+            document.getElementById('br-result-bitrate-num').textContent = finalBitrate.toFixed(3);
+        }
+
+        document.getElementById('br-result-bitrate-unit').addEventListener('change', () => calculateBitrate(false));
+        
+        
+        // Record Time 计算逻辑
+
+        function calculateRecordTime(fillZeros = true) {
+            // 1. 获取输入并处理空值
+            let storageInput = document.getElementById('rt-storage-size-value');
+            let bitrateInput = document.getElementById('rt-bitrate-value');
+            
+            if (fillZeros) {
+                if (storageInput.value.trim() === '') storageInput.value = '0';
+                if (bitrateInput.value.trim() === '') bitrateInput.value = '0';
+            }
+            
+            const storageUnit = document.getElementById('rt-storage-size-unit').value;
+            const bitrateUnit = document.getElementById('rt-bitrate-unit').value;
+
+            // 2. 转换 STORAGE SIZE 为 KB
+            const sizeInKB = filesizeToKB(storageInput.value, storageUnit);
+            const storageNumElement = document.getElementById('rt-result-storage-num');
+            if (sizeInKB > 1e11) {
+                storageNumElement.textContent = sizeInKB.toExponential(9); // 科学计数法，保留9位小数
+            } else {
+                storageNumElement.textContent = sizeInKB.toFixed(3);
+            }
+            document.getElementById('rt-result-storage-unit').textContent = 'KB';
+
+            // 3. 转换 BITRATE 为 Kbps
+            const bitrateInKbps = bitrateToKbps(bitrateInput.value, bitrateUnit);
+            const bitrateNumElement = document.getElementById('rt-result-bitrate-num');
+            if (bitrateInKbps > 1e11) {
+                bitrateNumElement.textContent = bitrateInKbps.toExponential(9);
+            } else {
+                bitrateNumElement.textContent = bitrateInKbps.toFixed(3);
+            }
+            document.getElementById('rt-result-bitrate-unit').textContent = 'Kbps';
+
+            // 4. 计算时间 (s)
+            const totalSeconds = (sizeInKB * 8) / (parseFloat(bitrateInKbps) || 1e-9);
+
+            // 5. 转换总秒数为 h m s 格式
+            const hms = secondsToHMS(totalSeconds);
+            document.getElementById('rt-result-h').textContent = hms.h;
+            document.getElementById('rt-result-m').textContent = hms.m;
+            document.getElementById('rt-result-s').textContent = hms.s;
+        }
+        
+        
+        // =================== Comp. Ratio 逻辑 ===================
+        
+        const RESOLUTION_MAP = {
+            '1280x720': 'HD 720p',
+            '1920x1080': 'FHD',
+            '2048x1080': '2K DCI',
+            '2560x1440': 'WQHD',
+            '3840x2160': '4K UHD',
+            '4096x2160': '4K DCI',
+            '7680x4320': '8K UHD',
+            '8192x4320': '8K DCI'
+        };
+        
+        const FRAMERATE_MAP = {
+            '23.976': '23.976', '24': '24', '25': '25', '29.97': '29.97', 
+            '30': '30', '50': '50', '59.94': '59.94', '60': '60', 
+            '100': '100', '119.88': '119.88', '120': '120', '240': '240'
+        };
+        
+        const COLOR_DEPTH_MAP = {
+            '8': '8 bit', '24': '24 bpc', '30': '30 bpc', '36': '36 bpc'
+        };
+
+        const VALID_CHROMA_DEPTHS = ['18', '24', '30', '36', '42', '48']; // 8, 10, 12, 14, 16 bit * 3 (for bpc)
+
+        
+        // 验证输入并限制范围
+        function validateInput(inputElement, minVal, maxVal, isInteger) {
+            let value = inputElement.value;
+            
+            if (value.trim() === '') return;
+            
+            let num = parseFloat(value);
+            
+            if (isNaN(num)) {
+                inputElement.value = '';
+                return;
+            }
+
+            if (num < minVal) {
+                num = minVal;
+            } else if (num > maxVal) {
+                num = maxVal;
+            }
+
+            if (isInteger) {
+                num = Math.floor(num);
+            }
+            
+            inputElement.value = num;
+        }
+        
+        // 检查分辨率按钮状态
+        function checkResolutionButton() {
+            const w = document.getElementById('cr-res-w').value;
+            const h = document.getElementById('cr-res-h').value;
+            const currentRes = w + 'x' + h;
+            
+            document.querySelectorAll('#cr-resolution-buttons .cr-button').forEach(button => {
+                if (button.getAttribute('data-res') === currentRes) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
+        
+        // 检查帧率按钮状态
+        function checkFramerateButton() {
+            const fps = document.getElementById('cr-framerate').value.trim();
+            document.querySelectorAll('#cr-framerate-buttons .cr-button').forEach(button => {
+                if (button.getAttribute('data-fps') === fps) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
+        
+        // 检查色深按钮状态
+        function checkColorDepthButton() {
+            const depth = document.getElementById('cr-color-depth').value.trim();
+            document.querySelectorAll('#cr-color-depth-buttons .cr-button').forEach(button => {
+                if (button.getAttribute('data-cd') === depth) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
+        
+        // 检查色度采样按钮状态
+        function checkChromaSubButton() {
+            const depth = document.getElementById('cr-color-depth').value.trim();
+            const isRestricted = !VALID_CHROMA_DEPTHS.includes(depth);
+            
+            const chromaButtons = document.querySelectorAll('#cr-chroma-sub-buttons .cr-button');
+            
+            if (isRestricted) {
+                // 限制：只有 RGB/YUV444 按钮亮起且可选
+                chromaButtons.forEach(button => {
+                    if (button.getAttribute('data-chroma') === '444') {
+                        button.classList.add('active');
+                        button.onclick = null; // 禁用点击
+                    } else {
+                        button.classList.remove('active');
+                        button.onclick = null; // 禁用点击
+                    }
+                });
+            } else {
+                // 正常逻辑：恢复点击事件
+                chromaButtons.forEach(button => {
+                    button.onclick = function() {
+                        handleChromaSubClick(this);
+                        updateCompRatio();
+                    };
+                });
+            }
+            
+            // 如果色深不满足条件，强制选中444
+            if (isRestricted) {
+                // 确保数据属性也设置为 444
+                chromaButtons.forEach(button => button.classList.remove('active'));
+                document.querySelector('#cr-chroma-sub-buttons .cr-button[data-chroma="444"]').classList.add('active');
+            }
+        }
+        
+        // 处理分辨率按钮点击
+        document.querySelectorAll('#cr-resolution-buttons .cr-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const [w, h] = this.getAttribute('data-res').split('x');
+                document.getElementById('cr-res-w').value = w;
+                document.getElementById('cr-res-h').value = h;
+                
+                checkResolutionButton(); // 激活当前按钮并取消其他按钮的激活状态
+                updateCompRatio();
+            });
+        });
+        
+        // 处理帧率按钮点击
+        document.querySelectorAll('#cr-framerate-buttons .cr-button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.getElementById('cr-framerate').value = this.getAttribute('data-fps');
+                checkFramerateButton();
+                updateCompRatio();
+            });
+        });
+
+        // 处理色深按钮点击
+        document.querySelectorAll('#cr-color-depth-buttons .cr-button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.getElementById('cr-color-depth').value = this.getAttribute('data-cd');
+                checkColorDepthButton();
+                checkChromaSubButton(); // 检查色深变化是否影响色度采样按钮
+                updateCompRatio();
+            });
+        });
+        
+        // 处理色度采样按钮点击
+        function handleChromaSubClick(clickedButton) {
+            document.querySelectorAll('#cr-chroma-sub-buttons .cr-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            clickedButton.classList.add('active');
+        }
+        // 初始绑定点击事件（在 checkChromaSubButton 中会根据条件禁用/启用）
+        document.querySelectorAll('#cr-chroma-sub-buttons .cr-button').forEach(button => {
+            button.addEventListener('click', function() {
+                handleChromaSubClick(this);
+                updateCompRatio();
+            });
+        });
+        
+        // 主计算逻辑
+        function updateCompRatio() {
+            const resW = parseFloat(document.getElementById('cr-res-w').value) || 0;
+            const resH = parseFloat(document.getElementById('cr-res-h').value) || 0;
+            const framerate = parseFloat(document.getElementById('cr-framerate').value) || 0;
+            let colorDepth = parseFloat(document.getElementById('cr-color-depth').value) || 24; // 默认 24
+            
+            // 默认值处理 (仅用于placeholder，计算中使用上面的值)
+            if (document.getElementById('cr-color-depth').value.trim() === '') {
+                 colorDepth = 24;
+            }
+            
+            // 如果色深不满足条件，强制使用 444
+            const isRestricted = !VALID_CHROMA_DEPTHS.includes(colorDepth.toString());
+            let chromaSubFactor;
+            const activeChromaButton = document.querySelector('#cr-chroma-sub-buttons .cr-button.active');
+            let chromaSub = activeChromaButton ? activeChromaButton.getAttribute('data-chroma') : '444'; 
+
+            if (isRestricted) {
+                chromaSub = '444';
+            }
+
+            if (chromaSub === '444') {
+                chromaSubFactor = 1; // RGB/YUV444
+            } else if (chromaSub === '422') {
+                chromaSubFactor = 2 / 3; // YUV422: (4+2+2)/12 = 8/12 = 2/3
+            } else if (chromaSub === '420') {
+                chromaSubFactor = 0.5; // YUV420: (4+1+1)/12 = 6/12 = 1/2
+            } else {
+                 chromaSubFactor = 1; 
+            }
+            
+            // 计算未压缩数据率 (Kbps)
+            let uncompressedKbps = 0;
+            if (resW > 0 && resH > 0 && framerate > 0 && colorDepth > 0) {
+                 // W * H * FPS * Color Depth (bit) * Chroma Subsampling Factor / 1000 = Kbps
+                 uncompressedKbps = (resW * resH * framerate * colorDepth * chromaSubFactor) / 1000;
+            }
+            
+            // 格式化并显示未压缩数据率
+            const formattedRate = formatUncompressedBitrate(uncompressedKbps);
+            document.getElementById('cr-result-uncompressed-num').textContent = formattedRate.num;
+            document.getElementById('cr-result-uncompressed-unit').textContent = formattedRate.unit;
+            
+            // 压缩率计算
+            const compressedRateValue = document.getElementById('cr-compressed-rate-value').value;
+            const compressedRateUnit = document.getElementById('cr-compressed-rate-unit').value;
+            
+            let compressedKbps = 0;
+            if (compressedRateValue.trim() !== '') {
+                compressedKbps = bitrateToKbps(compressedRateValue, compressedRateUnit);
+            }
+
+            let compressionRatio = 0;
+            if (uncompressedKbps > 0 && compressedKbps > 0) {
+                 compressionRatio = uncompressedKbps / compressedKbps;
+            }
+
+            if (compressionRatio >= 1e7) {
+                // 科学计数法，保留六位小数
+                formattedRatio = compressionRatio.toExponential(4);
+            } else {
+                // 否则，保留两位小数
+                formattedRatio = compressionRatio.toFixed(2);
+            }
+
+            // 显示压缩率
+            document.getElementById('cr-result-ratio-num').textContent = formattedRatio + ':1';
+        }
+        
+        // 确保 Comp. Ratio 页面加载时执行一次 checkChromaSubButton 和 updateCompRatio
+        document.addEventListener('DOMContentLoaded', () => {
+             calculateFileSize(false); 
+             calculateBitrate(false); 
+             calculateRecordTime(false);
+             // 初始化 Comp. Ratio 页面
+             document.getElementById('cr-color-depth').value = ''; // 清空色深输入框
+             checkChromaSubButton(); // 初始检查色深按钮
+             updateCompRatio();
+        });
+
+
+    </script>
+
+</body>
+</html>
