@@ -62,9 +62,12 @@
 
         /* 主容器 */
         .container {
-            width: 800px;
+            max-width: 800px;
+            width: 90%;
             padding: 20px;
             margin-top: 20px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         /* 标题样式 */
@@ -157,7 +160,7 @@
             line-height: 50px; 
             box-sizing: border-box;
             outline: none;
-            font-size: 22px; 
+            font-size: 20px; 
         }
         /* 禁用 input number 的上下箭头 */
         .input-field::-webkit-outer-spin-button,
@@ -297,7 +300,7 @@
         }
 
         .result-number {
-            font-size: 22px;
+            font-size: 20px;
             line-height: 1; 
             padding-top: 20px; 
         }
@@ -404,7 +407,7 @@
             height: 100%;
         }
         .time-result-group .result-number {
-             font-size: 22px;
+             font-size: 20px;
         }
         .time-result-group .result-unit {
              font-size: 16px;
@@ -432,7 +435,7 @@
             padding: 0;
         }
         .resolution-input-group .unit-label {
-            font-size: 24px;
+            font-size: 16px;
             color: #E0E0E0;
             margin: 0;
         }
@@ -498,7 +501,7 @@
             align-items: center;
             justify-content: center;
             font-family: 'Unispace Custom', monospace;
-            font-size: 20px; /* 略微调整以适应40px高度 */
+            font-size: 18px; /* 略微调整以适应40px高度 */
             color: #888888;
             text-shadow: none;
             
@@ -580,6 +583,32 @@
              color: transparent;
         }
 
+        @media (max-width: 820px) {
+        .input-group, 
+        .result-group {
+            max-width: 100%;
+        }
+
+        .size-result-field {
+            width: 100%; 
+            box-sizing: border-box; 
+        }
+        
+        .time-input-group .time-input {
+            width: calc(33.333% - 6px);
+            margin: 0 1px;
+        }
+        
+        #homeButton {
+            top: 10px;
+            left: 10px;
+            padding: 8px 12px;
+        }
+        
+        h1 {
+            font-size: 30px;
+        }
+    }
 
     </style>
 </head>
@@ -1305,34 +1334,33 @@
         // 检查色度采样按钮状态
         function checkChromaSubButton() {
             const depth = document.getElementById('cr-color-depth').value.trim();
+            // 假设 VALID_CHROMA_DEPTHS 是一个包含所有有效色深字符串的数组，例如 ['8', '10', '12', '14', '16']
             const isRestricted = !VALID_CHROMA_DEPTHS.includes(depth);
             
             const chromaButtons = document.querySelectorAll('#cr-chroma-sub-buttons .cr-button');
             
             if (isRestricted) {
-                // 限制：只有 RGB/YUV444 按钮亮起且可选
+                // 限制逻辑：只有 RGB/YUV444 按钮可用
                 chromaButtons.forEach(button => {
                     if (button.getAttribute('data-chroma') === '444') {
+                        // RGB/YUV444 按钮：强制选中，并允许点击
                         button.classList.add('active');
-                        button.onclick = null; // 禁用点击
+                        button.style.pointerEvents = 'auto'; // 允许点击
                     } else {
+                        // YUV422 和 YUV420 按钮：取消选中，并禁用点击
                         button.classList.remove('active');
-                        button.onclick = null; // 禁用点击
+                        button.style.pointerEvents = 'none'; // 禁用点击
                     }
                 });
             } else {
-                // 正常逻辑：恢复点击事件
+                // 正常逻辑：所有按钮都恢复可点击状态
                 chromaButtons.forEach(button => {
-                    button.onclick = function() {
-                        handleChromaSubClick(this);
-                        updateCompRatio();
-                    };
+                    button.style.pointerEvents = 'auto'; // 恢复点击
                 });
             }
             
-            // 如果色深不满足条件，强制选中444
+            // 确保在受限情况下，数据传输也使用 444
             if (isRestricted) {
-                // 确保数据属性也设置为 444
                 chromaButtons.forEach(button => button.classList.remove('active'));
                 document.querySelector('#cr-chroma-sub-buttons .cr-button[data-chroma="444"]').classList.add('active');
             }
