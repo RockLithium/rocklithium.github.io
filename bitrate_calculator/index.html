@@ -141,7 +141,7 @@
         .input-field, .unit-select, .time-input, .unit-label, 
         .result-number, .result-unit, .size-result-unit-select,
         .resolution-input, .framerate-input, .color-depth-input {
-            font-family: 'Unispace Custom', monospace; 
+            font-family: 'Unispace Custom', "PingFang SC"; 
         }
 
         /* 固定高度设置 (60px) */
@@ -1127,7 +1127,12 @@
             
             // 2. 转换 TIME 为总秒数 (s)
             const totalSeconds = timeToSeconds(h.value, m.value, s.value);
-            document.getElementById('fs-result-time-num').textContent = totalSeconds.toFixed(3);
+            const fsTimeNumElement = document.getElementById('fs-result-time-num');
+            if (totalSeconds >= 1e15) {
+                fsTimeNumElement.textContent = totalSeconds.toExponential(12); 
+            } else {
+                fsTimeNumElement.textContent = totalSeconds.toFixed(3);
+            }
 
             // 3. 转换 BITRATE 为 Kbps
             const bitrateInKbps = bitrateToKbps(bitrateInput.value, bitrateUnit);
@@ -1171,7 +1176,12 @@
 
             // 2. 转换 TIME 为总秒数 (s)
             const totalSeconds = timeToSeconds(h.value, m.value, s.value);
-            document.getElementById('br-result-time-num').textContent = totalSeconds.toFixed(3);
+            const brTimeNumElement = document.getElementById('br-result-time-num'); 
+            if (totalSeconds >= 1e15) {
+                brTimeNumElement.textContent = totalSeconds.toExponential(12); 
+            } else {
+                brTimeNumElement.textContent = totalSeconds.toFixed(3);
+            }
 
             // 3. 转换 FILE SIZE 为 KB
             const sizeInKB = filesizeToKB(filesizeInput.value, filesizeUnit);
