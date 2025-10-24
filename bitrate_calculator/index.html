@@ -890,7 +890,7 @@
                 
                 <div class="input-group">
                     <div class="input-title">FRAMERATE (FPS)</div>
-                    <input type="number" id="cr-framerate" class="framerate-input" placeholder="" min="0" max="1024" step="any" oninput="validateInput(this, 0, 1024, false); updateCompRatio(); checkFramerateButton()">
+                    <input type="text" inputmode="decimal" id="cr-framerate" class="framerate-input" placeholder="" min="0" max="1024" oninput="validateFramerateInput(this, 0, 1024); updateCompRatio(); checkFramerateButton()">
                     <p class="framerate-tip">For interlaced videos, you need to divide the frame rate by 2.</p>
                     <div class="cr-button-grid cols-6" id="cr-framerate-buttons">
                         <div class="cr-button" data-fps="23.976">23.976</div>
@@ -1084,6 +1084,57 @@
             }
         }
         
+        /** 专门用于 type="text" 的输入框验证（允许小数，不会重置光标）*/
+        function validateFramerateInput(inputElement, minVal, maxVal) {
+            let value = inputElement.value;
+            
+            // 1. 保留光标位置
+            const selectionStart = inputElement.selectionStart;
+
+            if (value.trim() === '') return;
+
+            // 2. 清理和格式化输入
+            let cleanedValue = value.replace(/[^\d.]/g, ''); 
+            const parts = cleanedValue.split('.');
+            if (parts.length > 2) {
+                // 移除除第一个小数点外的所有小数点
+                cleanedValue = parts[0] + '.' + parts.slice(1).join('');
+            }
+            
+            // 3. 将清理后的值写回（如果有变化）
+            if (inputElement.value !== cleanedValue) {
+                inputElement.value = cleanedValue;
+                // 尝试恢复光标位置
+                if (selectionStart !== null) {
+                    inputElement.setSelectionRange(selectionStart, selectionStart);
+                }
+            }
+            
+            // 4. 检查数值范围
+            let num = parseFloat(cleanedValue);
+            
+            if (isNaN(num)) {
+                // 如果输入是空字符串或只有一个小数点，不清除，允许用户继续输入
+                if (cleanedValue === '' || cleanedValue === '.') return; 
+                // 否则视为无效，清除
+                inputElement.value = ''; 
+                return;
+            }
+
+            if (num < minVal) {
+                num = minVal;
+                inputElement.value = num;
+            } else if (num > maxVal) {
+                num = maxVal;
+                inputElement.value = num;
+            }
+            
+            // 5. 如果输入框中包含有效的数字且没有额外的处理（比如科学计数法），且输入值与解析出的数字不匹配（比如用户输入了"52."），则更新
+            if (inputElement.value !== num.toString() && !inputElement.value.endsWith('.')) {
+                inputElement.value = num;
+            }
+        }
+
         // Uncompressed Bitrate 转换和格式化 (Comp. Ratio 专用)
         function formatUncompressedBitrate(bitrateInKbps) {
             if (bitrateInKbps >= 1000000) { // >= 1000 Mbps
