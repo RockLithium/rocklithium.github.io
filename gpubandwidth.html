@@ -91,7 +91,7 @@
             font-family: 'Ubuntu', monospace; 
             font-size: 14px;
             line-height: 1.5;
-            height: 400px; 
+            height: 500px; 
             overflow-y: auto; 
         }
 
@@ -143,6 +143,35 @@ function log(msg, type = 'normal') {
 }
 
 // ---------------------------------------------------------------
+// Get GPU Name
+// ---------------------------------------------------------------
+function getRobustGPUName(adapter) {
+    let name = "Generic GPU";
+    
+    if (adapter.info && adapter.info.description) {
+        name = adapter.info.description;
+    } 
+    
+    if (!name || name.toLowerCase().includes("generic") || name.toLowerCase().includes("adapter")) {
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (gl) {
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                if (debugInfo) {
+                    const webglName = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                    if (webglName) {
+                        name = webglName; 
+                    }
+                }
+            }
+        } catch (e) {
+        }
+    }
+    return name;
+}
+
+// ---------------------------------------------------------------
 // Main Benchmark Function
 // ---------------------------------------------------------------
 async function runBenchmark() {
@@ -161,12 +190,7 @@ async function runBenchmark() {
         if (!adapter) throw new Error("No GPU adapter found.");
         const device = await adapter.requestDevice();
         
-        let gpuName = "Generic GPU";
-        if (adapter.info) gpuName = adapter.info.description;
-        else if (adapter.requestAdapterInfo) {
-            const info = await adapter.requestAdapterInfo();
-            gpuName = info.description;
-        }
+        const gpuName = getRobustGPUName(adapter);
         log(`GPU: ${gpuName}`, 'info');
 
         // --- 1. Fixed 128MB Allocation ---
