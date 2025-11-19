@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPU Bandwidth Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Ubuntu', sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        #homeButton {
+            position: absolute; 
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            color: #e0e0e0; 
+            background-color: #333333;
+            border: 1px solid #505050;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            z-index: 100; 
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 30px;
+            text-align: center;
+            background: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            color: #ff9800;
+            margin-bottom: 25px;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+            font-family: 'Ubuntu', sans-serif;
+        }
+
+        button:hover:not(:disabled) {
+            background: #1976d2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(33, 150, 243, 0.4);
+        }
+
+        button:disabled {
+            background: #424242;
+            color: #aaa;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #log {
+            margin-top: 30px;
+            text-align: left;
+            background: #000000;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            font-family: 'Ubuntu', monospace; 
+            font-size: 14px;
+            line-height: 1.5;
+            height: 400px; 
+            overflow-y: auto; 
+        }
+
+        .success { color: #4caf50; font-weight: bold; }
+        .highlight { color: #ffd700; font-weight: bold; font-size: 1.1em; }
+        .info { color: #64b5f6; }
+        .warn { color: #ffab40; }
+        .dim { color: #888; }
+        .separator { border-top: 1px dashed #333; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <a href="./stress_tests/" id="homeButton">← Back</a>
+
+    <div class="container">
+        <h1>GPU Bandwidth Test</h1>
+        
+        <button id="runBtn" onclick="runBenchmark()">Start Benchmark</button>
+
+        <div id="log"><span class="dim">Ready to test. (128MB Buffer)</span></div>
+    </div>
+
+<script>
+// ---------------------------------------------------------------
+// Shader Logic
+// ---------------------------------------------------------------
+const shaderCode = `
+struct Data { values: array<vec4<f32>> };
+@group(0) @binding(0) var<storage, read> src : Data;
+@group(0) @binding(1) var<storage, read_write> dst : Data;
+
+@compute @workgroup_size(256)
+fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
+    let index = global_id.x;
+    if (index < arrayLength(&src.values)) {
+        dst.values[index] = src.values[index];
+    }
+}
+`;
+
+const logDiv = document.getElementById('log');
+function log(msg, type = 'normal') {
+    const span = document.createElement('div');
+    span.textContent = msg;
+    span.className = type;
+    logDiv.appendChild(span);
+    logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+// ---------------------------------------------------------------
+// Main Benchmark Function
+// ---------------------------------------------------------------
+async function runBenchmark() {
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true;
+    btn.textContent = "Running...";
+    
+    // 插入分隔符，不清空历史
+    const sep = document.createElement('div');
+    sep.className = 'separator';
+    logDiv.appendChild(sep);
+
+    try {
+        if (!navigator.gpu) throw new Error("WebGPU not supported!");
+        const adapter = await navigator.gpu.requestAdapter();
+        if (!adapter) throw new Error("No GPU adapter found.");
+        const device = await adapter.requestDevice();
+        
+        let gpuName = "Generic GPU";
+        if (adapter.info) gpuName = adapter.info.description;
+        else if (adapter.requestAdapterInfo) {
+            const info = await adapter.requestAdapterInfo();
+            gpuName = info.description;
+        }
+        log(`GPU: ${gpuName}`, 'info');
+
+        // --- 1. Fixed 128MB Allocation ---
+        const fixedMB = 128;
+        const memSize = fixedMB * 1024 * 1024;
+        const vec4Size = 16; 
+        const numVecs = Math.floor(memSize / vec4Size);
+        const actualSize = numVecs * vec4Size;
+
+        log(`Allocating buffers: ${(actualSize / (1024**2)).toFixed(2)} MB each...`, 'dim');
+
+        const srcBuffer = device.createBuffer({ size: actualSize, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+        const dstBuffer = device.createBuffer({ size: actualSize, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
+
+        const shaderModule = device.createShaderModule({ code: shaderCode });
+        const pipeline = device.createComputePipeline({ layout: 'auto', compute: { module: shaderModule, entryPoint: 'main' }});
+        const bindGroup = device.createBindGroup({
+            layout: pipeline.getBindGroupLayout(0),
+            entries: [ { binding: 0, resource: { buffer: srcBuffer } }, { binding: 1, resource: { buffer: dstBuffer } } ],
+        });
+
+        const workgroupSize = 256;
+        const dispatchCount = Math.ceil(numVecs / workgroupSize);
+
+        // --- 2. Warm-up ---
+        log("Running Warm-up...", 'dim');
+        {
+            const encoder = device.createCommandEncoder();
+            const pass = encoder.beginComputePass();
+            pass.setPipeline(pipeline);
+            pass.setBindGroup(0, bindGroup);
+            pass.dispatchWorkgroups(dispatchCount);
+            pass.end();
+            device.queue.submit([encoder.finish()]);
+            await device.queue.onSubmittedWorkDone();
+        }
+
+        // --- 3. Calibration ---
+        const calIters = 50;
+        const calStart = performance.now();
+        {
+            const encoder = device.createCommandEncoder();
+            const pass = encoder.beginComputePass();
+            pass.setPipeline(pipeline);
+            pass.setBindGroup(0, bindGroup);
+            for(let i=0; i<calIters; i++) pass.dispatchWorkgroups(dispatchCount);
+            pass.end();
+            device.queue.submit([encoder.finish()]);
+            await device.queue.onSubmittedWorkDone();
+        }
+        const calEnd = performance.now();
+        const avgTimePerIter = (calEnd - calStart) / calIters; 
+        
+        let targetIters = Math.floor(5000.0 / avgTimePerIter);
+        
+        const MAX_ITERS = 40000;
+        if (targetIters > MAX_ITERS) {
+            targetIters = MAX_ITERS;
+        } else if (targetIters < 100) {
+            targetIters = 100; 
+        }
+        
+        log(`Scheduled total iterations: ${targetIters}`, 'info');
+
+        // --- 4. Split-Batch Peak Test ---
+        const BATCH_COUNT = 100; 
+        const itersPerBatch = Math.ceil(targetIters / BATCH_COUNT);
+        
+        log(`Running ${BATCH_COUNT} batches (sampling peak speed)...`, 'info');
+
+        let maxBW = 0;
+
+        for (let b = 0; b < BATCH_COUNT; b++) {
+            const encoder = device.createCommandEncoder();
+            const pass = encoder.beginComputePass();
+            pass.setPipeline(pipeline);
+            pass.setBindGroup(0, bindGroup);
+            
+            for(let i=0; i<itersPerBatch; i++) {
+                pass.dispatchWorkgroups(dispatchCount);
+            }
+            pass.end();
+            const cmdBuffer = encoder.finish();
+
+            const t0 = performance.now();
+            device.queue.submit([cmdBuffer]);
+            await device.queue.onSubmittedWorkDone();
+            const t1 = performance.now();
+
+            const dt = t1 - t0; 
+            const batchBytes = actualSize * 2 * itersPerBatch; 
+            const batchGB = batchBytes / 1e9; 
+            const currentBW = (batchGB / (dt / 1000.0)); 
+
+            if (currentBW > maxBW) maxBW = currentBW;
+        }
+
+        // --- Result ---
+        log('------------------------------------------------', 'success');
+        log(`Peak Bandwidth: ${maxBW.toFixed(2)} GB/s`, 'highlight');
+        log(`(Sampled from best batch of ${itersPerBatch} iterations)`, 'dim');
+        log('------------------------------------------------', 'success');
+
+        srcBuffer.destroy();
+        dstBuffer.destroy();
+
+    } catch (err) {
+        log(`Error: ${err.message}`, 'warn');
+        console.error(err);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Start Benchmark";
+    }
+}
+</script>
+</body>
+</html>
