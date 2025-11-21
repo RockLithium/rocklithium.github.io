@@ -143,11 +143,11 @@
     }
 
     // ---------------------------------------------------------------
-    // Get GPU Name (Enhanced with ANGLE Cleaner)
+    // Get GPU Name (Fixed for TM/R symbols)
     // ---------------------------------------------------------------
     function getRobustGPUName(adapter) {
         let name = "Generic GPU";
-
+        
         if (adapter.info && adapter.info.description && !adapter.info.description.includes("Generic")) {
             name = adapter.info.description;
         } else {
@@ -158,24 +158,32 @@
                     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
                     if (debugInfo) {
                         const webglName = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-                        if (webglName) {
-                            name = webglName;
-                        }
+                        if (webglName) name = webglName; 
                     }
                 }
-            } catch (e) {
-            }
+            } catch (e) {}
         }
 
         if (name.startsWith("ANGLE (")) {
-            const angleRegex = /^ANGLE \((?:.+?),\s*(.+?)(?:\s*\(0x|\s*,|\s*\))/;
-            const match = name.match(angleRegex);
-            if (match && match[1]) {
-                name = match[1].trim();
+            let raw = name.substring(7, name.length - 1); 
+
+            let firstComma = raw.indexOf(',');
+            if (firstComma !== -1) {
+                raw = raw.substring(firstComma + 1).trim();
+            }
+
+            let deviceIdIndex = raw.indexOf('(0x');
+            if (deviceIdIndex !== -1) {
+                name = raw.substring(0, deviceIdIndex).trim();
+            } else {
+                let trailerComma = raw.indexOf(',');
+                if (trailerComma !== -1) {
+                    name = raw.substring(0, trailerComma).trim();
+                } else {
+                    name = raw;
+                }
             }
         }
-
-        name = name.replace(/\s*\(TM\)/g, "").replace(/\s*\(R\)/g, "");
 
         return name;
     }
