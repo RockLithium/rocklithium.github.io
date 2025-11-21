@@ -12,7 +12,7 @@
             min-height: 100vh;
             margin: 0;
             background-color: #1a1a1a;
-            color: #e0e0e0; /* 页面文字颜色已改为 #e0e0e0 */
+            color: #e0e0e0; 
             text-align: center;
         }
 
@@ -23,7 +23,7 @@
             left: 20px;
             padding: 10px 15px;
             font-size: 0.9em;
-            color: #e0e0e0; /* 保持与主页颜色一致 */
+            color: #e0e0e0; 
             background-color: #333333;
             border: 1px solid #778899;
             border-radius: 5px;
@@ -33,14 +33,17 @@
         }
 
         h1 {
-            color: #e0e0e0; /* 网页中标题颜色已改为 #e0e0e0 */
+            color: #e0e0e0; 
             margin-bottom: 50px;
             font-size: 2.5em;
         }
 
         #button-container {
-            display: flex;
+            display: grid; 
+            grid-template-columns: 1fr 1fr; /* 强制分为两列（自动形成两排） */
             gap: 30px; 
+            
+            justify-items: center; 
         }
 
         .tool-button {
@@ -69,11 +72,11 @@
     <a href="../" id="homeButton">← 返回主页</a>
 
     <h1>选择项目</h1> <div id="button-container">
-        <a href="../LLT.html" class="tool-button">
+        <a href="../llt.html" class="tool-button">
             梅森素数检验
         </a>
 
-        <a href="../PrimeNumber.html" class="tool-button">
+        <a href="../primenumber.html" class="tool-button">
             质数查找器
         </a>
 
@@ -81,6 +84,10 @@
             显存带宽测试
         </a>
         
+        <a href="../raytracing.html" class="tool-button">
+            软件光线追踪
+        </a>
+
     </div>
 
 </body>
