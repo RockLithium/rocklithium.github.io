@@ -691,7 +691,12 @@
                 const now = performance.now();
                 const dt = (now - lastDt) * 0.001;
                 lastDt = now;
-                if(now-lastTime >= 1000) { fpsElem.textContent=frames; frames=0; lastTime=now; }
+                if(now - lastTime >= 100) {
+                    const fps = frames * 1000 / (now - lastTime);
+                    fpsElem.textContent = fps.toFixed(2); 
+                    frames = 0;
+                    lastTime = now;
+                }
                 frames++;
 
                 state.zoom += (state.targetZoom - state.zoom) * 0.1;
