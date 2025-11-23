@@ -227,6 +227,7 @@
             <div class="switch-row compact">
                 <span class="label">DISPLAY</span>
                 <div class="toggle-container">
+                    <button id="btn_hdr" class="toggle-btn feature-btn">HDR</button>
                     <button id="btn_ratio" class="toggle-btn feature-btn active">FORCE 16:9</button>
                     <button id="btn_full" class="toggle-btn feature-btn">FULLSCREEN</button>
                 </div>
@@ -242,15 +243,13 @@
     <canvas id="gpuCanvas"></canvas>
 
     <script type="module">
-        const shaderCode = `
+        const getShaderCode = (isHDR) => `
         struct Uniforms {
             cameraPos: vec4f, cameraLookAt: vec4f, 
             lightDir: vec4f, lightColor: vec4f,
             params1: vec4f, params2: vec4f, params3: vec4f,
         }
-        // Params2.w flags: 1=Fog, 2=Water, 4=Cloud, 8=Bloom
-        // Params3.y = Shadow Samples Count
-        @group(0) @binding(0) var outputTex: texture_storage_2d<rgba8unorm, write>;
+        @group(0) @binding(0) var outputTex: texture_storage_2d<${isHDR ? 'rgba16float' : 'rgba8unorm'}, write>;
         @group(0) @binding(1) var<uniform> u: Uniforms;
 
         const PI = 3.14159265;
@@ -279,10 +278,10 @@
         fn rayMarch(ro: vec3f, rd: vec3f, maxD: f32) -> vec2f { var t=0.1; for(var i=0;i<256;i++){ let res=map(ro+rd*t); if(res.x<.0015){return vec2f(t,res.y);} if(t>maxD){break;} t+=res.x*.8; } return vec2f(-1.,-1.); }
         
         fn softShadow(ro: vec3f, rd: vec3f, k: f32) -> f32 {
-            let samples = i32(u.params3.y); // Read numeric samples
+            let samples = i32(u.params3.y); 
             if (samples <= 0) { return 1.0; }
             var res = 1.0; var t = 0.05;
-            for(var i=0; i<64; i++){ // Max loops capped
+            for(var i=0; i<64; i++){ 
                 if(i >= samples){break;}
                 let h=map(ro+rd*t).x; res=min(res,k*h/t); 
                 t+=clamp(h,0.02,0.2); 
@@ -302,9 +301,9 @@
                 max(rd.y+.05, 0.)
             );
 
+            let bloom = (i32(u.params2.w) & 8) != 0;
             col += u.lightColor.xyz * pow(sd, 20.) * 0.5;
 
-            // Cloud Layer
             var cloudDen = 0.0;
             if ((i32(u.params2.w) & 4) != 0 && rd.y > 0.01) {
                 let t = u.params1.y * 0.1;
@@ -323,7 +322,6 @@
                 }
             }
 
-            let bloom = (i32(u.params2.w) & 8) != 0;
             let sunPower = select(300.0, 1024.0, bloom);
             let sunCore = vec3f(1.0, 0.95, 0.9) * pow(sd, sunPower) * 100.0;
             col += sunCore * (1.0 - cloudDen);
@@ -355,7 +353,6 @@
                         
                         let ndoth = max(dot(n,normalize(sunD-crd)),0.);
                         let spe = pow(ndoth, 600.);
-                        // FIXED: Water Bloom Tighter
                         let glow = select(0.0, pow(ndoth, 1000.0)*0.8, bloom); 
                         
                         col+=tp*(vec3f(.005,.01,.02)*.3*(.5+.5*sha)+sunC*(spe+glow)*sha*1.5);
@@ -366,7 +363,6 @@
                         let ndoth = max(dot(n, hal), 0.0);
                         let spe = pow(ndoth, 2./(.12*.12));
                         
-                        // Metal Bloom Wide (Kept as is)
                         var metalGlow = vec3f(0.0);
                         if (bloom) {
                             let wideSpec = pow(ndoth, 12.0); 
@@ -393,8 +389,19 @@
                 }
                 col+=fa;
             }
-            col*=1.3; col=clamp((col*(2.51*col+.03))/(col*(2.43*col+.59)+.14),vec3f(0.),vec3f(1.));
-            textureStore(outputTex, id.xy, vec4f(pow(col*(1.-length(uv)*.15),vec3f(.4545)),1.));
+            col*=1.3; 
+            
+            ${isHDR ? `
+            col = max(col, vec3f(0.0)); 
+            col = col * 2.0; 
+            col = pow(col, vec3f(0.6));
+            textureStore(outputTex, id.xy, vec4f(col, 1.0));
+            ` : `
+            col = clamp((col*(2.51*col+.03))/(col*(2.43*col+.59)+.14), vec3f(0.), vec3f(1.));
+            col = clamp(col, vec3f(0.0), vec3f(1.0)); 
+            let vig = 1.0 - length(uv) * 0; 
+            textureStore(outputTex, id.xy, vec4f(pow(col * vig, vec3f(0.4545)), 1.));
+            `}
         }
         `;
 
@@ -407,7 +414,6 @@
             const zoomElem = document.getElementById('zoom_text');
             const warningBox = document.getElementById('limit_warning');
             
-            // Sliders
             const inRotate = document.getElementById('in_rotate');
             const inDeform = document.getElementById('in_deform');
             const inBounces = document.getElementById('in_bounces');
@@ -416,7 +422,6 @@
             const inScale = document.getElementById('in_scale');
             const inTime = document.getElementById('in_time');
             
-            // Labels
             const valRotate = document.getElementById('val_rotate');
             const valDeform = document.getElementById('val_deform');
             const valBounces = document.getElementById('val_bounces');
@@ -425,11 +430,11 @@
             const valScale = document.getElementById('val_scale');
             const valTime = document.getElementById('val_time');
 
-            // Buttons
             const btnFog = document.getElementById('btn_fog');
             const btnWater = document.getElementById('btn_water');
-            const btnCloud = document.getElementById('btn_cloud'); // New Button
+            const btnCloud = document.getElementById('btn_cloud'); 
             const btnBloom = document.getElementById('btn_bloom');
+            const btnHdr = document.getElementById('btn_hdr');
             const btnRatio = document.getElementById('btn_ratio');
             const btnFull = document.getElementById('btn_full');
 
@@ -460,8 +465,7 @@
             ];
 
             let currentScaleIdx = 4; 
-            // Added cloud flag
-            let flags = { fog: true, water: true, cloud: false, bloom: true, force16_9: true }; 
+            let flags = { fog: true, water: true, cloud: false, bloom: true, force16_9: true, hdr: false }; 
             let isCollapsed = false;
 
             btnMin.onclick = () => {
@@ -536,20 +540,49 @@
                 gpuCanvas.height = targetH;
                 resElem.textContent = `${targetW}x${targetH}`;
                 
-                context.configure({
-                    device, format: 'rgba8unorm',
-                    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
-                    alphaMode: 'premultiplied',
-                });
+                try {
+                    // HDR Configuration
+                    // display-p3 with float16 allows values > 1.0 which Windows maps to HDR luminance
+                    const config = {
+                        device, 
+                        format: flags.hdr ? 'rgba16float' : 'rgba8unorm',
+                        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
+                        alphaMode: 'premultiplied',
+                        colorSpace: flags.hdr ? 'display-p3' : 'srgb'
+                    };
+                    
+                    // Chrome 129+ Tone Mapping setting
+                    if (flags.hdr && 'toneMapping' in GPUCanvasContext.prototype) {
+                        // @ts-ignore
+                        config.toneMapping = { mode: 'extended' }; 
+                    }
+                    context.configure(config);
+                    
+                } catch(e) {
+                    console.warn("HDR Config failed", e);
+                    context.configure({
+                        device, 
+                        format: 'rgba8unorm', 
+                        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
+                        alphaMode: 'premultiplied',
+                        colorSpace: 'srgb'
+                    });
+                }
+
                 requestAnimationFrame(updateUIScale);
                 return { width: targetW, height: targetH };
             };
 
             let canvasSize = updateResolution();
-            const module = device.createShaderModule({ code: shaderCode });
-            const pipeline = device.createComputePipeline({
-                layout: 'auto', compute: { module, entryPoint: 'main' }
-            });
+            let module, pipeline;
+            
+            const rebuildPipeline = () => {
+                module = device.createShaderModule({ code: getShaderCode(flags.hdr) });
+                pipeline = device.createComputePipeline({
+                    layout: 'auto', compute: { module, entryPoint: 'main' }
+                });
+            };
+            rebuildPipeline();
             
             const uniformBuffer = device.createBuffer({ size: 112, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
             
@@ -558,7 +591,7 @@
                 if(outputTexture) outputTexture.destroy();
                 outputTexture = device.createTexture({
                     size: [canvasSize.width, canvasSize.height],
-                    format: 'rgba8unorm',
+                    format: flags.hdr ? 'rgba16float' : 'rgba8unorm',
                     usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC
                 });
                 bindGroup = device.createBindGroup({
@@ -577,7 +610,6 @@
             });
 
             const presets = {
-                // Updated presets with Cloud logic
                 low:   { bounces: 3,  far: 40,  scaleIdx: 2, shadow: 8,  fog: false, water: false, cloud: false, bloom: true }, 
                 mid:   { bounces: 4,  far: 100, scaleIdx: 3, shadow: 16, fog: false, water: true,  cloud: true, bloom: true }, 
                 high:  { bounces: 6,  far: 200, scaleIdx: 4, shadow: 16, fog: true,  water: true,  cloud: true, bloom: true }, 
@@ -627,10 +659,13 @@
             const toggle = (btn, key) => {
                 flags[key] = !flags[key];
                 btn.classList.toggle('active', flags[key]);
-                if (key === 'force16_9') {
-                    updateScaleText(); 
-                    canvasSize = updateResolution();
-                    createResources();
+                if (key === 'force16_9' || key === 'hdr') {
+                    if (key === 'force16_9') updateScaleText(); 
+                    if (key === 'hdr') {
+                        rebuildPipeline(); // Recompile shader for HDR/SDR
+                    }
+                    canvasSize = updateResolution(); // Reconfigure Context
+                    createResources(); // Recreate textures
                 }
                 checkPresets(); 
             };
@@ -641,8 +676,9 @@
             
             btnFog.onclick = () => toggle(btnFog, 'fog');
             btnWater.onclick = () => toggle(btnWater, 'water');
-            btnCloud.onclick = () => toggle(btnCloud, 'cloud'); // Handler
+            btnCloud.onclick = () => toggle(btnCloud, 'cloud'); 
             btnBloom.onclick = () => toggle(btnBloom, 'bloom');
+            btnHdr.onclick = () => toggle(btnHdr, 'hdr');
             btnRatio.onclick = () => toggle(btnRatio, 'force16_9');
 
             btnFull.onclick = () => {
@@ -671,7 +707,7 @@
 
                 setToggle(btnFog, 'fog', p.fog);
                 setToggle(btnWater, 'water', p.water);
-                setToggle(btnCloud, 'cloud', p.cloud); // Apply cloud preset
+                setToggle(btnCloud, 'cloud', p.cloud); 
                 setToggle(btnBloom, 'bloom', p.bloom);
 
                 canvasSize = updateResolution();
@@ -760,7 +796,7 @@
                 let flagBits = 0;
                 if(flags.fog) flagBits |= 1;
                 if(flags.water) flagBits |= 2;
-                if(flags.cloud) flagBits |= 4; // Added Cloud Bit
+                if(flags.cloud) flagBits |= 4;
                 if(flags.bloom) flagBits |= 8;
 
                 const uData = new Float32Array(28);
