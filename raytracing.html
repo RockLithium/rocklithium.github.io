@@ -219,6 +219,7 @@
                 <div class="toggle-container">
                     <button id="btn_fog" class="toggle-btn active">FOG</button>
                     <button id="btn_water" class="toggle-btn active">WATER</button>
+                    <button id="btn_cloud" class="toggle-btn active">CLOUD</button>
                     <button id="btn_bloom" class="toggle-btn active">BLOOM</button>
                 </div>
             </div>
@@ -247,7 +248,7 @@
             lightDir: vec4f, lightColor: vec4f,
             params1: vec4f, params2: vec4f, params3: vec4f,
         }
-        // Params2.w flags: 1=Fog, 2=Water, 4=Unused(was HiShadow), 8=Bloom
+        // Params2.w flags: 1=Fog, 2=Water, 4=Cloud, 8=Bloom
         // Params3.y = Shadow Samples Count
         @group(0) @binding(0) var outputTex: texture_storage_2d<rgba8unorm, write>;
         @group(0) @binding(1) var<uniform> u: Uniforms;
@@ -263,8 +264,10 @@
 
         fn getWaterHeight(p: vec3f) -> f32 {
             if((i32(u.params2.w)&2)==0){return 0.;}
-            let t=u.params1.y; let m1=vec2f(t*.08,t*.04); let m2=vec2f(-t*.02,t*.06);
-            return (fbm(p.xz*.4+m1)*1.5 + fbm(p.xz*2.-m2)*.1)*.25;
+            let t=u.params1.y; 
+            let m1=vec2f(t*.06, t*.03); 
+            let m2=vec2f(-t*.20, t*.25); 
+            return (fbm(p.xz*.4+m1)*1.5 + fbm(p.xz*0.8-m2)*.06)*.25;
         }
         fn map(p_in: vec3f) -> vec2f {
             var p=p_in; p=vec3f(rot2D(u.params2.y)*p.xz,p.y).xzy; var s=1.; let t=u.params1.x*.1; 
@@ -289,14 +292,42 @@
         }
 
         fn getSkyColor(rd: vec3f) -> vec3f {
-            let sunDir=normalize(u.lightDir.xyz); let sh=sunDir.y;
-            var col=mix(mix(vec3f(.8,.4,.2),vec3f(.5,.55,.6),smoothstep(-.1,.4,sh)), mix(vec3f(.05,.05,.1),vec3f(.05,.1,.25),smoothstep(-.2,.5,sh)), max(rd.y+.1,0.));
-            let sd=max(dot(rd,sunDir),0.); 
-            // Bloom Enhances Sun Halo
+            let sunDir = normalize(u.lightDir.xyz); 
+            let sh = sunDir.y;
+            let sd = max(dot(rd, sunDir), 0.);
+
+            var col = mix(
+                mix(vec3f(.6,.3,.1), vec3f(.4,.45,.6), smoothstep(-.1, .4, sh)), 
+                mix(vec3f(.02,.02,.05), vec3f(.02,.05,.15), smoothstep(-.2, .5, sh)), 
+                max(rd.y+.05, 0.)
+            );
+
+            col += u.lightColor.xyz * pow(sd, 20.) * 0.5;
+
+            // Cloud Layer
+            var cloudDen = 0.0;
+            if ((i32(u.params2.w) & 4) != 0 && rd.y > 0.01) {
+                let t = u.params1.y * 0.1;
+                let skyPos = (rd.xz / (rd.y + 0.15)) * 1.5;
+                
+                var val = fbm(skyPos + vec2f(t, t*0.5));
+                val += fbm(skyPos * 2.5 - vec2f(t*0.5, 0.)) * 0.5;
+                
+                cloudDen = smoothstep(0.1, 0.85, val);
+                cloudDen *= smoothstep(0.0, 0.4, rd.y); 
+                
+                if (cloudDen > 0.01) {
+                    let base = vec3f(0.85); 
+                    let scatter = u.lightColor.xyz * pow(sd, 12.0) * 1.5; 
+                    col = mix(col, base + scatter, cloudDen);
+                }
+            }
+
             let bloom = (i32(u.params2.w) & 8) != 0;
-            let sunPow = select(600.0, 300.0, bloom); 
-            let sunMul = select(10.0, 15.0, bloom);
-            col+=u.lightColor.xyz*pow(sd,20.)*.5 + vec3f(1.,.9,.8)*pow(sd,sunPow)*sunMul; 
+            let sunPower = select(300.0, 1024.0, bloom);
+            let sunCore = vec3f(1.0, 0.95, 0.9) * pow(sd, sunPower) * 100.0;
+            col += sunCore * (1.0 - cloudDen);
+
             return col;
         }
 
@@ -323,7 +354,7 @@
                         if((i32(u.params2.w)&2)!=0){ let e=.05; n=normalize(mix(vec3f(0,1,0),normalize(vec3f(h-getWaterHeight(hp+vec3f(e,0,0)),e,h-getWaterHeight(hp+vec3f(0,0,e)))),.8)); }
                         
                         let ndoth = max(dot(n,normalize(sunD-crd)),0.);
-                        let spe = pow(ndoth, 400.);
+                        let spe = pow(ndoth, 600.);
                         // FIXED: Water Bloom Tighter
                         let glow = select(0.0, pow(ndoth, 1000.0)*0.8, bloom); 
                         
@@ -397,6 +428,7 @@
             // Buttons
             const btnFog = document.getElementById('btn_fog');
             const btnWater = document.getElementById('btn_water');
+            const btnCloud = document.getElementById('btn_cloud'); // New Button
             const btnBloom = document.getElementById('btn_bloom');
             const btnRatio = document.getElementById('btn_ratio');
             const btnFull = document.getElementById('btn_full');
@@ -428,7 +460,8 @@
             ];
 
             let currentScaleIdx = 4; 
-            let flags = { fog: true, water: true, bloom: true, force16_9: true }; 
+            // Added cloud flag
+            let flags = { fog: true, water: true, cloud: false, bloom: true, force16_9: true }; 
             let isCollapsed = false;
 
             btnMin.onclick = () => {
@@ -544,11 +577,12 @@
             });
 
             const presets = {
-                low:   { bounces: 3,  far: 40,  scaleIdx: 2, shadow: 8,  fog: false, water: false, bloom: true }, 
-                mid:   { bounces: 4,  far: 100, scaleIdx: 3, shadow: 16, fog: false, water: true,  bloom: true }, 
-                high:  { bounces: 6,  far: 200, scaleIdx: 4, shadow: 16, fog: true,  water: true,  bloom: true }, 
-                ultra: { bounces: 8,  far: 300, scaleIdx: 5, shadow: 32, fog: true,  water: true,  bloom: true }, 
-                extreme: { bounces: 12, far: 300, scaleIdx: 7, shadow: 48, fog: true, water: true, bloom: true } 
+                // Updated presets with Cloud logic
+                low:   { bounces: 3,  far: 40,  scaleIdx: 2, shadow: 8,  fog: false, water: false, cloud: false, bloom: true }, 
+                mid:   { bounces: 4,  far: 100, scaleIdx: 3, shadow: 16, fog: false, water: true,  cloud: true, bloom: true }, 
+                high:  { bounces: 6,  far: 200, scaleIdx: 4, shadow: 16, fog: true,  water: true,  cloud: true, bloom: true }, 
+                ultra: { bounces: 8,  far: 300, scaleIdx: 5, shadow: 32, fog: true,  water: true,  cloud: true,  bloom: true }, 
+                extreme: { bounces: 12, far: 300, scaleIdx: 7, shadow: 48, fog: true, water: true, cloud: true,  bloom: true } 
             };
 
             const checkPresets = () => {
@@ -561,7 +595,7 @@
 
                 const isMatch = (p) => 
                     p.bounces === curBounces && p.far === curFar && p.scaleIdx === curScale && p.shadow === curShadow &&
-                    p.fog === flags.fog && p.water === flags.water && p.bloom === flags.bloom;
+                    p.fog === flags.fog && p.water === flags.water && p.cloud === flags.cloud && p.bloom === flags.bloom;
 
                 if (isMatch(presets.low)) preLow.classList.add('active');
                 else if (isMatch(presets.mid)) preMid.classList.add('active');
@@ -607,6 +641,7 @@
             
             btnFog.onclick = () => toggle(btnFog, 'fog');
             btnWater.onclick = () => toggle(btnWater, 'water');
+            btnCloud.onclick = () => toggle(btnCloud, 'cloud'); // Handler
             btnBloom.onclick = () => toggle(btnBloom, 'bloom');
             btnRatio.onclick = () => toggle(btnRatio, 'force16_9');
 
@@ -636,6 +671,7 @@
 
                 setToggle(btnFog, 'fog', p.fog);
                 setToggle(btnWater, 'water', p.water);
+                setToggle(btnCloud, 'cloud', p.cloud); // Apply cloud preset
                 setToggle(btnBloom, 'bloom', p.bloom);
 
                 canvasSize = updateResolution();
@@ -691,9 +727,9 @@
                 const now = performance.now();
                 const dt = (now - lastDt) * 0.001;
                 lastDt = now;
-                if(now - lastTime >= 100) {
+                if(now - lastTime >= 250) {
                     const fps = frames * 1000 / (now - lastTime);
-                    fpsElem.textContent = fps.toFixed(2); 
+                    fpsElem.textContent = fps.toFixed(1); 
                     frames = 0;
                     lastTime = now;
                 }
@@ -710,7 +746,7 @@
                 const sunAngle = 0.1 + timeVal * (Math.PI - 0.2); 
                 const lightDir = [Math.cos(sunAngle), Math.sin(sunAngle), 0.2];
                 const sunH = Math.sin(sunAngle);
-                const sunColor = [1.0, Math.min(1.0, 0.4 + sunH * 0.6), Math.min(1.0, 0.1 + sunH * 0.9), 0.5 + sunH * 0.5];
+                const sunColor = [1.0, Math.min(1.0, 0.4 + sunH * 1.5), Math.min(1.0, 0.1 + sunH * 2.0), 0.5 + sunH * 0.5];
                 const intensity = 1.2 + sunH * 1.2; 
 
                 const minPitch = Math.asin(Math.max(-1.0, Math.min(1.0, (-1.0) / state.radius)));
@@ -724,6 +760,7 @@
                 let flagBits = 0;
                 if(flags.fog) flagBits |= 1;
                 if(flags.water) flagBits |= 2;
+                if(flags.cloud) flagBits |= 4; // Added Cloud Bit
                 if(flags.bloom) flagBits |= 8;
 
                 const uData = new Float32Array(28);
