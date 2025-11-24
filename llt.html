@@ -484,10 +484,10 @@
         
         function updateWorkerCountInput() {
             const maxCores = SYSTEM_CORE_COUNT;
-            workerCountInput.max = maxCores;
+            workerCountInput.max = maxCores * 2;
             
             let requestedCount = parseInt(workerCountInput.value);
-            requestedCount = Math.max(1, Math.min(requestedCount, maxCores));
+            requestedCount = Math.max(1, Math.min(requestedCount, maxCores*2));
             workerCountInput.value = requestedCount;
             WORKER_COUNT = requestedCount;
             updateCoreStatusArray(WORKER_COUNT);
