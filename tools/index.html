@@ -2,7 +2,9 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>Tool List</title> <style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool List</title> 
+    <style>
         body {
             font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
             display: flex;
@@ -14,9 +16,9 @@
             background-color: #1a1a1a;
             color: #e0e0e0;
             text-align: center;
+            overflow-x: hidden;
         }
 
-        /* 返回主页按钮样式 */
         #homeButton {
             position: absolute;
             top: 20px;
@@ -32,15 +34,28 @@
             z-index: 100;
         }
 
+        .main-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translateY(-10%);
+        }
+
         h1 {
             color: #e0e0e0;
-            margin-bottom: 50px;
+            margin-bottom: 40px;
             font-size: 2.5em;
+            margin-top: 0;
         }
 
         #button-container {
             display: flex;
-            gap: 30px; 
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
         }
 
         .tool-button {
@@ -53,14 +68,59 @@
             border: 2px solid #505050;
             border-radius: 8px;
             text-decoration: none;
-            transition: background-color 0.3s, border-color 0.3s;
+            transition: all 0.3s;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .tool-button:hover {
             background-color: #444444;
             border-color: #e0e0e0; 
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.7);
+            transform: translateY(-3px);
+        }
+
+        #description-display {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            width: 400px;
+            max-width: 90vw;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 1em;
+            color: #888;
+            font-weight: 300;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+            line-height: 1.5;
+        }
+
+        #description-display.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            color: #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+                margin-bottom: 30px;
+            }
+            
+            #button-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            #description-display {
+                width: 90%;
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
@@ -68,16 +128,38 @@
 
     <a href="../" id="homeButton">← 返回主页</a>
 
-    <h1>选择项目</h1> <div id="button-container">
-        <a href="../bitratecalculator" class="tool-button">
-            码率计算器
-        </a>
+    <div class="main-wrapper">
+        <h1>选择项目</h1> 
 
-        <a href="../fileconverter" class="tool-button">
-            文件转HTML
-        </a>
-        
+        <div id="button-container">
+            <a href="../bitratecalculator" class="tool-button" data-desc="集成码率、文件体积、录制时长及压缩比计算的数据工具">
+                码率计算器
+            </a>
+
+            <a href="../fileconverter" class="tool-button" data-desc="将视频、文档或音频一键封装为独立 HTML 网页，支持离线预览与原件下载">
+                文件转HTML
+            </a>
+        </div>
+
+        <div id="description-display"></div>
     </div>
+
+    <script>
+        const buttons = document.querySelectorAll('.tool-button');
+        const displayArea = document.getElementById('description-display');
+
+        buttons.forEach(button => {
+            button.addEventListener('mouseenter', () => {
+                const desc = button.getAttribute('data-desc');
+                displayArea.textContent = desc;
+                displayArea.classList.add('active');
+            });
+
+            button.addEventListener('mouseleave', () => {
+                displayArea.classList.remove('active');
+            });
+        });
+    </script>
 
 </body>
 </html>

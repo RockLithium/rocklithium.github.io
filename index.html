@@ -2,7 +2,9 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>rocklithium.github.io</title> <style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rocklithium.github.io</title> 
+    <style>
         body {
             font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
             display: flex;
@@ -14,24 +16,42 @@
             background-color: #1a1a1a;
             color: #e0e0e0;
             text-align: center;
+            overflow-x: hidden;
+        }
+
+        .main-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translateY(-10%);
+            width: 90%;
+            max-width: 800px;
         }
 
         h1 {
             color: #e0e0e0;
-            margin-bottom: 0px;
+            margin-bottom: 10px;
             font-size: 2.5em;
+            margin-top: 0;
         }
 
         p {
             color: #AAAAAA;
-            margin-top: 10px;
+            margin-top: 0;
             margin-bottom: 20px;
-            text-align: center;
+            font-size: 1em;
+            line-height: 1.5;
+            max-width: 600px;
         }
 
         #button-container {
             display: flex;
-            gap: 30px; 
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
         }
 
         .tool-button {
@@ -44,35 +64,66 @@
             border: 2px solid #505050;
             border-radius: 8px;
             text-decoration: none;
-            transition: background-color 0.3s, border-color 0.3s;
+            transition: all 0.3s;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .tool-button:hover {
             background-color: #444444;
             border-color: #e0e0e0; 
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.7);
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+                margin-bottom: 15px;
+            }
+            
+            p {
+                font-size: 0.9em;
+                margin-bottom: 30px;
+                padding: 0 20px;
+            }
+
+            #button-container {
+                flex-direction: column;
+                gap: 20px;
+                width: 100%;
+                align-items: center;
+            }
+
+            .tool-button {
+                width: 140px; 
+            }
         }
     </style>
 </head>
 <body>
 
-    <h1>选择项目</h1> 
-    <p>移动端建议在浏览器中打开“桌面版网站”以优化浏览体验。</p>
-    <div id="button-container">
-        
-        <a href="./projects/" class="tool-button">
-            项目
-        </a>
+    <div class="main-wrapper">
+        <h1>选择项目</h1> 
+        <p>移动端建议在浏览器中打开“桌面版网站”以优化浏览体验。<br>
+            使用最新版系统，并在 Chrome/Edge (Windows/Android) 或 Safari (macOS/iOS/iPadOS) 中打开以避免兼容性问题。
+        </p>
 
-        <a href="./stress_tests/" class="tool-button">
-            压力测试
-        </a>
+        <div id="button-container">
+            <a href="./projects/" class="tool-button">
+                项目
+            </a>
 
-        <a href="./tools/" class="tool-button">
-            小工具
-        </a>
-        
+            <a href="./stress_tests/" class="tool-button">
+                压力测试
+            </a>
+
+            <a href="./tools/" class="tool-button">
+                小工具
+            </a>
+        </div>
     </div>
 
 </body>

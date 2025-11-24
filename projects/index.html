@@ -2,7 +2,9 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>Project List</title> <style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project List</title> 
+    <style>
         body {
             font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
             display: flex;
@@ -14,16 +16,16 @@
             background-color: #1a1a1a;
             color: #e0e0e0;
             text-align: center;
+            overflow-x: hidden;
         }
 
-        /* 返回主页按钮样式 */
         #homeButton {
             position: absolute;
             top: 20px;
             left: 20px;
             padding: 10px 15px;
             font-size: 0.9em;
-            color: #e0e0e0; 
+            color: #e0e0e0;
             background-color: #333333;
             border: 1px solid #778899;
             border-radius: 5px;
@@ -32,15 +34,28 @@
             z-index: 100;
         }
 
+        .main-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translateY(-10%);
+        }
+
         h1 {
-            color: #e0e0e0; 
-            margin-bottom: 50px;
+            color: #e0e0e0;
+            margin-bottom: 40px;
             font-size: 2.5em;
+            margin-top: 0;
         }
 
         #button-container {
             display: flex;
-            gap: 30px; 
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
         }
 
         .tool-button {
@@ -53,14 +68,30 @@
             border: 2px solid #505050;
             border-radius: 8px;
             text-decoration: none;
-            transition: background-color 0.3s, border-color 0.3s;
+            transition: all 0.3s;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .tool-button:hover {
             background-color: #444444;
             border-color: #e0e0e0; 
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.7);
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+                margin-bottom: 30px;
+            }
+            
+            #button-container {
+                flex-direction: column;
+                gap: 20px;
+            }
         }
     </style>
 </head>
@@ -68,11 +99,14 @@
 
     <a href="../" id="homeButton">← 返回主页</a>
 
-    <h1>选择项目</h1> <div id="button-container">
-        <a href="../encoder_perf_test/" class="tool-button">
-            编码器性能测试
-        </a>
+    <div class="main-wrapper">
+        <h1>选择项目</h1> 
 
+        <div id="button-container">
+            <a href="../encoder_perf_test/" class="tool-button">
+                编码器性能测试
+            </a>
+        </div>
     </div>
 
 </body>

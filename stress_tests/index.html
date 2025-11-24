@@ -2,7 +2,9 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>Test List</title> <style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test List</title> 
+    <style>
         body {
             font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
             display: flex;
@@ -12,38 +14,48 @@
             min-height: 100vh;
             margin: 0;
             background-color: #1a1a1a;
-            color: #e0e0e0; 
+            color: #e0e0e0;
             text-align: center;
+            overflow-x: hidden;
         }
 
-        /* 返回主页按钮样式 */
         #homeButton {
-            position: absolute; /* 绝对定位 */
+            position: absolute;
             top: 20px;
             left: 20px;
             padding: 10px 15px;
             font-size: 0.9em;
-            color: #e0e0e0; 
+            color: #e0e0e0;
             background-color: #333333;
             border: 1px solid #778899;
             border-radius: 5px;
             text-decoration: none;
             transition: background-color 0.3s;
-            z-index: 100; /* 确保按钮在最上层 */
+            z-index: 100;
+        }
+
+        .main-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translateY(-10%);
         }
 
         h1 {
-            color: #e0e0e0; 
-            margin-bottom: 50px;
+            color: #e0e0e0;
+            margin-bottom: 40px;
             font-size: 2.5em;
+            margin-top: 0;
         }
 
         #button-container {
-            display: grid; 
-            grid-template-columns: 1fr 1fr; /* 强制分为两列（自动形成两排） */
-            gap: 30px; 
-            
-            justify-items: center; 
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            justify-items: center;
+            position: relative;
+            z-index: 10;
         }
 
         .tool-button {
@@ -53,17 +65,62 @@
             cursor: pointer;
             color: #e0e0e0; 
             background-color: #333333;
-            border: 2px solid #505050; /* 边框颜色略微调暗 */
+            border: 2px solid #505050;
             border-radius: 8px;
             text-decoration: none;
-            transition: background-color 0.3s, border-color 0.3s;
+            transition: all 0.3s;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .tool-button:hover {
-            background-color: #444444; /* 悬停时稍微变亮 */
+            background-color: #444444;
             border-color: #e0e0e0; 
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.7);
+            transform: translateY(-3px);
+        }
+
+        #description-display {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            width: 400px;
+            max-width: 90vw;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 1em;
+            color: #888;
+            font-weight: 300;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+            line-height: 1.5;
+        }
+
+        #description-display.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            color: #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+                margin-bottom: 30px;
+            }
+            
+            #button-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            #description-display {
+                width: 90%;
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
@@ -71,24 +128,46 @@
 
     <a href="../" id="homeButton">← 返回主页</a>
 
-    <h1>选择项目</h1> <div id="button-container">
-        <a href="../llt.html" class="tool-button">
-            梅森素数检验
-        </a>
+    <div class="main-wrapper">
+        <h1>选择项目</h1> 
 
-        <a href="../primenumber.html" class="tool-button">
-            质数查找器
-        </a>
+        <div id="button-container">
+            <a href="../llt.html" class="tool-button" data-desc="采用卢卡斯-莱默检验法（LLT）验证梅森素数。支持循环测试。">
+                梅森素数检验
+            </a>
 
-        <a href="../bandwidthtest.html" class="tool-button">
-            显存带宽测试
-        </a>
-        
-        <a href="../raytracing.html" class="tool-button">
-            软件光线追踪
-        </a>
+            <a href="../primenumber.html" class="tool-button" data-desc="使用 Miller-Rabin 算法并行查找大范围内的质数，压榨 CPU 的多线程并发处理能力。支持导出结果。">
+                质数查找器
+            </a>
 
+            <a href="../bandwidthtest.html" class="tool-button" data-desc="测试显卡的显存读写带宽。（需要WebGPU支持）">
+                显存带宽测试
+            </a>
+            
+            <a href="../raytracing.html" class="tool-button" data-desc="基于通用计算着色器的实时光追渲染演示。（需要WebGPU支持）">
+                软件光线追踪
+            </a>
+        </div>
+
+        <div id="description-display"></div>
     </div>
+
+    <script>
+        const buttons = document.querySelectorAll('.tool-button');
+        const displayArea = document.getElementById('description-display');
+
+        buttons.forEach(button => {
+            button.addEventListener('mouseenter', () => {
+                const desc = button.getAttribute('data-desc');
+                displayArea.textContent = desc;
+                displayArea.classList.add('active');
+            });
+
+            button.addEventListener('mouseleave', () => {
+                displayArea.classList.remove('active');
+            });
+        });
+    </script>
 
 </body>
 </html>
