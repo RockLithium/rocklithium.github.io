@@ -40,6 +40,7 @@
             flex-direction: column;
             align-items: center;
             transform: translateY(-10%);
+            width: 100%;
         }
 
         h1 {
@@ -59,7 +60,7 @@
         }
 
         .tool-button {
-            width: 150px;
+            width: 150px; 
             padding: 15px 30px;
             font-size: 1.2em;
             cursor: pointer;
@@ -73,6 +74,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            user-select: none; 
         }
 
         .tool-button:hover {
@@ -80,6 +82,98 @@
             border-color: #e0e0e0; 
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.7);
             transform: translateY(-3px);
+        }
+
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: #2a2a2a;
+            border: 1px solid #505050;
+            border-radius: 12px;
+            padding: 25px;
+            width: 400px;
+            max-width: 85%;
+            text-align: left;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #fff;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        .modal-body {
+            font-size: 1em;
+            color: #ccc;
+            line-height: 1.6;
+            min-height: 60px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .modal-btn {
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            border: none;
+            transition: background-color 0.2s;
+        }
+
+        .btn-cancel {
+            background-color: transparent;
+            color: #aaa;
+            border: 1px solid #444;
+        }
+        .btn-cancel:hover {
+            color: #e0e0e0;
+            border-color: #666;
+        }
+
+        .btn-confirm {
+            background-color: #e0e0e0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        .btn-confirm:hover {
+            background-color: #fff;
         }
 
         @media (max-width: 768px) {
@@ -103,11 +197,75 @@
         <h1>选择项目</h1> 
 
         <div id="button-container">
-            <a href="../encoder_perf_test/" class="tool-button">
+            <div class="tool-button" data-href="../encoder_perf_test/" data-desc="（暂无描述）">
                 编码器性能测试
-            </a>
+            </div>
         </div>
     </div>
+
+    <div id="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header" id="modal-title">标题</div>
+            <div class="modal-body" id="modal-description">描述内容</div>
+            <div class="modal-footer">
+                <button class="modal-btn btn-cancel" id="modal-close">取消</button>
+                <button class="modal-btn btn-confirm" id="modal-go">访问</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const buttons = document.querySelectorAll('.tool-button');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-description');
+        const btnGo = document.getElementById('modal-go');
+        const btnClose = document.getElementById('modal-close');
+
+        let currentTargetUrl = '';
+
+        function openModal(title, desc, url) {
+            modalTitle.textContent = title;
+            modalDesc.textContent = desc || "（暂无描述）";
+            currentTargetUrl = url;
+            modalOverlay.classList.add('active');
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            currentTargetUrl = '';
+        }
+
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                const title = button.innerText.trim(); 
+                const desc = button.getAttribute('data-desc');
+                const url = button.getAttribute('data-href');
+                
+                openModal(title, desc, url);
+            });
+        });
+
+        btnGo.addEventListener('click', () => {
+            if (currentTargetUrl) {
+                window.location.href = currentTargetUrl;
+            }
+        });
+
+        btnClose.addEventListener('click', closeModal);
+
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+                closeModal();
+            }
+        });
+    </script>
 
 </body>
 </html>

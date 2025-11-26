@@ -40,6 +40,7 @@
             flex-direction: column;
             align-items: center;
             transform: translateY(-10%);
+            width: 100%;
         }
 
         h1 {
@@ -73,6 +74,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            user-select: none; 
         }
 
         .tool-button:hover {
@@ -82,28 +84,96 @@
             transform: translateY(-3px);
         }
 
-        #description-display {
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%) translateY(10px);
-            width: 400px;
-            max-width: 90vw;
-            margin-top: 20px;
-            text-align: center;
-            font-size: 1em;
-            color: #888;
-            font-weight: 300;
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
             opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            pointer-events: none;
-            line-height: 1.5;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        #description-display.active {
+        #modal-overlay.active {
             opacity: 1;
-            transform: translateX(-50%) translateY(0);
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: #2a2a2a;
+            border: 1px solid #505050;
+            border-radius: 12px;
+            padding: 25px;
+            width: 400px;
+            max-width: 85%;
+            text-align: left;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #fff;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        .modal-body {
+            font-size: 1em;
+            color: #ccc;
+            line-height: 1.6;
+            min-height: 60px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .modal-btn {
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            border: none;
+            transition: background-color 0.2s;
+        }
+
+        .btn-cancel {
+            background-color: transparent;
+            color: #aaa;
+            border: 1px solid #444;
+        }
+        .btn-cancel:hover {
             color: #e0e0e0;
+            border-color: #666;
+        }
+
+        .btn-confirm {
+            background-color: #e0e0e0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        .btn-confirm:hover {
+            background-color: #fff;
         }
 
         @media (max-width: 768px) {
@@ -116,11 +186,6 @@
                 flex-direction: column;
                 gap: 20px;
             }
-
-            #description-display {
-                width: 90%;
-                font-size: 0.9em;
-            }
         }
     </style>
 </head>
@@ -132,32 +197,77 @@
         <h1>选择项目</h1> 
 
         <div id="button-container">
-            <a href="../bitratecalculator" class="tool-button" data-desc="集成码率、文件体积、录制时长及压缩比计算的数据工具">
+            <div class="tool-button" data-href="../bitratecalculator" data-desc="集成码率、文件体积、录制时长及压缩比计算的数据工具">
                 码率计算器
-            </a>
+            </div>
 
-            <a href="../fileconverter" class="tool-button" data-desc="将视频、文档或音频一键封装为独立 HTML 网页，支持离线预览与原件下载">
+            <div class="tool-button" data-href="../fileconverter" data-desc="将视频、文档或音频一键封装为独立 HTML 网页，支持离线预览与原件下载">
                 文件转HTML
-            </a>
+            </div>
         </div>
+    </div>
 
-        <div id="description-display"></div>
+    <div id="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header" id="modal-title">标题</div>
+            <div class="modal-body" id="modal-description">描述内容</div>
+            <div class="modal-footer">
+                <button class="modal-btn btn-cancel" id="modal-close">取消</button>
+                <button class="modal-btn btn-confirm" id="modal-go">访问</button>
+            </div>
+        </div>
     </div>
 
     <script>
         const buttons = document.querySelectorAll('.tool-button');
-        const displayArea = document.getElementById('description-display');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-description');
+        const btnGo = document.getElementById('modal-go');
+        const btnClose = document.getElementById('modal-close');
+
+        let currentTargetUrl = '';
+
+        function openModal(title, desc, url) {
+            modalTitle.textContent = title;
+            modalDesc.textContent = desc;
+            currentTargetUrl = url;
+            modalOverlay.classList.add('active');
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            currentTargetUrl = '';
+        }
 
         buttons.forEach(button => {
-            button.addEventListener('mouseenter', () => {
+            button.addEventListener('click', () => {
+                const title = button.innerText.trim(); 
                 const desc = button.getAttribute('data-desc');
-                displayArea.textContent = desc;
-                displayArea.classList.add('active');
+                const url = button.getAttribute('data-href');
+                
+                openModal(title, desc, url);
             });
+        });
 
-            button.addEventListener('mouseleave', () => {
-                displayArea.classList.remove('active');
-            });
+        btnGo.addEventListener('click', () => {
+            if (currentTargetUrl) {
+                window.location.href = currentTargetUrl;
+            }
+        });
+
+        btnClose.addEventListener('click', closeModal);
+
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+                closeModal();
+            }
         });
     </script>
 
