@@ -139,6 +139,7 @@
             color: #ccc;
             line-height: 1.6;
             min-height: 60px;
+            padding: 0 5px;
         }
 
         .modal-footer {
@@ -197,7 +198,7 @@
         <h1>选择项目</h1> 
 
         <div id="button-container">
-            <div class="tool-button" data-href="../encoder_perf_test/" data-desc="（暂无描述）">
+            <div class="tool-button" data-href="../encoder_perf_test/" data-desc="基于 4K 60FPS HDR 高规格素材，深度横评各种编码格式及编码器在不同码率下的极限编码质量。提供交互式 VMAF-码率性能曲线图、详细测试数据矩阵以及完整的 FFmpeg 命令行预设，以直观对比不同编码器的性能。">
                 编码器性能测试
             </div>
         </div>
@@ -226,7 +227,7 @@
 
         function openModal(title, desc, url) {
             modalTitle.textContent = title;
-            modalDesc.textContent = desc || "（暂无描述）";
+            modalDesc.textContent = desc;
             currentTargetUrl = url;
             modalOverlay.classList.add('active');
         }
