@@ -174,6 +174,35 @@
         .top-bar-row {
             display: flex; gap: 5px; margin-bottom: 5px;
         }
+
+        .toast-msg {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.9); 
+            background: rgba(20, 20, 25, 0.95);
+            border: 1px solid rgba(255, 80, 80, 0.5);
+            color: #ff5555;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease-out;
+            pointer-events: none;
+            z-index: 2000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast-msg.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) scale(1); 
+        }
     </style>
 </head>
 <body>
@@ -262,6 +291,11 @@
             </div>
         </div>
     </div>
+
+    <div id="custom_toast" class="toast-msg">
+        <span>⚠️</span><span id="toast_text"></span>
+    </div>
+
     <script type="module">
         // --- SHADER CODE (GLSL for WebGL, WGSL for WebGPU) ---
         const getVertexShaderCodeGLSL = () => `#version 300 es
@@ -802,6 +836,21 @@
             let activeCleanup = null;
             let activeConfigUpdate = null; 
 
+            const toastEl = document.getElementById('custom_toast');
+            const toastText = document.getElementById('toast_text');
+            let toastTimer = null;
+
+            const showToast = (msg) => {
+                toastText.textContent = msg;
+                toastEl.classList.add('show');
+                
+                if (toastTimer) clearTimeout(toastTimer);
+                
+                toastTimer = setTimeout(() => {
+                    toastEl.classList.remove('show');
+                }, 2000);
+            };
+
             // Shared UI Helpers
             const updateScaleText = () => {
                 const val = scaleLevels[currentScaleIdx];
@@ -894,7 +943,13 @@
             btnWater.onclick = () => toggle(btnWater, 'water');
             btnCloud.onclick = () => toggle(btnCloud, 'cloud'); 
             btnBloom.onclick = () => toggle(btnBloom, 'bloom');
-            btnHdr.onclick = () => toggle(btnHdr, 'hdr');
+            btnHdr.onclick = () => {
+                if (!isWebGPU) {
+                    showToast("HDR is only available in WebGPU mode");
+                    return;
+                }
+                toggle(btnHdr, 'hdr');
+            };
             btnRatio.onclick = () => toggle(btnRatio, 'force16_9');
 
             btnFull.onclick = () => {
@@ -1391,12 +1446,21 @@
                 } else {
                     isWebGPU = false;
                     btnMode.classList.remove('active');
+                    
+                    if (flags.hdr) {
+                        flags.hdr = false;
+                        btnHdr.classList.remove('active');
+                    }
                     launchWebGL();
                 }
             };
 
             applyPreset(presets.mid); 
             if(!flags.force16_9) toggle(btnRatio, 'force16_9');
+
+            if (!isWebGPU && flags.hdr) {
+                toggle(btnHdr, 'hdr'); 
+            }
             
             launchWebGL();
         }
