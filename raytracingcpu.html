@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Software-Based Ray Tracing Demo</title>
+    <style>
+        body { 
+            margin: 0; background: #000; color: #eee; 
+            font-family: "PingFang SC", sans-serif; 
+            overflow: hidden;
+            display: flex; justify-content: center; align-items: center; 
+            width: 100vw; height: 100vh;
+            touch-action: none;
+        }
+        
+        canvas { 
+            display: block; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.5); 
+            image-rendering: pixelated; 
+        }
+        
+        #ui {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(10, 10, 12, 0.85); 
+            padding: 12px; 
+            border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            width: 250px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            user-select: none;
+            transform-origin: 0 0; 
+            will-change: transform, width, height, padding;
+            transition: background 0.3s, box-shadow 0.3s, padding 0.3s;
+            pointer-events: auto;
+            z-index: 999;
+            overflow: hidden;
+        }
+        
+        #ui.collapsed {
+            width: 28px !important; height: 28px !important;
+            padding: 0 !important;
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            backdrop-filter: none; box-shadow: none;
+        }
+
+        #ui * { font-family: "PingFang SC", sans-serif; }
+
+        .back-btn {
+            display: block;
+            box-sizing: border-box;
+            width: 100%;
+            background: #222; 
+            border: 1px solid #333; 
+            color: #777;
+            padding: 4px 0; 
+            margin-bottom: 5px;
+            border-radius: 2px; 
+            font-size: 9px; font-weight: 700; 
+            text-align: center; text-decoration: none; 
+            letter-spacing: 1px;
+            transition: background 0.1s, color 0.1s;
+        }
+        .back-btn:hover { 
+            background: #333; color: #fff; border-color: #555; 
+        }
+        #ui.collapsed .back-btn { display: none; }
+
+        .header {
+            font-size: 11px; font-weight: 700; color: #fff; 
+            padding-bottom: 4px; margin-bottom: 2px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: space-between;
+            height: 20px;
+        }
+        
+        .title-text { display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px; }
+        .title-text::before { content: ''; width: 3px; height: 10px; background: #ffd700; border-radius: 1px; box-shadow: 0 0 5px #ffd700; }
+
+        .min-btn {
+            width: 28px; height: 28px; background: transparent; border: none; color: #ffd700;
+            font-size: 16px; line-height: 1; font-weight: 300;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            margin-right: -8px; margin-top: -4px; transition: transform 0.3s;
+        }
+        .min-btn:hover { color: #fff; }
+
+        #ui.collapsed .min-btn { margin: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); }
+        #ui.collapsed .header { border: none; padding: 0; margin: 0; justify-content: center; height: 100%; }
+        #ui.collapsed .title-text { display: none; }
+        #ui_body { transition: opacity 0.2s; }
+        #ui.collapsed #ui_body { display: none; opacity: 0; }
+
+        .control-group { margin-top: 5px; } 
+        .control-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1px; }
+        .label { font-size: 9px; color: #888; font-weight: 500; transform: scale(0.95); transform-origin: left; }
+        .value { font-size: 9px; color: #ffd700; font-weight: 500; font-variant-numeric: tabular-nums;}
+        
+        .preset-container { display: flex; gap: 2px; margin-top: 2px; }
+        .preset-btn {
+            flex: 1; background: #222; border: 1px solid #333; color: #777;
+            padding: 3px 0; border-radius: 2px; font-size: 9px; font-weight: 500;
+            cursor: pointer; transition: background 0.1s, color 0.1s;
+            box-sizing: border-box; white-space: nowrap;
+        }
+        .preset-btn:hover { background: #333; color: #fff; }
+        .preset-btn.active { background: #ffd700; color: #000; border-color: #ffd700; }
+
+        input[type=range] {
+            width: 100%; -webkit-appearance: none; background: transparent; margin: 2px 0 0 0;
+            height: 6px; cursor: pointer; display: block;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 9px; width: 9px; border-radius: 50%; 
+            background: #ffd700; margin-top: -3.5px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 2px; background: #333; border-radius: 1px;
+        }
+        
+        .switch-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .switch-row.compact { border-top: none; margin-top: 2px; padding-top: 0; }
+        
+        .toggle-container { display: flex; gap: 2px; flex: 1; justify-content: flex-end;}
+        
+        .toggle-btn {
+            background: #222;
+            border: 1px solid #333; 
+            color: #777; 
+            padding: 3px 6px; 
+            border-radius: 2px; 
+            font-size: 9px; font-weight: 500;
+            cursor: pointer; 
+            transition: background 0.1s, color 0.1s;
+            box-sizing: border-box; 
+            white-space: nowrap;
+            text-align: center;
+        }
+        .toggle-btn:hover { background: #333; color: #fff; }
+        .toggle-btn.active { background: #ffd700; color: #000; border-color: #ffd700; }
+
+        .stats { 
+            margin-top: 8px; font-size: 9px; color: #555; font-weight: 500; 
+            letter-spacing: 0.5px; 
+            display: grid; 
+            grid-template-columns: 1.2fr 1fr 1fr; 
+            align-items: center;
+        }
+        .stats > span:nth-child(1) { text-align: left; }
+        .stats > span:nth-child(2) { text-align: center; }
+        .stats > span:nth-child(3) { text-align: right; }
+
+        #fps, #res_text, #zoom_text { color: #888; font-weight: 500; }
+        
+        .warning-box {
+            margin-top: 3px; padding: 3px;
+            background: rgba(0, 100, 255, 0.1); border: 1px solid rgba(0, 100, 255, 0.3);
+            border-radius: 2px; color: #66aaff; font-size: 8px; line-height: 1.2;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <a href="./stress_tests/" class="back-btn">← BACK</a>
+
+        <div class="header">
+            <div class="title-text">GRAPHICS SETTINGS</div>
+            <button id="btn_min" class="min-btn">–</button>
+        </div>
+        
+        <div id="ui_body">
+            <div class="control-group">
+                <div class="control-row"><span class="label">PRESETS</span></div>
+                <div class="preset-container">
+                    <button id="pre_low" class="preset-btn">LOW</button>
+                    <button id="pre_mid" class="preset-btn">MID</button>
+                    <button id="pre_high" class="preset-btn">HIGH</button>
+                    <button id="pre_ultra" class="preset-btn">ULTRA</button>
+                    <button id="pre_extreme" class="preset-btn">EXTREME</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="control-row"><span class="label">ROTATION SPD</span><span id="val_rotate" class="value">0.1</span></div>
+                <input type="range" id="in_rotate" min="0" max="1" step="0.05" value="0.1">
+            </div>
+
+            <div class="control-group">
+                <div class="control-row"><span class="label">FRACTAL SPD</span><span id="val_deform" class="value">0.5</span></div>
+                <input type="range" id="in_deform" min="0" max="1" step="0.05" value="0.5">
+            </div>
+
+            <div class="control-group">
+                <div class="control-row"><span class="label">REFLECTION BOUNCES</span><span id="val_bounces" class="value">6</span></div>
+                <input type="range" id="in_bounces" min="1" max="8" step="1" value="6">
+            </div>
+
+            <div class="control-group">
+                <div class="control-row"><span class="label">SHADOW SAMPLES</span><span id="val_shadow" class="value">16</span></div>
+                <input type="range" id="in_shadow" min="0" max="5" step="1" value="3">
+            </div>
+
+            <div class="control-group">
+                <div class="control-row"><span class="label">FAR CLIP</span><span id="val_far" class="value">200</span></div>
+                <input type="range" id="in_far" min="10" max="200" step="10" value="200">
+            </div>
+
+            <div class="control-group">
+                <div class="control-row"><span class="label">RENDER SCALE</span><span id="val_scale" class="value">1.0x</span></div>
+                <input type="range" id="in_scale" min="0" max="8" step="1" value="8">
+            </div>
+            <div id="limit_warning" class="warning-box">ℹ️ Info</div>
+
+            <div class="control-group">
+                <div class="control-row"><span class="label">TIME</span><span id="val_time" class="value">0.25</span></div>
+                <input type="range" id="in_time" min="0" max="1" step="0.01" value="0.25">
+            </div>
+
+            <div class="switch-row">
+                <span class="label">SCENE</span>
+                <div class="toggle-container">
+                    <button id="btn_fog" class="toggle-btn active">FOG</button>
+                    <button id="btn_water" class="toggle-btn active">WATER</button>
+                    <button id="btn_cloud" class="toggle-btn active">CLOUD</button>
+                    <button id="btn_bloom" class="toggle-btn active">BLOOM</button>
+                </div>
+            </div>
+
+            <div class="switch-row compact">
+                <span class="label">DISPLAY</span>
+                <div class="toggle-container">
+                    <button id="btn_ratio" class="toggle-btn feature-btn active">FORCE 16:9</button>
+                    <button id="btn_full" class="toggle-btn feature-btn">FULLSCREEN</button>
+                </div>
+            </div>
+
+            <div class="stats">
+                <span>RES: <span id="res_text">-</span></span>
+                <span>ZOOM: <span id="zoom_text">1.6</span></span>
+                <span><span id="fps_label">FPS</span>: <span id="fps">0</span></span>
+            </div>
+        </div>
+    </div>
+    <canvas id="cpuCanvas"></canvas>
+
+    <script id="worker-code" type="javascript/worker">
+        // --- Vector Math Library (mimicking GLSL behavior) ---
+        
+        const PI = 3.14159265;
+        
+        function fract(x) { return x - Math.floor(x); }
+        function fract3(v) { return [v[0] - Math.floor(v[0]), v[1] - Math.floor(v[1]), v[2] - Math.floor(v[2])]; }
+        function mix(x, y, a) { return x * (1 - a) + y * a; }
+        function mix3(v1, v2, a) { return [mix(v1[0],v2[0],a), mix(v1[1],v2[1],a), mix(v1[2],v2[2],a)]; }
+        function dot3(v1, v2) { return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2]; }
+        function cross(v1, v2) { return [v1[1]*v2[2] - v1[2]*v2[1], v1[2]*v2[0] - v1[0]*v2[2], v1[0]*v2[1] - v1[1]*v2[0]]; }
+        function normalize(v) { let l = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]); return l === 0 ? [0,0,0] : [v[0]/l, v[1]/l, v[2]/l]; }
+        function length3(v) { return Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]); }
+        function clamp(v, min, max) { return Math.min(Math.max(v, min), max); }
+        function smoothstep(e0, e1, x) {
+            let t = clamp((x - e0) / (e1 - e0), 0.0, 1.0);
+            return t * t * (3.0 - 2.0 * t);
+        }
+        function reflect(i, n) { 
+            let d = 2 * dot3(i, n);
+            return [i[0] - n[0]*d, i[1] - n[1]*d, i[2] - n[2]*d];
+        }
+        
+        // --- Rotation Logic ---
+        function rot2D(p, a) { 
+            let s = Math.sin(a), c = Math.cos(a);
+            return [
+                c * p[0] + s * p[1], 
+                -s * p[0] + c * p[1]
+            ];
+        }
+        
+        // --- Shader Logic Port ---
+
+        function hash12(p) { // p is vec2
+            let p3x = fract(p[0] * .1031);
+            let p3y = fract(p[1] * .1031);
+            let p3z = fract(p[0] * .1031);
+            let d = dot3([p3x, p3y, p3z], [p3y + 33.33, p3z + 33.33, p3x + 33.33]);
+            p3x += d; p3y += d; p3z += d;
+            return fract((p3x + p3y) * p3z);
+        }
+
+        function noise(p) { // p is vec2
+            let ix = Math.floor(p[0]), iy = Math.floor(p[1]);
+            let fx = fract(p[0]), fy = fract(p[1]);
+            let ux = fx * fx * (3.0 - 2.0 * fx);
+            let uy = fy * fy * (3.0 - 2.0 * fy);
+            
+            let a = hash12([ix, iy]);
+            let b = hash12([ix + 1.0, iy]);
+            let c = hash12([ix, iy + 1.0]);
+            let d = hash12([ix + 1.0, iy + 1.0]);
+            
+            return mix(mix(a, b, ux), mix(c, d, ux), uy) * 2.0 - 1.0;
+        }
+
+        function fbm(p) { // p is vec2
+            let v = 0.0;
+            let a = 0.5;
+            let px = p[0], py = p[1];
+            let s = 0.4794255, c = 0.8775825; // sin(0.5), cos(0.5)
+            
+            for(let i = 0; i < 4; i++){
+                v += a * noise([px, py]);
+                let nx = (c * px + s * py) * 2.0 + 1.2;
+                let ny = (-s * px + c * py) * 2.0 + 3.4;
+                px = nx; py = ny;
+                a *= 0.5;
+            }
+            return v;
+        }
+
+        function hash33(p) { // p is vec3
+            let p3 = fract3([p[0] * .1031, p[1] * .1031, p[2] * .1031]);
+            let d = dot3(p3, [p3[2] + 31.32, p3[0] + 31.32, p3[1] + 31.32]);
+            p3[0]+=d; p3[1]+=d; p3[2]+=d;
+            return fract((p3[0] + p3[1]) * p3[2]);
+        }
+
+        function noise3D(p) { // p is vec3
+            let ix = Math.floor(p[0]), iy = Math.floor(p[1]), iz = Math.floor(p[2]);
+            let fx = fract(p[0]), fy = fract(p[1]), fz = fract(p[2]);
+            let ux = fx * fx * (3.0 - 2.0 * fx);
+            let uy = fy * fy * (3.0 - 2.0 * fy);
+            let uz = fz * fz * (3.0 - 2.0 * fz);
+            
+            let n000 = hash33([ix, iy, iz]);
+            let n100 = hash33([ix+1, iy, iz]);
+            let n010 = hash33([ix, iy+1, iz]);
+            let n110 = hash33([ix+1, iy+1, iz]);
+            let n001 = hash33([ix, iy, iz+1]);
+            let n101 = hash33([ix+1, iy, iz+1]);
+            let n011 = hash33([ix, iy+1, iz+1]);
+            let n111 = hash33([ix+1, iy+1, iz+1]);
+            
+            return mix(
+                mix(mix(n000, n100, ux), mix(n010, n110, ux), uy),
+                mix(mix(n001, n101, ux), mix(n011, n111, ux), uy),
+                uz
+            );
+        }
+
+        function fbm3D_Fog(p) {
+            let v = 0.0;
+            let a = 0.5;
+            let px=p[0], py=p[1], pz=p[2];
+            for(let i = 0; i < 2; i++){
+                v += a * noise3D([px, py, pz]);
+                px = px * 2.0 + 0.1;
+                py = py * 2.0 + 0.1;
+                pz = pz * 2.0 + 0.1;
+                a *= 0.5;
+            }
+            return v;
+        }
+
+        // --- Render Context (Uniforms) ---
+        let u = {}; // Will be populated by message
+
+        function getWaterHeight(p) {
+            if ((u.flags & 2) === 0) return 0.0;
+            let t = u.waterTime;
+            let val1 = fbm([p[0] * .4 + t * .06, p[2] * .4 + t * .03]);
+            let val2 = fbm([p[0] * .8 - (-t * .20), p[2] * .8 - t * .25]);
+            return (val1 * 1.5 + val2 * .06) * .25;
+        }
+
+        function map(p_in) {
+            let p = [p_in[0], p_in[1], p_in[2]];
+            
+            // 1. Initial Rotate XZ
+            let rxz = rot2D([p[0], p[2]], u.rotAngle);
+            p[0] = rxz[0]; p[2] = rxz[1]; 
+            
+            let s = 1.0;
+            let t = u.fractalTime * .1;
+            
+            for(let i = 0; i < 5; i++) {
+                p[0] = Math.abs(p[0]) - .4;
+                p[1] = Math.abs(p[1]) - .3;
+                p[2] = Math.abs(p[2]) - .3;
+                
+                // Rot XY
+                let xy = rot2D([p[0], p[1]], .5 + t * .1);
+                p[0] = xy[0]; p[1] = xy[1];
+                
+                // Rot XZ
+                let xz = rot2D([p[0], p[2]], .8 - t * .05);
+                p[0] = xz[0]; p[2] = xz[1];
+                
+                p[0]*=1.5; p[1]*=1.5; p[2]*=1.5;
+                s *= 1.5;
+            }
+            
+            // Distance Calculation
+            let dx = Math.max(Math.abs(p[0]) - .1, 0);
+            let dy = Math.max(Math.abs(p[1]) - 2.0, 0);
+            let dz = Math.max(Math.abs(p[2]) - .1, 0);
+            let dLen = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            
+            let dF = (dLen - .05) / s;
+            let dW = p_in[1] - (-1.2);
+            
+            if (dF < dW) return [dF, 1.0]; // Fractal
+            else return [dW, 2.0]; // Water
+        }
+
+        function rayMarch(ro, rd, maxD) {
+            let t = 0.1;
+            for(let i = 0; i < 256; i++) {
+                let p = [ro[0] + rd[0]*t, ro[1] + rd[1]*t, ro[2] + rd[2]*t];
+                let res = map(p);
+                if(res[0] < .0015) return [t, res[1]];
+                if(t > maxD) break;
+                t += res[0] * .8;
+            }
+            return [-1.0, -1.0];
+        }
+
+        function calcNormal(p) {
+            let e = 0.001;
+            let v1 = map([p[0]+e, p[1]-e, p[2]-e])[0];
+            let v2 = map([p[0]-e, p[1]-e, p[2]+e])[0];
+            let v3 = map([p[0]-e, p[1]+e, p[2]-e])[0];
+            let v4 = map([p[0]+e, p[1]+e, p[2]+e])[0];
+            
+            let nx = v1 - v2 - v3 + v4;
+            let ny = -v1 - v2 + v3 + v4;
+            let nz = -v1 + v2 - v3 + v4;
+            
+            return normalize([nx, ny, nz]);
+        }
+
+        function softShadow(ro, rd, k) {
+            let samples = u.shadowSamples;
+            if (samples <= 0) return 1.0;
+            let res = 1.0;
+            let t = 0.05;
+            for(let i = 0; i < 64; i++) {
+                if(i >= samples) break;
+                let h = map([ro[0]+rd[0]*t, ro[1]+rd[1]*t, ro[2]+rd[2]*t])[0];
+                res = Math.min(res, k * h / t);
+                t += clamp(h, 0.02, 0.2);
+                if(res < .01 || t > 8.0) break;
+            }
+            return clamp(res, 0.0, 1.0);
+        }
+
+        function getSkyColor(rd) {
+            let sunDir = normalize(u.lightDir);
+            let sh = sunDir[1];
+            let sd = Math.max(dot3(rd, sunDir), 0.0);
+            
+            let col1 = mix3([.6,.3,.1], [.4,.45,.6], smoothstep(-.1, .4, sh));
+            let col2 = mix3([.02,.02,.05], [.02,.05,.15], smoothstep(-.2, .5, sh));
+            let col = mix3(col1, col2, Math.max(rd[1] + .05, 0.0));
+            
+            let bloom = (u.flags & 8) !== 0;
+            let spec = Math.pow(sd, 20.0) * 0.5;
+            col[0] += u.lightColor[0] * spec; 
+            col[1] += u.lightColor[1] * spec; 
+            col[2] += u.lightColor[2] * spec;
+
+            let cloudDen = 0.0;
+            if ((u.flags & 4) !== 0 && rd[1] > 0.01) {
+                let t = u.fractalTime * 0.1;
+                let div = (rd[1] + 0.15);
+                let sp = [rd[0]/div * 1.5, rd[2]/div * 1.5];
+                
+                let val = fbm([sp[0] + t, sp[1] + t * 0.5]);
+                val += fbm([sp[0] * 2.5 - t * 0.5, sp[1] * 2.5]) * 0.5;
+                
+                cloudDen = smoothstep(0.1, 0.85, val);
+                cloudDen *= smoothstep(0.0, 0.4, rd[1]);
+                
+                if (cloudDen > 0.01) {
+                    let base = 0.85; 
+                    let scatterM = Math.pow(sd, 12.0) * 1.5;
+                    let scatter = [u.lightColor[0]*scatterM, u.lightColor[1]*scatterM, u.lightColor[2]*scatterM];
+                    col[0] = mix(col[0], base + scatter[0], cloudDen);
+                    col[1] = mix(col[1], base + scatter[1], cloudDen);
+                    col[2] = mix(col[2], base + scatter[2], cloudDen);
+                }
+            }
+            
+            let sunPower = bloom ? 1024.0 : 300.0;
+            let sunCoreVal = Math.pow(sd, sunPower) * 100.0;
+            col[0] += 1.0 * sunCoreVal * (1.0 - cloudDen);
+            col[1] += 0.95 * sunCoreVal * (1.0 - cloudDen);
+            col[2] += 0.9 * sunCoreVal * (1.0 - cloudDen);
+            
+            return col;
+        }
+
+        self.onmessage = function(e) {
+            const data = e.data;
+            u = data.uniforms;
+            const startY = data.startY;
+            const endY = data.endY;
+            const width = u.width;
+            const height = u.height;
+            const buffer = new Float32Array((endY - startY) * width * 4); 
+
+            let cp = u.cameraPos;
+            let cl = u.cameraLookAt;
+            let f = normalize([cl[0]-cp[0], cl[1]-cp[1], cl[2]-cp[2]]);
+            let r = normalize(cross(f, [0, 1, 0]));
+            let up = cross(r, f);
+            let asp = width / height;
+            let sunD = normalize(u.lightDir);
+            let bloom = (u.flags & 8) !== 0;
+            let sunCMult = bloom ? 4.0 : 3.0;
+            let sunC = [u.lightColor[0]*u.lightDir[3]*sunCMult, u.lightColor[1]*u.lightDir[3]*sunCMult, u.lightColor[2]*u.lightDir[3]*sunCMult];
+
+            let ptr = 0;
+            for(let y = startY; y < endY; y++) {
+                let gl_y = height - 1 - y;
+                
+                for(let x = 0; x < width; x++) {
+                    let uvy = (gl_y + 0.5) / height * 2.0 - 1.0;
+                    let uvx = (x + 0.5) / width * 2.0 - 1.0;
+                    
+                    let rVec = [r[0]*uvx*asp, r[1]*uvx*asp, r[2]*uvx*asp];
+                    let uVec = [up[0]*uvy, up[1]*uvy, up[2]*uvy];
+                    let dir = [f[0] + (rVec[0]+uVec[0])/u.zoom, f[1] + (rVec[1]+uVec[1])/u.zoom, f[2] + (rVec[2]+uVec[2])/u.zoom];
+                    let rd = normalize(dir);
+                    
+                    let col = [0, 0, 0];
+                    let tp = [1, 1, 1];
+                    let cro = [cp[0], cp[1], cp[2]];
+                    let crd = [rd[0], rd[1], rd[2]];
+                    
+                    for(let b = 0; b < 12; b++) {
+                        if(b >= u.bounces) break;
+                        
+                        let hit = rayMarch(cro, crd, u.farClip);
+                        if(hit[0] > 0.0) {
+                            let hp = [cro[0]+crd[0]*hit[0], cro[1]+crd[1]*hit[0], cro[2]+crd[2]*hit[0]];
+                            let sha = softShadow(hp, sunD, 8.0);
+                            
+                            if(hit[1] > 1.5) { // Water
+                                let h = getWaterHeight(hp);
+                                let n = [0, 1, 0];
+                                if ((u.flags & 2) !== 0) {
+                                    let e = 0.05;
+                                    let h1 = h - getWaterHeight([hp[0]+e, hp[1], hp[2]]);
+                                    let h2 = h - getWaterHeight([hp[0], hp[1], hp[2]+e]);
+                                    let rough = normalize([h1, e, h2]);
+                                    n = normalize(mix3([0,1,0], rough, 0.8));
+                                }
+                                
+                                let half = normalize([sunD[0]-crd[0], sunD[1]-crd[1], sunD[2]-crd[2]]);
+                                let ndoth = Math.max(dot3(n, half), 0.0);
+                                let spe = Math.pow(ndoth, 600.0);
+                                let glow = bloom ? (Math.pow(ndoth, 1000.0) * 0.8) : 0.0;
+                                
+                                let term1 = [0.005*0.3*(0.5+0.5*sha), 0.01*0.3*(0.5+0.5*sha), 0.02*0.3*(0.5+0.5*sha)];
+                                let term2 = [(spe+glow)*sha*1.5, (spe+glow)*sha*1.5, (spe+glow)*sha*1.5];
+                                
+                                col[0] += tp[0] * (term1[0] + sunC[0]*term2[0]);
+                                col[1] += tp[1] * (term1[1] + sunC[1]*term2[1]);
+                                col[2] += tp[2] * (term1[2] + sunC[2]*term2[2]);
+                                
+                                let f0 = 0.02;
+                                let fresnel = f0 + (1.0 - f0) * Math.pow(1.0 - Math.max(dot3([-crd[0],-crd[1],-crd[2]], n), 0.0), 5.0);
+                                tp[0] *= fresnel; tp[1] *= fresnel; tp[2] *= fresnel;
+                                
+                                cro = [hp[0]+n[0]*0.05, hp[1]+n[1]*0.05, hp[2]+n[2]*0.05];
+                                crd = reflect(crd, n);
+                            } else { // Brass
+                                let n = calcNormal(hp);
+                                let half = normalize([sunD[0]-crd[0], sunD[1]-crd[1], sunD[2]-crd[2]]);
+                                let ndoth = Math.max(dot3(n, half), 0.0);
+                                let spe = Math.pow(ndoth, 2.0 / (0.12*0.12));
+                                
+                                let metalGlow = [0,0,0];
+                                if(bloom) {
+                                    let wideSpec = Math.pow(ndoth, 12.0);
+                                    let mg = wideSpec * 0.8 * sha;
+                                    metalGlow = [1.0*mg, 0.8*mg, 0.4*mg];
+                                }
+                                
+                                let amb = [0.85*0.04*u.lightColor[3]*0.5, 0.65*0.04*u.lightColor[3]*0.5, 0.25*0.05*u.lightColor[3]*0.5];
+                                let specTerm = [1.2*spe*sha*sunC[0] + metalGlow[0], 1.0*spe*sha*sunC[1] + metalGlow[1], 0.8*spe*sha*sunC[2] + metalGlow[2]];
+                                
+                                col[0] += tp[0] * (amb[0] + specTerm[0]);
+                                col[1] += tp[1] * (amb[1] + specTerm[1]);
+                                col[2] += tp[2] * (amb[2] + specTerm[2]);
+                                
+                                let f0 = [0.85, 0.65, 0.25];
+                                let vd = Math.max(dot3([-crd[0], -crd[1], -crd[2]], n), 0.0);
+                                let pow5 = Math.pow(1.0 - vd, 5.0);
+                                let fres = [ (f0[0] + (1.0-f0[0])*pow5)*0.8, (f0[1] + (1.0-f0[1])*pow5)*0.8, (f0[2] + (1.0-f0[2])*pow5)*0.8 ];
+                                
+                                tp[0] *= fres[0]; tp[1] *= fres[1]; tp[2] *= fres[2];
+                                cro = [hp[0]+n[0]*0.01, hp[1]+n[1]*0.01, hp[2]+n[2]*0.01];
+                                crd = reflect(crd, n);
+                            }
+                        } else {
+                            let sk = getSkyColor(crd);
+                            col[0] += tp[0]*sk[0]; col[1] += tp[1]*sk[1]; col[2] += tp[2]*sk[2];
+                            break;
+                        }
+                        if (Math.sqrt(tp[0]*tp[0]+tp[1]*tp[1]+tp[2]*tp[2]) < 0.002) break;
+                    }
+                    
+                    if((u.flags & 1) !== 0) {
+                        let ph = rayMarch(cp, rd, u.farClip);
+                        let fl = Math.min(150.0, u.farClip);
+                        let md = (ph[0] > 0.0) ? Math.min(fl, ph[0]) : fl;
+                        let sl = md / 12.0;
+                        let fa = [0,0,0];
+                        let ft = 1.0;
+                        
+                        for(let i = 1; i <= 12; i++) {
+                            let t = sl * i;
+                            let p = [cp[0]+rd[0]*t, cp[1]+rd[1]*t, cp[2]+rd[2]*t];
+                            if(p[1] < -2.5 || p[1] > 1.5) continue;
+                            
+                            let den = smoothstep(.2, .8, fbm3D_Fog([p[0]*.5+u.fractalTime*.1, p[1]*.5+u.fractalTime*.1, p[2]*.5+u.fractalTime*.1])) * Math.exp(-(p[1]+1.)*2.) * 0.08;
+                            
+                            if(den > 0.001) {
+                                let sha = softShadow(p, normalize(u.lightDir), 8.0) * Math.min(1.0, 4.0 * map(p)[0] / t);
+                                let lightC = [u.lightColor[0]*sunC[0]*sha + 0.01, u.lightColor[1]*sunC[1]*sha + 0.0125, u.lightColor[2]*sunC[2]*sha + 0.015];
+                                fa[0] += lightC[0] * den * sl * ft;
+                                fa[1] += lightC[1] * den * sl * ft;
+                                fa[2] += lightC[2] * den * sl * ft;
+                                ft *= Math.exp(-den * sl);
+                            }
+                            if(ft < 0.05) break;
+                        }
+                        col[0] += fa[0]; col[1] += fa[1]; col[2] += fa[2];
+                    }
+                    
+                    col[0] *= 1.3; col[1] *= 1.3; col[2] *= 1.3;
+                    let lum = dot3(col, [0.2126, 0.7152, 0.0722]);
+                    col = mix3([lum, lum, lum], col, 1.2);
+                    
+                    function tonemap(c) { return clamp((c*(2.51*c+0.03))/(c*(2.43*c+0.59)+0.14), 0.0, 1.0); }
+                    col[0] = tonemap(col[0]); col[1] = tonemap(col[1]); col[2] = tonemap(col[2]);
+                    
+                    let vig = 1.0 - length3([uvx, uvy, 0]) * 0.0;
+                    col[0] *= vig; col[1] *= vig; col[2] *= vig;
+                    
+                    col[0] = Math.pow(col[0], 0.4545);
+                    col[1] = Math.pow(col[1], 0.4545);
+                    col[2] = Math.pow(col[2], 0.4545);
+                    
+                    buffer[ptr++] = col[0];
+                    buffer[ptr++] = col[1];
+                    buffer[ptr++] = col[2];
+                    buffer[ptr++] = 1.0;
+                }
+            }
+            
+            self.postMessage({ 
+                buffer: buffer, 
+                startY: startY, 
+                endY: endY 
+            }, [buffer.buffer]); 
+        };
+    </script>
+
+    <script type="module">
+        async function init() {
+            const canvas = document.getElementById('cpuCanvas');
+            const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+            
+            const ui = document.getElementById('ui');
+            const btnMin = document.getElementById('btn_min');
+            const fpsElem = document.getElementById('fps');
+            const resElem = document.getElementById('res_text');
+            const zoomElem = document.getElementById('zoom_text');
+            const warningBox = document.getElementById('limit_warning');
+            
+            const inRotate = document.getElementById('in_rotate');
+            const inDeform = document.getElementById('in_deform');
+            const inBounces = document.getElementById('in_bounces');
+            const inShadow = document.getElementById('in_shadow'); 
+            const inFar = document.getElementById('in_far');
+            const inScale = document.getElementById('in_scale');
+            const inTime = document.getElementById('in_time');
+            
+            const valRotate = document.getElementById('val_rotate');
+            const valDeform = document.getElementById('val_deform');
+            const valBounces = document.getElementById('val_bounces');
+            const valShadow = document.getElementById('val_shadow'); 
+            const valFar = document.getElementById('val_far'); 
+            const valScale = document.getElementById('val_scale');
+            const valTime = document.getElementById('val_time');
+
+            const btnFog = document.getElementById('btn_fog');
+            const btnWater = document.getElementById('btn_water');
+            const btnCloud = document.getElementById('btn_cloud'); 
+            const btnBloom = document.getElementById('btn_bloom');
+            const btnRatio = document.getElementById('btn_ratio');
+            const btnFull = document.getElementById('btn_full');
+
+            const preLow = document.getElementById('pre_low');
+            const preMid = document.getElementById('pre_mid');
+            const preHigh = document.getElementById('pre_high');
+            const preUltra = document.getElementById('pre_ultra');
+            const preExtreme = document.getElementById('pre_extreme');
+
+            const workerScriptBlob = new Blob([document.getElementById('worker-code').textContent], {type: 'application/javascript'});
+            const workerScriptURL = URL.createObjectURL(workerScriptBlob);
+            
+            const logicalThreads = navigator.hardwareConcurrency || 4;
+            const workerCount = logicalThreads * 3; 
+            const workers = [];
+            let finishedWorkers = 0;
+            let isRendering = false;
+            
+            console.log(`Spawning ${workerCount} render workers...`);
+
+            for(let i=0; i<workerCount; i++) {
+                const w = new Worker(workerScriptURL);
+                w.onmessage = handleWorkerMessage;
+                workers.push(w);
+            }
+
+            let imageData = null;
+
+            function handleWorkerMessage(e) {
+                const { buffer, startY, endY } = e.data;
+                const len = buffer.length;
+                const imgWidth = canvas.width;
+                const offset = startY * imgWidth * 4;
+                
+                for (let i = 0; i < len; i++) {
+                    imageData.data[offset + i] = Math.min(255, Math.max(0, buffer[i] * 255));
+                }
+
+                finishedWorkers++;
+                if (finishedWorkers === workerCount) {
+                    ctx.putImageData(imageData, 0, 0);
+                    isRendering = false;
+                    requestAnimationFrame(frame); 
+                }
+            }
+
+            const scaleLevels = [0.0625, 0.1, 0.125, 0.166666, 0.25, 0.333333, 0.5, 0.75, 1.0];
+            const scaleLabels = ["0.063x", "0.1x", "0.125x", "0.167x", "0.25x", "0.33x", "0.5x", "0.75x", "1.0x"];
+            const shadowLevels = [0, 4, 8, 16, 24, 32];
+
+            const updateScaleText = () => {
+                const txt = scaleLabels[currentScaleIdx];
+                valScale.textContent = txt;
+            };
+
+            const fixedResolutions = [
+                [160, 90],   // 0.063x
+                [256, 144],  // 0.1x
+                [320, 180],  // 0.125x
+                [427, 240],  // 0.167x
+                [640, 360],  // 0.25x
+                [854, 480],  // 0.33x
+                [1280, 720], // 0.5x
+                [1920, 1080],// 0.75x
+                [2560, 1440] // 1.0x
+            ];
+
+            let currentScaleIdx = 0; 
+            let flags = { fog: false, water: false, cloud: false, bloom: true, force16_9: true }; 
+            let isCollapsed = false;
+
+            btnMin.onclick = () => {
+                isCollapsed = !isCollapsed;
+                ui.classList.toggle('collapsed', isCollapsed);
+                btnMin.textContent = isCollapsed ? '+' : '–';
+                if(!isCollapsed) updateUIScale();
+            };
+
+            const updateUIScale = () => {
+                if (isCollapsed) { ui.style.transform = 'scale(1)'; return; }
+                ui.style.transform = 'scale(1)'; 
+                const winW = window.innerWidth;
+                if (winW < 500) {
+                    ui.style.transform = `scale(0.65)`;
+                }
+            };
+
+            const updateResolution = () => {
+                const innerW = window.innerWidth;
+                const innerH = window.innerHeight;
+                let targetW, targetH;
+
+                if (flags.force16_9) {
+                    const res = fixedResolutions[currentScaleIdx];
+                    targetW = res[0]; targetH = res[1];
+                    const winAspect = innerW / innerH;
+                    const targetAspect = 16 / 9;
+                    let styleW, styleH;
+                    if (winAspect > targetAspect) { styleH = innerH; styleW = innerH * targetAspect; } 
+                    else { styleW = innerW; styleH = innerW / targetAspect; }
+                    canvas.style.width = `${styleW}px`;
+                    canvas.style.height = `${styleH}px`;
+                    warningBox.textContent = `ℹ️ Fixed 16:9`;
+                    warningBox.style.display = 'block';
+                } else {
+                    const multiplier = scaleLevels[currentScaleIdx];
+                    targetW = Math.floor(innerW * multiplier);
+                    targetH = Math.floor(innerH * multiplier);
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
+                    warningBox.style.display = 'none';
+                }
+                
+                targetW = Math.max(1, Math.floor(targetW));
+                targetH = Math.max(1, Math.floor(targetH));
+
+                if(canvas.width !== targetW || canvas.height !== targetH) {
+                    canvas.width = targetW;
+                    canvas.height = targetH;
+                    imageData = ctx.createImageData(targetW, targetH);
+                }
+                
+                resElem.textContent = `${targetW}x${targetH}`;
+                
+                requestAnimationFrame(updateUIScale);
+                return { width: targetW, height: targetH };
+            };
+
+            let canvasSize = updateResolution();
+            
+            window.addEventListener('resize', () => { 
+                canvasSize = updateResolution(); 
+            });
+
+            // Presets Definition
+            const presets = {
+                low:   { bounces: 2, shadow: 0,  far: 20,  scaleIdx: 0, fog: false, water: false, cloud: false, bloom: true }, 
+                mid:   { bounces: 3, shadow: 4,  far: 40,  scaleIdx: 1, fog: false, water: true,  cloud: true,  bloom: true }, 
+                high:  { bounces: 4, shadow: 8,  far: 100, scaleIdx: 2, fog: false, water: true,  cloud: true,  bloom: true }, 
+                ultra: { bounces: 6, shadow: 16, far: 150, scaleIdx: 4, fog: true,  water: true,  cloud: true,  bloom: true },
+                extreme: { bounces: 8, shadow: 32, far: 200, scaleIdx: 6, fog: true, water: true, cloud: true,  bloom: true } 
+            };
+
+            const checkPresets = () => {
+                const curBounces = parseInt(inBounces.value);
+                const curFar = parseInt(inFar.value);
+                const curScale = parseInt(inScale.value);
+                const curShadowVal = shadowLevels[parseInt(inShadow.value)];
+                
+                [preLow, preMid, preHigh, preUltra, preExtreme].forEach(b => b.classList.remove('active'));
+
+                const isMatch = (p) => 
+                    p.bounces === curBounces && p.far === curFar && p.scaleIdx === curScale && p.shadow === curShadowVal &&
+                    p.fog === flags.fog && p.water === flags.water && p.cloud === flags.cloud && p.bloom === flags.bloom;
+
+                if (isMatch(presets.low)) preLow.classList.add('active');
+                else if (isMatch(presets.mid)) preMid.classList.add('active');
+                else if (isMatch(presets.high)) preHigh.classList.add('active');
+                else if (isMatch(presets.ultra)) preUltra.classList.add('active');
+                else if (isMatch(presets.extreme)) preExtreme.classList.add('active');
+            };
+
+            const updateLabel = (input, label) => {
+                if (input.id === 'in_shadow') {
+                    label.textContent = shadowLevels[input.value];
+                } else {
+                    label.textContent = input.value;
+                }
+                checkPresets(); 
+            };
+
+            inRotate.oninput = () => updateLabel(inRotate, valRotate);
+            inDeform.oninput = () => updateLabel(inDeform, valDeform);
+            inBounces.oninput = () => updateLabel(inBounces, valBounces);
+            inShadow.oninput = () => updateLabel(inShadow, valShadow);
+            inFar.oninput = () => updateLabel(inFar, valFar); 
+            inTime.oninput = () => updateLabel(inTime, valTime);
+            
+            inScale.oninput = () => {
+                currentScaleIdx = parseInt(inScale.value);
+                updateScaleText(); 
+                canvasSize = updateResolution();
+                checkPresets(); 
+            };
+
+            const toggle = (btn, key) => {
+                flags[key] = !flags[key];
+                btn.classList.toggle('active', flags[key]);
+                if (key === 'force16_9') {
+                    updateScaleText(); 
+                    canvasSize = updateResolution(); 
+                }
+                checkPresets(); 
+            };
+            const setToggle = (btn, key, state) => {
+                flags[key] = state;
+                btn.classList.toggle('active', state);
+            }
+            
+            btnFog.onclick = () => toggle(btnFog, 'fog');
+            btnWater.onclick = () => toggle(btnWater, 'water');
+            btnCloud.onclick = () => toggle(btnCloud, 'cloud'); 
+            btnBloom.onclick = () => toggle(btnBloom, 'bloom');
+            btnRatio.onclick = () => toggle(btnRatio, 'force16_9');
+
+            btnFull.onclick = () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => console.log(err));
+                } else {
+                    document.exitFullscreen();
+                }
+            };
+            
+            document.addEventListener('fullscreenchange', () => {
+                if (document.fullscreenElement) {
+                    btnFull.textContent = "EXIT FULL";
+                    btnFull.classList.add('active');
+                } else {
+                    btnFull.textContent = "FULLSCREEN";
+                    btnFull.classList.remove('active');
+                }
+            });
+
+            const applyPreset = (p) => {
+                inBounces.value = p.bounces; valBounces.textContent = p.bounces;
+                inFar.value = p.far; valFar.textContent = p.far;
+                inScale.value = p.scaleIdx; currentScaleIdx = p.scaleIdx; updateScaleText();
+                
+                // Find shadow index
+                const sIdx = shadowLevels.indexOf(p.shadow);
+                inShadow.value = sIdx; valShadow.textContent = p.shadow;
+
+                setToggle(btnFog, 'fog', p.fog);
+                setToggle(btnWater, 'water', p.water);
+                setToggle(btnCloud, 'cloud', p.cloud); 
+                setToggle(btnBloom, 'bloom', p.bloom);
+
+                canvasSize = updateResolution();
+                checkPresets();
+            };
+
+            preLow.onclick = () => applyPreset(presets.low);
+            preMid.onclick = () => applyPreset(presets.mid);
+            preHigh.onclick = () => applyPreset(presets.high);
+            preUltra.onclick = () => applyPreset(presets.ultra);
+            preExtreme.onclick = () => applyPreset(presets.extreme);
+
+            // Default apply LOW
+            applyPreset(presets.low); 
+            if(!flags.force16_9) toggle(btnRatio, 'force16_9');
+            
+            const state = {
+                yaw: Math.PI / 2, pitch: 0.0, radius: 4.0,
+                zoom: 1.6, targetZoom: 1.6,
+                camPos: [0,0,0], camLookAt: [0, 0.0, 0],
+                fractalTime: 0.0, 
+                waterTime: Math.random() * 1000.0, 
+                fractalRotAngle: 0.0
+            };
+            
+            let isDragging = false, lastX = 0, lastY = 0, pinchDist = 0, pinchZoom = 1;
+            const handleDrag = (dx, dy) => { state.yaw -= dx * 0.005; state.pitch -= dy * 0.005; };
+
+            canvas.addEventListener('wheel', e => { e.preventDefault(); state.targetZoom = Math.max(0.5, Math.min(20.0, state.targetZoom - e.deltaY * 0.002)); }, {passive:false});
+            
+            window.addEventListener('mousedown', e => { if(!e.target.closest('#ui')){ isDragging=true; lastX=e.clientX; lastY=e.clientY; }});
+            window.addEventListener('mousemove', e => { if(isDragging) { handleDrag(e.clientX-lastX, e.clientY-lastY); lastX=e.clientX; lastY=e.clientY; }});
+            window.addEventListener('mouseup', () => isDragging=false);
+            
+            window.addEventListener('touchstart', e => {
+                if(!e.target.closest('#ui')){
+                    if(e.touches.length===1) { isDragging=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; }
+                    else if(e.touches.length===2) { isDragging=false; pinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); pinchZoom=state.targetZoom; }
+                }
+            }, {passive:false});
+            window.addEventListener('touchmove', e => {
+                if(isDragging || pinchDist>0) e.preventDefault();
+                if(e.touches.length===1 && isDragging) { handleDrag(e.touches[0].clientX-lastX, e.touches[0].clientY-lastY); lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; }
+                else if(e.touches.length===2 && pinchDist>0) { 
+                    let d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+                    state.targetZoom = Math.max(0.5, Math.min(20.0, pinchZoom * (d/pinchDist)));
+                }
+            }, {passive:false});
+
+            let frames = 0, lastTime = performance.now(), lastDt = performance.now();
+            
+            const frame = () => {
+                if(isRendering) {
+                    requestAnimationFrame(checkRender);
+                    return;
+                }
+                
+                const now = performance.now();
+                const dt = (now - lastDt) * 0.001; 
+                lastDt = now;
+                
+                if(now - lastTime >= 250) {
+                    const fps = frames * 1000 / (now - lastTime);
+                    fpsElem.textContent = fps.toFixed(1); 
+                    frames = 0;
+                    lastTime = now;
+                }
+                frames++;
+
+                state.zoom += (state.targetZoom - state.zoom) * 0.1;
+                zoomElem.textContent = state.zoom.toFixed(2);
+
+                state.fractalTime += dt * parseFloat(inDeform.value) * 4.0;
+                state.fractalRotAngle += dt * (parseFloat(inRotate.value) * 0.5);
+                state.waterTime += dt * 1.0;
+                
+                const timeVal = parseFloat(inTime.value);
+                const sunAngle = 0.1 + timeVal * (Math.PI - 0.2); 
+                const lightDir = [Math.cos(sunAngle), Math.sin(sunAngle), 0.2];
+                const sunH = Math.sin(sunAngle);
+                const sunColor = [1.0, Math.min(1.0, 0.4 + sunH * 1.5), Math.min(1.0, 0.1 + sunH * 2.0), 0.5 + sunH * 0.5];
+                const intensity = 1.2 + sunH * 1.2; 
+
+                const minPitch = Math.asin(Math.max(-1.0, Math.min(1.0, (-1.0) / state.radius)));
+                if(state.pitch < minPitch) state.pitch = minPitch;
+                if(state.pitch > 1.5) state.pitch = 1.5;
+
+                state.camPos[0] = state.radius * Math.cos(state.pitch) * Math.cos(state.yaw);
+                state.camPos[1] = state.radius * Math.sin(state.pitch);
+                state.camPos[2] = state.radius * Math.cos(state.pitch) * Math.sin(state.yaw);
+
+                let flagBits = 0;
+                if(flags.fog) flagBits |= 1;
+                if(flags.water) flagBits |= 2;
+                if(flags.cloud) flagBits |= 4;
+                if(flags.bloom) flagBits |= 8;
+
+                isRendering = true;
+                finishedWorkers = 0;
+                
+                const h = canvas.height;
+                const rowsPerWorker = Math.ceil(h / workerCount);
+                
+                const uniforms = {
+                    cameraPos: state.camPos,
+                    cameraLookAt: state.camLookAt,
+                    lightDir: [...lightDir, intensity], 
+                    lightColor: sunColor,
+                    fractalTime: state.fractalTime,
+                    waterTime: state.waterTime,
+                    width: canvas.width,
+                    height: canvas.height,
+                    zoom: state.zoom,
+                    rotAngle: state.fractalRotAngle,
+                    bounces: parseFloat(inBounces.value),
+                    flags: flagBits,
+                    farClip: parseFloat(inFar.value),
+                    shadowSamples: shadowLevels[parseInt(inShadow.value)]
+                };
+
+                for(let i=0; i<workerCount; i++) {
+                    const startY = i * rowsPerWorker;
+                    let endY = startY + rowsPerWorker;
+                    if(endY > h) endY = h;
+                    
+                    if(startY < h) {
+                        workers[i].postMessage({
+                            uniforms: uniforms,
+                            startY: startY,
+                            endY: endY
+                        });
+                    } else {
+                        finishedWorkers++; 
+                    }
+                }
+                
+                if(finishedWorkers === workerCount) {
+                    isRendering = false;
+                    requestAnimationFrame(frame);
+                }
+            };
+
+            const checkRender = () => {
+                if(!isRendering) frame();
+                else requestAnimationFrame(checkRender);
+            }
+
+            requestAnimationFrame(frame);
+        }
+        
+        const msg = "⚠️THIS DEMO IS EXTREMELY CPU-INTENSIVE. You may experience performance drops or stuttering.\nClick OK to start.";
+
+        if (confirm(msg)) {
+            init();
+        }
+    </script>
+</body>
+</html>

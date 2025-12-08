@@ -52,16 +52,20 @@
 
         #button-container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            /* 修改这里：改为3列布局 */
+            grid-template-columns: repeat(3, 1fr);
             gap: 30px;
             justify-items: center;
             position: relative;
             z-index: 10;
+            /* 稍微增加最大宽度以适应3列 */
+            max-width: 1200px;
+            padding: 0 20px;
         }
 
         .tool-button {
-            width: 120px;
-            padding: 15px 30px;
+            width: 160px;
+            padding: 15px 10px;
             font-size: 1.2em;
             cursor: pointer;
             color: #e0e0e0; 
@@ -184,7 +188,7 @@
             }
             
             #button-container {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr; /* 移动端保持单列 */
                 gap: 20px;
             }
         }
@@ -202,16 +206,20 @@
                 梅森素数检验
             </div>
 
-            <div class="tool-button" data-href="../primenumber.html" data-desc="侧重于并发吞吐量的 CPU 性能测试工具。使用 Miller-Rabin 概率算法在指定的大范围内并行查找质数，以压榨处理器的整数运算能力与多线程通信效率。具备自动分块搜索及结果同步排序功能，并支持导出最终计算结果，适合评估 CPU 在混合高并发负载下的综合表现。">
+            <div class="tool-button" data-href="../primenumber.html" data-desc="侧重于并发吞吐量的 CPU 性能测试工具。使用 Miller-Rabin 概率算法在指定的大范围内并行查找质数，以压榨处理器的整数运算能力与多线程通信效率。具备自动分块搜索及结果同步排序功能，适合评估 CPU 在混合高并发负载下的综合表现。">
                 质数查找器
+            </div>
+
+            <div class="tool-button" data-href="../raytracingcpu.html" data-desc="基于 SDF 光线步进算法的纯 CPU 渲染演示。利用 Web Worker 将海量浮点运算与向量处理分配至所有 CPU 核心，场景完全由数学公式动态构建，通过模拟高负载的绘图过程，直观检测处理器在浮点运算密集型任务中的多线程并发效率。">
+                软件光线追踪
             </div>
 
             <div class="tool-button" data-href="../bandwidthtest.html" data-desc="评估 GPU 显存带宽的基准测试。利用 WebGPU 直接对显存执行大规模的高强度读写拷贝操作，以衡量显存峰值带宽。包含自动预热、速率校准与分批峰值采样机制，以排除系统干扰。（需要 WebGPU 支持）">
                 显存带宽测试
             </div>
             
-            <div class="tool-button" data-href="../raytracing.html" data-desc="基于 SDF 光线步进算法的实时渲染演示。场景完全由数学公式动态构建，通过运行高复杂度着色器代码，对 GPU 的浮点运算单元施加巨大压力。支持 HDR 色调映射与多档画质调节，支持 WebGL 2.0 与 WebGPU 双后端热切换，支持实时帧率显示。">
-                软件光线追踪
+            <div class="tool-button" data-href="../raytracing.html" data-desc="基于 SDF 光线步进算法，完全利用着色器而非硬件光追单元实现的 GPU 实时渲染演示。场景完全由数学公式动态构建，通过运行高复杂度着色器代码，对 GPU 的浮点运算单元施加巨大压力。支持 HDR 色调映射与多档画质调节，支持 WebGL 2.0 与 WebGPU 双后端热切换，支持实时帧率显示。">
+                着色器光线追踪
             </div>
         </div>
     </div>
