@@ -210,7 +210,7 @@
                 质数查找器
             </div>
 
-            <div class="tool-button" data-href="../raytracingcpu.html" data-desc="基于 SDF 光线步进算法的纯 CPU 渲染演示。利用 Web Worker 将海量浮点运算与向量处理分配至所有 CPU 核心，场景完全由数学公式动态构建，通过模拟高负载的绘图过程，直观检测处理器在浮点运算密集型任务中的多线程并发效率。">
+            <div class="tool-button" data-href="../raytracingcpu.html" data-desc="基于 SDF 光线步进算法的纯 CPU 渲染演示。利用 Web Worker 施加多核负载，直观检测处理器在浮点运算密集型任务中的多线程并发效率。受限于 CPU 架构及 JavaScript 缺乏原生 SIMD 支持，其渲染效率在原理上显著低于 GPU 或软件光栅化管线，不可与着色器版本直接对比帧数。">
                 软件光线追踪
             </div>
 
