@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Audio Frequency Analyzer</title>
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Condensed&display=swap" rel="stylesheet">
     <style>
@@ -308,6 +308,7 @@
             width: 100%;
             height: 300px;
             background: #000;
+            touch-action: manipulation;
         }
         canvas {
             display: block;
@@ -359,6 +360,13 @@
             border-radius: 50%;
             transition: background 0.2s;
             flex-shrink: 0;
+            padding: 0;
+        }
+        .vis-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            display: block;
         }
         .vis-btn:hover { color: #FF7E00; background: rgba(255,255,255,0.1); }
         
@@ -431,12 +439,12 @@
     <a href="../tools" id="homeButton">← Go Back</a>
     <div class="container">
         <h1>Audio Frequency Analyzer</h1>
-        <div class="subtitle">Extract low & peak frequencies in the input audio, export as SRT.</div>
+        <div class="subtitle">Extract low & peak frequencies, export as SRT. Supports Audio & Video files.</div>
         <div class="input-group">
-            <div class="input-title">SELECT AUDIO FILE</div>
+            <div class="input-title">SELECT MEDIA FILE</div>
             <div class="file-upload-wrapper" id="dropZone">
-                <span class="file-upload-text" id="fileNameDisplay">Click or Drop audio here...</span>
-                <input type="file" id="fileInput" accept="audio/*, .wav, .mp3, .flac, .aac, .m4a, .ogg, .wma">
+                <span class="file-upload-text" id="fileNameDisplay">Click or Drop Audio/Video here...</span>
+                <input type="file" id="fileInput" accept=".wav, .mp3, .flac, .aac, .m4a, .ogg, .wma, .mp4, .mov, .mkv, .webm, .avi">
             </div>
             <div class="status-text" id="statusText">Waiting for input...</div>
         </div>
@@ -477,7 +485,7 @@
         <div class="input-group">
             <div class="input-title">PREVIEW</div>
             <div class="preview-box" id="previewArea">
-                <span class="preview-placeholder">No audio loaded</span>
+                <span class="preview-placeholder">No media loaded</span>
             </div>
         </div>
         <div class="input-group" style="text-align: center;">
@@ -783,7 +791,7 @@
             isProcessing = true;
             processBtn.textContent = "STOP ANALYSIS";
             processBtn.className = "main-btn process-button is-processing";
-            statusText.textContent = "Loading audio data...";
+            statusText.textContent = "Loading media data...";
             downloadBtn.disabled = true;
             inputRate.disabled = true;
             inputDB.disabled = true;
@@ -795,7 +803,7 @@
                 if (!isProcessing) return; 
 
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                statusText.textContent = "Decoding audio (Main Thread)...";
+                statusText.textContent = "Decoding audio track (Main Thread)...";
                 const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
                 
                 if (!isProcessing) return; 
@@ -990,6 +998,11 @@
                             <div class="vis-progress-container">
                                 <input type="range" id="visProgress" min="0" max="100" value="0" step="0.1">
                             </div>
+                            <button class="vis-btn" id="visFS" style="margin-left:10px;">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1003,6 +1016,7 @@
             const visControls = document.getElementById('visControls');
             const toggleBtn = document.getElementById('visToggle');
             const progressBar = document.getElementById('visProgress');
+            const fsBtn = document.getElementById('visFS');
             
             visAudio.src = URL.createObjectURL(file);
             visAudio.loop = false;
@@ -1019,6 +1033,11 @@
                     document.exitFullscreen();
                 }
             }
+            
+            fsBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleFullscreen();
+            };
 
             function showUI() {
                 visControls.classList.remove('hide-ui');
@@ -1167,8 +1186,13 @@
             document.addEventListener('keydown', visSpaceListener);
 
             function resize() {
-                canvas.width = visContainer.clientWidth;
-                canvas.height = visContainer.clientHeight;
+                const dpr = window.devicePixelRatio || 1;
+                const superSample = 2;
+                
+                canvas.width = visContainer.clientWidth * dpr * superSample;
+                canvas.height = visContainer.clientHeight * dpr * superSample;
+                
+                ctx.scale(dpr * superSample, dpr * superSample);
             }
             window.addEventListener('resize', resize);
             resize();
@@ -1211,8 +1235,8 @@
 
                 if (!dataArray) return; 
 
-                const width = canvas.width;
-                const height = canvas.height;
+                const width = visContainer.clientWidth;
+                const height = visContainer.clientHeight;
                 
                 ctx.fillStyle = '#000';
                 ctx.fillRect(0, 0, width, height);
@@ -1321,7 +1345,7 @@
                 const lowPeak = validPeaks.length > 0 ? validPeaks[0] : null;
 
                 peaks.sort((a, b) => b.db - a.db); 
-                let displayPeaks = peaks.slice(0, 5);
+                let displayPeaks = peaks.slice(0, 10);
                 if (lowPeak) {
                     const exists = displayPeaks.find(p => Math.abs(p.freq - lowPeak.freq) < 1);
                     if (!exists) displayPeaks.push(lowPeak);
