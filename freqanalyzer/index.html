@@ -806,7 +806,8 @@
             rtAnalyser = rtContext.createAnalyser();
 
             rtAnalyser.fftSize = 4096; 
-            rtAnalyser.smoothingTimeConstant = 0.5; 
+            rtAnalyser.minDecibels = -140;
+            rtAnalyser.smoothingTimeConstant = 0.3; 
             rtSource.connect(rtAnalyser);
 
             const dataArray = new Float32Array(rtAnalyser.frequencyBinCount);
@@ -861,7 +862,7 @@
                 }
 
                 function getY(db) {
-                    const minDb = -100;
+                    const minDb = -140;
                     const maxDb = 0;
                     let norm = (db - minDb) / (maxDb - minDb);
                     if (norm < 0) norm = 0;
@@ -896,9 +897,9 @@
 
                 // Y-Axis Grid
                 ctx.textAlign = "left";
-                for (let db = -100; db <= 0; db += 4) {
+                for (let db = -140; db <= 0; db += 4) {
                     const y = getY(db);
-                    const isMajor = (db % 20 === 0 && db !== 0 && db !== -100);
+                    const isMajor = (db % 20 === 0 && db !== 0 && db !== -140);
                     ctx.beginPath();
                     ctx.moveTo(0, y);
                     ctx.lineTo(width, y); 
@@ -932,7 +933,7 @@
 
                 // Peak Detection
                 const peaks = [];
-                const noiseFloor = -80;
+                const noiseFloor = -100;
                 // Simple peak picking
                 for (let i = 2; i < bufferLength - 2; i++) {
                     const val = dataArray[i];
