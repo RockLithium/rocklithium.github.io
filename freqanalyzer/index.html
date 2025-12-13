@@ -1499,7 +1499,10 @@
                 toggleFullscreen();
             });
 
-            visContainer.addEventListener('mousemove', resetIdleTimer);
+            visContainer.addEventListener('mousemove', (e) => {
+                if (e.movementX === 0 && e.movementY === 0) return;
+                resetIdleTimer();
+            });
 
             visSpaceListener = (e) => {
                 const tag = document.activeElement.tagName;
