@@ -1195,7 +1195,7 @@
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement("a");
                             a.href = url;
-                            a.download = selectedFile.name + ".srt";
+                            a.download = selectedFile.name.replace(/\.[^/.]+$/, "") + ".srt";
                             document.body.appendChild(a);
                             a.click();
                             document.body.removeChild(a);
