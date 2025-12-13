@@ -3,17 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test List</title> 
+    <title>Test list</title> 
     <style>
+        :root {
+            --glass-blur: 40px;
+            --glass-saturate: 180%;
+            --snap-release: cubic-bezier(0.18, 0.89, 0.32, 1.1);
+            --press-curve: cubic-bezier(0.1, 0, 0.2, 1);
+            --pop-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
         body {
-            font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #1a1a1a;
+            background: radial-gradient(circle at 50% 0%, #1a1c25 0%, #08090b 100%);
             color: #e0e0e0;
             text-align: center;
             overflow-x: hidden;
@@ -23,15 +31,28 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            padding: 10px 15px;
+            padding: 10px 16px;
             font-size: 0.9em;
-            color: #e0e0e0;
-            background-color: #333333;
-            border: 1px solid #778899;
-            border-radius: 5px;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px) saturate(120%);
+            -webkit-backdrop-filter: blur(20px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
             text-decoration: none;
-            transition: background-color 0.3s;
+            transition: all 0.2s ease;
             z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        #homeButton:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.04);
+        }
+        
+        #homeButton:active {
+            transform: scale(0.96);
+            transition: transform 0.05s;
         }
 
         .main-wrapper {
@@ -39,53 +60,74 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            transform: translateY(-10%);
+            transform: translateY(-8%);
             width: 100%;
         }
 
         h1 {
-            color: #e0e0e0;
-            margin-bottom: 40px;
+            color: #fff;
+            margin-bottom: 50px;
             font-size: 2.5em;
             margin-top: 0;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.7) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
 
         #button-container {
             display: grid;
-            /* 修改这里：改为3列布局 */
             grid-template-columns: repeat(3, 1fr);
             gap: 30px;
             justify-items: center;
             position: relative;
             z-index: 10;
-            /* 稍微增加最大宽度以适应3列 */
             max-width: 1200px;
             padding: 0 20px;
         }
 
         .tool-button {
             width: 160px;
-            padding: 15px 10px;
+            padding: 18px 12px;
             font-size: 1.2em;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.4); 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.95);
             cursor: pointer;
-            color: #e0e0e0; 
-            background-color: #333333;
-            border: 2px solid #505050;
-            border-radius: 8px;
-            text-decoration: none;
-            transition: all 0.3s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+            user-select: none;
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            user-select: none; 
+            box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.3), inset 0 0.5px 0 rgba(255, 255, 255, 0.2); 
+            transition: transform 0.4s var(--snap-release), background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            transform-style: preserve-3d;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         .tool-button:hover {
-            background-color: #444444;
-            border-color: #e0e0e0; 
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.7);
-            transform: translateY(-3px);
+            transform: translateY(-4px) scale(1.02);
+            background: rgba(255, 255, 255, 0.08);
+            border-top-color: rgba(255, 255, 255, 0.6);
+            color: #fff;
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        }
+
+        .tool-button:active {
+            transform: scale(0.96);
+            background: rgba(255, 255, 255, 0.02);
+            border-top-color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 4px 8px rgba(0, 0, 0, 0.2); 
+            transition: all 0.3s var(--press-curve);
         }
 
         #modal-overlay {
@@ -94,12 +136,13 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
+            background-color: rgba(0, 0, 0, 0);
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
             z-index: 1000;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
+            transition: all 0.3s ease;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -108,19 +151,29 @@
         #modal-overlay.active {
             opacity: 1;
             visibility: visible;
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
         }
 
         .modal-content {
-            background-color: #2a2a2a;
-            border: 1px solid #505050;
-            border-radius: 12px;
-            padding: 25px;
+            background: linear-gradient(160deg, rgba(40,40,45,0.7) 0%, rgba(20,20,25,0.8) 100%);
+            backdrop-filter: blur(50px) saturate(180%);
+            -webkit-backdrop-filter: blur(50px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-top: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 28px;
+            padding: 30px;
             width: 400px;
             max-width: 85%;
             text-align: left;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-            transform: scale(0.9);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            transform: scale(0.05);
+            opacity: 0;
+            transition: 
+                transform 0.45s var(--pop-spring), 
+                opacity 0.2s ease-out;
+            
             display: flex;
             flex-direction: column;
             gap: 15px;
@@ -128,57 +181,70 @@
 
         #modal-overlay.active .modal-content {
             transform: scale(1);
+            opacity: 1;
         }
 
         .modal-header {
-            font-size: 1.4em;
-            font-weight: bold;
+            font-size: 1.6em;
+            font-weight: 700;
             color: #fff;
-            border-bottom: 1px solid #444;
             padding-bottom: 10px;
+            letter-spacing: -0.5px;
         }
 
         .modal-body {
-            font-size: 1em;
-            color: #ccc;
+            font-size: 1.05em;
+            color: rgba(255, 255, 255, 0.75);
             line-height: 1.6;
             min-height: 60px;
-            padding: 0 5px;
+            font-weight: 400;
         }
 
         .modal-footer {
             display: flex;
             justify-content: flex-end;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 12px;
+            margin-top: 15px;
         }
 
         .modal-btn {
-            padding: 8px 20px;
-            border-radius: 6px;
+            padding: 10px 22px;
+            border-radius: 14px;
             cursor: pointer;
-            font-size: 0.95em;
+            font-size: 1em;
+            font-weight: 600;
             border: none;
-            transition: background-color 0.2s;
+            transition: all 0.2s ease;
+        }
+        .modal-btn:active {
+            transform: scale(0.94);
+            transition: all 0.05s ease;
         }
 
         .btn-cancel {
-            background-color: transparent;
-            color: #aaa;
-            border: 1px solid #444;
+            background-color: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
         .btn-cancel:hover {
-            color: #e0e0e0;
-            border-color: #666;
+            background-color: rgba(255, 255, 255, 0.12);
+            color: #fff;
         }
 
         .btn-confirm {
-            background-color: #e0e0e0;
-            color: #1a1a1a;
-            font-weight: bold;
+            background-color: #fff;
+            color: #000;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
         }
         .btn-confirm:hover {
-            background-color: #fff;
+            background-color: #f2f2f2;
+            box-shadow: 0 6px 16px rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        .btn-confirm:active {
+            background-color: #e0e0e0;
+            box-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+            transform: scale(0.94) translateY(0);
         }
 
         @media (max-width: 768px) {
@@ -188,8 +254,8 @@
             }
             
             #button-container {
-                grid-template-columns: 1fr; /* 移动端保持单列 */
-                gap: 20px;
+                grid-template-columns: 1fr;
+                gap: 25px;
             }
         }
     </style>
@@ -225,7 +291,7 @@
     </div>
 
     <div id="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content" id="modal-box">
             <div class="modal-header" id="modal-title">标题</div>
             <div class="modal-body" id="modal-description">描述内容</div>
             <div class="modal-footer">
@@ -238,6 +304,7 @@
     <script>
         const buttons = document.querySelectorAll('.tool-button');
         const modalOverlay = document.getElementById('modal-overlay');
+        const modalBox = document.getElementById('modal-box');
         const modalTitle = document.getElementById('modal-title');
         const modalDesc = document.getElementById('modal-description');
         const btnGo = document.getElementById('modal-go');
@@ -245,10 +312,23 @@
 
         let currentTargetUrl = '';
 
-        function openModal(title, desc, url) {
+        function setTransformOrigin(element) {
+            const rect = element.getBoundingClientRect();
+            const btnCenterX = rect.left + rect.width / 2;
+            const btnCenterY = rect.top + rect.height / 2;
+            const winCenterX = window.innerWidth / 2;
+            const winCenterY = window.innerHeight / 2;
+            const offsetX = btnCenterX - winCenterX;
+            const offsetY = btnCenterY - winCenterY;
+            
+            modalBox.style.transformOrigin = `calc(50% + ${offsetX}px) calc(50% + ${offsetY}px)`;
+        }
+
+        function openModal(title, desc, url, sourceBtn) {
             modalTitle.textContent = title;
             modalDesc.textContent = desc;
             currentTargetUrl = url;
+            setTransformOrigin(sourceBtn);
             modalOverlay.classList.add('active');
         }
 
@@ -258,18 +338,20 @@
         }
 
         buttons.forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', (e) => {
                 const title = button.innerText.trim(); 
                 const desc = button.getAttribute('data-desc');
                 const url = button.getAttribute('data-href');
-                
-                openModal(title, desc, url);
+                openModal(title, desc, url, button);
             });
         });
 
         btnGo.addEventListener('click', () => {
             if (currentTargetUrl) {
-                window.location.href = currentTargetUrl;
+                btnGo.style.transform = 'scale(0.92)';
+                setTimeout(() => {
+                     window.location.href = currentTargetUrl;
+                }, 100);
             }
         });
 
