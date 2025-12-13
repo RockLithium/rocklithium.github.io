@@ -494,7 +494,7 @@
             <div class="input-title">SELECT MEDIA FILE</div>
             <div class="file-upload-wrapper" id="dropZone">
                 <span class="file-upload-text" id="fileNameDisplay">Click or drop file here...</span>
-                <input type="file" id="fileInput" accept="audio/*, .mp3, .wav, .flac, .aac, .m4a, .ogg, .wma, .mp4, .mov, .mkv, .webm, .avi">
+                <input type="file" id="fileInput">
             </div>
             <div class="status-text" id="statusText">Waiting for input...</div>
         </div>
@@ -773,30 +773,18 @@
             statusText.textContent = "Requesting microphone access...";
             
             try {
-                // MODIFIED: Nested try-catch to prevent crash ("Flash back") on mobile
-                // Attempt 1: High fidelity (disables mobile noise gates)
-                let stream;
-                try {
-                    const constraints = {
-                        audio: {
-                            echoCancellation: false,
-                            noiseSuppression: false,
-                            autoGainControl: false,
-                            mozAutoGainControl: false,
-                            googAutoGainControl: false
-                        }
-                    };
-                    stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    statusText.textContent = "Real-time analysis active (High-Fi).";
-                } catch (firstErr) {
-                    console.warn("High-fi audio failed, trying fallback", firstErr);
-                    // Attempt 2: Fallback to basic (prevents OverconstrainedError crash)
-                    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    statusText.textContent = "Real-time active (Standard Mode).";
-                }
-                
+                const constraints = {
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false,
+                        mozAutoGainControl: false,
+                        googAutoGainControl: false
+                    }
+                };
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                statusText.textContent = "Real-time analysis active.";
                 startRealTimeVisualizer(stream);
-
             } catch (err) {
                 console.error(err);
                 statusText.textContent = "Error: Microphone access denied or not available.";
@@ -832,7 +820,6 @@
             if (rtAnimationId) cancelAnimationFrame(rtAnimationId);
             if (rtSource) { rtSource.disconnect(); rtSource = null; }
             if (rtStream) {
-                // Crucial for resetting permissions/call mode
                 rtStream.getTracks().forEach(track => track.stop());
                 rtStream = null;
             }
