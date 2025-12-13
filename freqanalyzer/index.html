@@ -442,6 +442,19 @@
             .container { margin-top: 40px; }
             .main-btn { font-size: 20px; }
         }
+
+        @media (max-width: 600px) {
+            .options-grid {
+                flex-direction: column;
+            }
+            
+            .param-box, .option-btn {
+                flex: none;
+                width: 100%;
+                box-sizing: border-box;
+                height: 50px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -871,7 +884,7 @@
                 }
 
                 // Grid
-                ctx.font = "12px 'Unispace Custom', monospace";
+                ctx.font = "16px 'Unispace Custom', monospace";
                 ctx.textAlign = "center";
                 const powers = [10, 100, 1000, 10000];
                 const multipliers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -964,6 +977,7 @@
                 }
 
                 ctx.textAlign = "center";
+                ctx.font = "14px 'Unispace Custom', monospace";
                 displayPeaks.forEach(p => {
                     const x = getX(p.freq);
                     const y = getY(p.db);
@@ -1312,13 +1326,18 @@
         function initVisualizer(file, decodedBuffer) {
             stopVisualizer();
 
+            const iconPlay = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+            const iconPause = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+
             previewArea.innerHTML = `
                 <div class="visualizer-container" id="visContainer">
                     <canvas id="visCanvas"></canvas>
                     <div class="vis-hint">Double-Click/F: Fullscreen | Space: Play/Pause</div>
                     <div class="vis-overlay">
                         <div class="vis-controls" id="visControls">
-                            <button class="vis-btn" id="visToggle">▶</button>
+                            <button class="vis-btn" id="visToggle">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </button>
                             <div class="vis-progress-container">
                                 <input type="range" id="visProgress" min="0" max="100" value="0" step="0.1">
                             </div>
@@ -1369,19 +1388,14 @@
             }
 
             function hideUI() {
-                if (document.fullscreenElement) {
-                    visControls.classList.add('hide-ui');
-                    visContainer.classList.add('hide-cursor');
-                }
+                visControls.classList.add('hide-ui');
+                visContainer.classList.add('hide-cursor');
             }
 
             function resetIdleTimer() {
                 showUI();
                 if (idleTimer) clearTimeout(idleTimer);
-                
-                if (document.fullscreenElement) {
-                    idleTimer = setTimeout(hideUI, 5000);
-                }
+                idleTimer = setTimeout(hideUI, 4000);
             }
 
             document.addEventListener('fullscreenchange', () => {
@@ -1399,12 +1413,10 @@
                     return;
                 }
 
-                if (document.fullscreenElement) {
-                    if (visControls.classList.contains('hide-ui')) {
-                        resetIdleTimer();
-                    } else {
-                        hideUI();
-                    }
+                if (visControls.classList.contains('hide-ui')) {
+                    resetIdleTimer();
+                } else {
+                    hideUI();
                 }
             });
 
@@ -1449,11 +1461,11 @@
                     if(!visualizerCtx) setupAudioContext();
                     else if(visualizerCtx.state === 'suspended') visualizerCtx.resume();
                     visAudio.play();
-                    toggleBtn.textContent = "⏸";
+                    toggleBtn.innerHTML = iconPause;
                     resetIdleTimer();
                 } else {
                     visAudio.pause();
-                    toggleBtn.textContent = "▶";
+                    toggleBtn.innerHTML = iconPlay;
                     showUI();
                 }
             }
@@ -1461,7 +1473,7 @@
             toggleBtn.onclick = togglePlay;
             
             visAudio.onended = () => {
-                toggleBtn.textContent = "▶";
+                toggleBtn.innerHTML = iconPlay;
                 progressBar.value = 100;
                 showUI();
             };
@@ -1482,7 +1494,12 @@
                 }
             });
             
-            visContainer.addEventListener('dblclick', toggleFullscreen);
+            visContainer.addEventListener('dblclick', (e) => {
+                if (e.target.closest('.vis-controls')) return;
+                toggleFullscreen();
+            });
+
+            visContainer.addEventListener('mousemove', resetIdleTimer);
 
             visSpaceListener = (e) => {
                 const tag = document.activeElement.tagName;
@@ -1587,7 +1604,7 @@
                 }
 
                 // Grid drawing logic (X-Axis)
-                ctx.font = "12px 'Unispace Custom', monospace";
+                ctx.font = "16px 'Unispace Custom', monospace";
                 ctx.textAlign = "center";
                 const powers = [10, 100, 1000, 10000];
                 const multipliers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -1676,6 +1693,7 @@
                 }
 
                 ctx.textAlign = "center";
+                ctx.font = "14px 'Unispace Custom', monospace";
                 displayPeaks.forEach(p => {
                     const x = getX(p.freq);
                     const y = getY(p.db);
