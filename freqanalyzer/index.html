@@ -279,6 +279,7 @@
             background: #444;
             color: #888;
             cursor: not-allowed;
+            display: none; /* Hide when disabled */
         }
         .download-button:active {
             transform: scale(0.98);
@@ -504,7 +505,8 @@
             </div>
 
             <div class="options-grid" id="genSpectrumBtnGroup">
-                <div class="option-btn" id="optVideo">Generate Spectrum</div>
+                <div class="option-btn active" id="optSpectrum">Generate Spectrum</div>
+                <div class="option-btn" id="optSRT">Generate SRT</div>
             </div>
         </div>
 
@@ -676,7 +678,10 @@
         const inputRate = document.getElementById('inputRate');
         const inputDB = document.getElementById('inputDB');
         const inputWindow = document.getElementById('inputWindow');
-        const optVideo = document.getElementById('optVideo');
+        
+        // --- Buttons for Output Options ---
+        const optSpectrum = document.getElementById('optSpectrum');
+        const optSRT = document.getElementById('optSRT');
         
         // --- UI Groups for Toggling ---
         const optRealTime = document.getElementById('optRealTime');
@@ -1017,8 +1022,14 @@
             }
         }
 
-        optVideo.addEventListener('click', () => {
-            optVideo.classList.toggle('active');
+        // Toggling Output Options
+        optSpectrum.addEventListener('click', () => {
+            optSpectrum.classList.toggle('active');
+            resetUIOnOptionChange();
+        });
+
+        optSRT.addEventListener('click', () => {
+            optSRT.classList.toggle('active');
             resetUIOnOptionChange();
         });
 
@@ -1161,28 +1172,54 @@
 
                 if (!isProcessing) return; 
 
-                const maxThreads = 16;
-                const logicalCores = navigator.hardwareConcurrency || 4;
-                const threadCount = Math.min(logicalCores, maxThreads);
+                // Check if SRT generation is requested
+                if (optSRT.classList.contains('active')) {
+                    const maxThreads = 16;
+                    const logicalCores = navigator.hardwareConcurrency || 4;
+                    const threadCount = Math.min(logicalCores, maxThreads);
 
-                statusText.textContent = `Analyzing with ${threadCount} threads...`;
-                
-                generatedSrtContent = await runParallelAnalysis(processingBuffer, threadCount, rateVal, dbVal, windowSec);
-                
-                if (!generatedSrtContent) return;
+                    statusText.textContent = `Analyzing with ${threadCount} threads...`;
+                    
+                    generatedSrtContent = await runParallelAnalysis(processingBuffer, threadCount, rateVal, dbVal, windowSec);
+                    
+                    if (!generatedSrtContent && isProcessing) {
+                         // Process finished but empty or cancelled
+                    } else if (generatedSrtContent) {
+                        downloadBtn.disabled = false;
+                        downloadBtn.textContent = "DOWNLOAD SRT";
+                        
+                        // Handler for Download button
+                        downloadBtn.onclick = () => {
+                            if (!generatedSrtContent) return;
+                            const blob = new Blob([generatedSrtContent], {type: "text/srt"});
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = selectedFile.name + ".srt";
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        };
+                    }
+                } else {
+                    generatedSrtContent = "";
+                    downloadBtn.disabled = true;
+                }
+
+                if (!isProcessing) return;
 
                 isProcessing = false;
                 statusText.textContent = "Analysis complete.";
                 processBtn.textContent = "PROCESSING COMPLETE";
                 processBtn.className = "main-btn process-button is-complete";
-                downloadBtn.disabled = false;
-                downloadBtn.textContent = "DOWNLOAD SRT";
+                
                 inputRate.disabled = false;
                 inputDB.disabled = false;
                 inputWindow.disabled = false;
                 inputHighPass.disabled = false;
 
-                if (optVideo.classList.contains('active')) {
+                if (optSpectrum.classList.contains('active')) {
                     statusText.textContent = "Analysis complete. Loading Visualization...";
                     initVisualizer(selectedFile, processingBuffer);
                 }
