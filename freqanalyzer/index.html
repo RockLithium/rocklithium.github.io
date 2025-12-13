@@ -1486,14 +1486,18 @@
                 idleTimer = setTimeout(hideUI, 4000);
             }
 
-            document.addEventListener('fullscreenchange', () => {
+            const handleFullscreenChange = () => {
+                if (visControls.classList.contains('hide-ui')) return;
+
                 if (!document.fullscreenElement) {
                     showUI();
                     if (idleTimer) clearTimeout(idleTimer);
                 } else {
                     resetIdleTimer();
                 }
-            });
+            };
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
 
             visContainer.addEventListener('click', (e) => {
                 if (e.target.closest('.vis-controls') || e.target.classList.contains('vis-pitch-btn')) {
@@ -1558,7 +1562,10 @@
                 }
             }
 
-            toggleBtn.onclick = togglePlay;
+            toggleBtn.onclick = (e) => {
+                e.stopPropagation(); 
+                togglePlay();
+            };
             
             visAudio.onended = () => {
                 toggleBtn.innerHTML = iconPlay;
