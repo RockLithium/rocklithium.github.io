@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Color Temperature Visualizer</title>
+    <style>
+        body { 
+            margin: 0; background: #000; color: #eee; 
+            font-family: "PingFang SC", sans-serif; 
+            overflow: hidden;
+            display: flex; justify-content: center; align-items: center; 
+            width: 100vw; height: 100vh;
+            touch-action: none;
+        }
+        
+        canvas { 
+            display: block; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.5); 
+        }
+        
+        #ui {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(10, 10, 12, 0.85); 
+            padding: 12px; 
+            border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            width: 250px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            user-select: none;
+            transform-origin: 0 0; 
+            will-change: transform, width, height, padding;
+            transition: background 0.3s, box-shadow 0.3s, padding 0.3s;
+            pointer-events: auto;
+            z-index: 999;
+            overflow: hidden;
+        }
+        
+        #ui.collapsed {
+            width: 28px !important; height: 28px !important;
+            padding: 0 !important;
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            backdrop-filter: none; box-shadow: none;
+        }
+
+        #ui * { font-family: "PingFang SC", sans-serif; }
+
+        .back-btn {
+            display: block;
+            box-sizing: border-box;
+            width: 100%;
+            background: #222; 
+            border: 1px solid #333; 
+            color: #777;
+            padding: 4px 0; 
+            margin-bottom: 5px;
+            border-radius: 2px; 
+            font-size: 9px; font-weight: 700; 
+            text-align: center; text-decoration: none; 
+            letter-spacing: 1px;
+            transition: background 0.1s, color 0.1s;
+        }
+        .back-btn:hover { 
+            background: #333; color: #fff; border-color: #555; 
+        }
+        #ui.collapsed .back-btn { display: none; }
+
+        .header {
+            font-size: 11px; font-weight: 700; color: #fff; 
+            padding-bottom: 4px; margin-bottom: 2px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: space-between;
+            height: 20px;
+        }
+        
+        .title-text { display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px; }
+        .title-text::before { content: ''; width: 3px; height: 10px; background: #ffd700; border-radius: 1px; box-shadow: 0 0 5px #ffd700; }
+
+        .min-btn {
+            width: 28px; height: 28px; background: transparent; border: none; color: #ffd700;
+            font-size: 16px; line-height: 1; font-weight: 300;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            margin-right: -8px; margin-top: -4px; transition: transform 0.3s;
+        }
+        .min-btn:hover { color: #fff; }
+
+        #ui.collapsed .min-btn { margin: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); }
+        #ui.collapsed .header { border: none; padding: 0; margin: 0; justify-content: center; height: 100%; }
+        #ui.collapsed .title-text { display: none; }
+        #ui_body { transition: opacity 0.2s; }
+        #ui.collapsed #ui_body { display: none; opacity: 0; }
+
+        .control-group { margin-top: 5px; } 
+        .control-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1px; }
+        .label { font-size: 9px; color: #888; font-weight: 500; transform: scale(0.95); transform-origin: left; }
+        .value { font-size: 9px; color: #ffd700; font-weight: 500; font-variant-numeric: tabular-nums;}
+        
+        .preset-container { display: flex; gap: 2px; margin-top: 2px; }
+        .preset-btn {
+            flex: 1; background: #222; border: 1px solid #333; color: #777;
+            padding: 3px 0; border-radius: 2px; font-size: 9px; font-weight: 500;
+            cursor: pointer; transition: background 0.1s, color 0.1s;
+            box-sizing: border-box; white-space: nowrap;
+        }
+        .preset-btn:hover { background: #333; color: #fff; }
+        .preset-btn.active { background: #ffd700; color: #000; border-color: #ffd700; }
+
+        input[type=range] {
+            width: 100%; -webkit-appearance: none; background: transparent; margin: 2px 0 0 0;
+            height: 6px; cursor: pointer; display: block;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 9px; width: 9px; border-radius: 50%; 
+            background: #ffd700; margin-top: -3.5px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 2px; background: #333; border-radius: 1px;
+        }
+        
+        .switch-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .toggle-container { display: flex; gap: 2px; flex: 1; justify-content: flex-end;}
+        
+        .toggle-btn {
+            background: #222;
+            border: 1px solid #333; 
+            color: #777; 
+            padding: 3px 6px; 
+            border-radius: 2px; 
+            font-size: 9px; font-weight: 500;
+            cursor: pointer; 
+            transition: background 0.1s, color 0.1s;
+            box-sizing: border-box; 
+            white-space: nowrap;
+            text-align: center;
+        }
+        .toggle-btn:hover { background: #333; color: #fff; }
+        .toggle-btn.active { background: #ffd700; color: #000; border-color: #ffd700; }
+
+        .toast-msg {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.9); 
+            background: rgba(20, 20, 25, 0.95);
+            border: 1px solid rgba(255, 80, 80, 0.5);
+            color: #ff5555;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease-out;
+            pointer-events: none;
+            z-index: 2000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast-msg.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) scale(1); 
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <a href="../tools/" class="back-btn">← BACK</a>
+
+        <div class="header">
+            <div class="title-text">SETTINGS</div>
+            <button id="btn_min" class="min-btn">–</button>
+        </div>
+        
+        <div id="ui_body">
+            <div class="control-group">
+                <div class="control-row"><span class="label">COLOR SPACE</span></div>
+                <div class="preset-container">
+                    <button id="btn_srgb" class="preset-btn">sRGB</button>
+                    <button id="btn_p3" class="preset-btn active">Display P3</button>
+                    <button id="btn_2020" class="preset-btn">BT.2020</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="control-row"><span class="label">COLOR TEMPERATURE</span><span id="val_temp" class="value">6500K</span></div>
+                <input type="range" id="in_temp" min="2000" max="10000" step="50" value="6500">
+            </div>
+
+            <div class="control-group">
+                <div class="control-row"><span class="label">EXPOSURE</span><span id="val_exp" class="value">0.0</span></div>
+                <input type="range" id="in_exp" min="-6.0" max="0.0" step="0.1" value="0.0">
+            </div>
+
+            <div class="switch-row">
+                <span class="label">DISPLAY</span>
+                <div class="toggle-container">
+                    <button id="btn_hdr" class="toggle-btn">HDR (WebGPU)</button>
+                    <button id="btn_full" class="toggle-btn">FULLSCREEN</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom_toast" class="toast-msg">
+        <span>⚠️</span><span id="toast_text"></span>
+    </div>
+
+    <script type="module">
+        const colorTable = [
+            [2000, 0.9999999999999999, 0.5676231377822956, 0.084219224],
+            [2050, 0.9999999999999999, 0.578978609, 0.11441842321640885],
+            [2100, 0.9999999999999999, 0.5899810222469688, 0.14001078155781466],
+            [2150, 0.9999999999999999, 0.6006493929808603, 0.16287384407989108],
+            [2200, 0.9999999999999999, 0.6110010897985193, 0.1838975880012858],
+            [2250, 0.9999999999999999, 0.6210520341434461, 0.20357965232805314],
+            [2300, 0.9999999999999999, 0.6308168694124837, 0.22222800080641547],
+            [2350, 0.9999999999999999, 0.6403091048474068, 0.24004690087685204],
+            [2400, 0.9999999999999999, 0.6495412387509258, 0.2571788935614686],
+            [2450, 0.9999999999999999, 0.658524865, 0.27372740183813493],
+            [2500, 0.9999999999999999, 0.6672707628945223, 0.28976983671693757],
+            [2550, 0.9999999999999999, 0.6757889811120643, 0.3053656398795679],
+            [2600, 0.9999999999999999, 0.6840889035383362, 0.3205614487999558],
+            [2650, 0.9999999999999999, 0.692179313, 0.33539453957454407],
+            [2700, 0.9999999999999999, 0.7000684429902051, 0.3498951939447677],
+            [2750, 0.9999999999999999, 0.7077640293806342, 0.3640883698523071],
+            [2800, 0.9999999999999999, 0.715273349, 0.37799490718352047],
+            [2850, 0.9999999999999999, 0.7226032596474045, 0.39163241508178037],
+            [2900, 0.9999999999999999, 0.7297602331414497, 0.4050159360902531],
+            [2950, 0.9999999999999999, 0.7367503861056297, 0.4181584507388121],
+            [3000, 0.9999999999999999, 0.7435795070680989, 0.43107126602869167],
+            [3050, 0.9999999999999999, 0.7502530811344814, 0.4437643181003251],
+            [3100, 0.9999999999999999, 0.7567763122591799, 0.45624641057435905],
+            [3150, 0.9999999999999999, 0.763154143, 0.4685254040623715],
+            [3200, 0.9999999999999999, 0.769391275, 0.48060836818548364],
+            [3250, 0.9999999999999999, 0.7754921814632127, 0.49250170450650715],
+            [3300, 0.9999999999999999, 0.7814611265108086, 0.5042112466823406],
+            [3350, 0.9999999999999999, 0.7873021771492088, 0.5157423426205616],
+            [3400, 0.9999999999999999, 0.7930192163560095, 0.5270999223056725],
+            [3450, 0.9999999999999999, 0.7986159548024121, 0.5382885541294812],
+            [3500, 0.9999999999999999, 0.8040959416072427, 0.5493124919362607],
+            [3550, 0.9999999999999999, 0.8094625742353159, 0.5601757145204123],
+            [3600, 0.9999999999999999, 0.8147191076219655, 0.5708819589526316],
+            [3650, 0.9999999999999999, 0.8198686625963064, 0.581434749],
+            [3700, 0.9999999999999999, 0.824914234, 0.5918374183412958],
+            [3750, 0.9999999999999999, 0.8298586962335194, 0.602093133],
+            [3800, 0.9999999999999999, 0.8347048132580406, 0.6122049064485824],
+            [3850, 0.9999999999999999, 0.8394552414712453, 0.6221756174348124],
+            [3900, 0.9999999999999999, 0.8441125371262179, 0.6320080212357829],
+            [3950, 0.9999999999999999, 0.848679161, 0.641704762],
+            [4000, 0.9999999999999999, 0.8531574851489032, 0.651268382],
+            [4050, 0.9999999999999999, 0.8575497940147495, 0.6607013327755453],
+            [4100, 0.9999999999999999, 0.8618582922993885, 0.6700059781443327],
+            [4150, 0.9999999999999999, 0.8660851072424619, 0.6791846054751424],
+            [4200, 0.9999999999999999, 0.8702322927589602, 0.6882394293939157],
+            [4250, 0.9999999999999999, 0.8743018329791358, 0.6971725974919366],
+            [4300, 0.9999999999999999, 0.8782956455634893, 0.705986195],
+            [4350, 0.9999999999999999, 0.8822155848099104, 0.714682249],
+            [4400, 0.9999999999999999, 0.8860634445685627, 0.7232627319247518],
+            [4450, 0.9999999999999999, 0.8898409609787787, 0.7317295653155741],
+            [4500, 0.9999999999999999, 0.8935498150410279, 0.7400846223927168],
+            [4550, 0.9999999999999999, 0.8971916350359305, 0.7483297309570578],
+            [4600, 0.9999999999999999, 0.9007679988013041, 0.7564666757797525],
+            [4650, 0.9999999999999999, 0.9042804358773365, 0.7644972008024224],
+            [4700, 0.9999999999999999, 0.9077304295291682, 0.7724230111333614],
+            [4750, 0.9999999999999999, 0.9111194186554213, 0.7802457748631637],
+            [4800, 0.9999999999999999, 0.9144487995905521, 0.7879671247201582],
+            [4850, 0.9999999999999999, 0.9177199278082713, 0.7955886595834487],
+            [4900, 0.9999999999999999, 0.92093412, 0.803111946],
+            [4950, 0.9999999999999999, 0.9240926532636661, 0.8105385188033146],
+            [5000, 0.9999999999999999, 0.9271967712211612, 0.8178698835940401],
+            [5050, 0.9999999999999999, 0.9302476807153929, 0.8251075165125147],
+            [5100, 0.9999999999999999, 0.9332465554461551, 0.8322528658931382],
+            [5150, 0.9999999999999999, 0.9361945367367419, 0.8393073530604834],
+            [5200, 0.9999999999999999, 0.939092735, 0.8462723731905641],
+            [5250, 0.9999999999999999, 0.9419422293849219, 0.8531492961128748],
+            [5300, 0.9999999999999999, 0.9447440717739283, 0.8599394670589607],
+            [5350, 0.9999999999999999, 0.9474992848566025, 0.8666442073626615],
+            [5400, 0.9999999999999999, 0.9502088645605596, 0.8732648151165979],
+            [5450, 0.9999999999999999, 0.9528737806757802, 0.8798025657889996],
+            [5500, 0.9999999999999999, 0.9554949777306082, 0.8862587128045254],
+            [5550, 0.9999999999999999, 0.958073376, 0.8926344880923596],
+            [5600, 0.9999999999999999, 0.9606098714461387, 0.898931102604525],
+            [5650, 0.9999999999999999, 0.9631053382001785, 0.9051497468070107],
+            [5700, 0.9999999999999999, 0.9655606275761212, 0.9112915911462219],
+            [5750, 0.9999999999999999, 0.9679765696296984, 0.9173577864926572],
+            [5800, 0.9999999999999999, 0.9703539736574106, 0.9233494645639692],
+            [5850, 0.9999999999999999, 0.9726936288395459, 0.9292677383290058],
+            [5900, 0.9999999999999999, 0.9749963048569509, 0.9351137023944369],
+            [5950, 0.9999999999999999, 0.9772627524829894, 0.9408884333753873],
+            [6000, 0.9999999999999999, 0.9794937041519934, 0.9465929902513365],
+            [6050, 0.9999999999999999, 0.9816898745054606, 0.9522284147084595],
+            [6100, 0.9999999999999999, 0.9838519609171531, 0.9577957314694424],
+            [6150, 0.9999999999999999, 0.985980644, 0.9632959486117253],
+            [6200, 0.9999999999999999, 0.9880765880830688, 0.968730058],
+            [6250, 0.9999999999999999, 0.9901404416978291, 0.9740990349589803],
+            [6300, 0.9999999999999999, 0.9921728380108025, 0.9794038398114201],
+            [6350, 0.9999999999999999, 0.994174395, 0.9846454169082485],
+            [6400, 0.9999999999999999, 0.9961457172083131, 0.9898246955251696],
+            [6450, 0.9999999999999999, 0.9980873934753623, 0.9949425900020045],
+            [6500, 0.9999999999999999, 0.9999999999999999, 0.9999999999999999],
+            [6550, 0.9950257535529897, 0.9969009695454866, 0.9999999999999999],
+            [6600, 0.9901558275350814, 0.9938611687064293, 0.9999999999999999],
+            [6650, 0.985387142, 0.9908789681695013, 0.9999999999999999],
+            [6700, 0.9807167327751046, 0.9879527978724846, 0.9999999999999999],
+            [6750, 0.9761417505019084, 0.9850811442966311, 0.9999999999999999],
+            [6800, 0.9716594508326911, 0.9822625479086221, 0.9999999999999999],
+            [6850, 0.9672671917839691, 0.9794956007424293, 0.9999999999999999],
+            [6900, 0.962962429, 0.9767789441121134, 0.9999999999999999],
+            [6950, 0.9587427094208286, 0.9741112664472534, 0.9999999999999999],
+            [7000, 0.9546056709578988, 0.9714913012432921, 0.9999999999999999],
+            [7050, 0.9505490347007296, 0.9689178251196532, 0.9999999999999999],
+            [7100, 0.9465706031022837, 0.9663896559789803, 0.9999999999999999],
+            [7150, 0.9426682560531829, 0.9639056512613237, 0.9999999999999999],
+            [7200, 0.9388399475250745, 0.9614647062875362, 0.9999999999999999],
+            [7250, 0.9350837023873491, 0.9590657526865295, 0.9999999999999999],
+            [7300, 0.9313976133868124, 0.9567077569014076, 0.9999999999999999],
+            [7350, 0.9277798382806104, 0.9543897187698466, 0.9999999999999999],
+            [7400, 0.9242285971133756, 0.9521106701743852, 0.9999999999999999],
+            [7450, 0.9207421696301595, 0.949869674, 0.9999999999999999],
+            [7500, 0.9173188928172871, 0.9476658217053243, 0.9999999999999999],
+            [7550, 0.9139571585637788, 0.9454982345735933, 0.9999999999999999],
+            [7600, 0.9106554114364774, 0.9433660601906764, 0.9999999999999999],
+            [7650, 0.9074121465624503, 0.941268473, 0.9999999999999999],
+            [7700, 0.9042259076126604, 0.9392046710370684, 0.9999999999999999],
+            [7750, 0.9010952848812825, 0.9371738790051509, 0.9999999999999999],
+            [7800, 0.8980189134553906, 0.9351753433241903, 0.9999999999999999],
+            [7850, 0.8949954714700769, 0.9332083332745552, 0.9999999999999999],
+            [7900, 0.8920236784443775, 0.9312721397590148, 0.9999999999999999],
+            [7950, 0.8891022936936485, 0.9293660745056349, 0.9999999999999999],
+            [8000, 0.886230115, 0.9274894693060958, 0.9999999999999999],
+            [8050, 0.8834059762372196, 0.925641675, 0.9999999999999999],
+            [8100, 0.8806287478457724, 0.9238220622164832, 0.9999999999999999],
+            [8150, 0.8778973336558553, 0.9220300178323685, 0.9999999999999999],
+            [8200, 0.8752106705539591, 0.9202649472105277, 0.9999999999999999],
+            [8250, 0.8725677270907553, 0.9185262721518049, 0.9999999999999999],
+            [8300, 0.8699675023272219, 0.9168134305982583, 0.9999999999999999],
+            [8350, 0.8674090247306713, 0.9151258760733925, 0.9999999999999999],
+            [8400, 0.8648913511181692, 0.9134630771457514, 0.9999999999999999],
+            [8450, 0.8624135656450026, 0.9118245169147237, 0.9999999999999999],
+            [8500, 0.859974779, 0.9102096925174841, 0.9999999999999999],
+            [8550, 0.8575741266572385, 0.9086181146560544, 0.9999999999999999],
+            [8600, 0.85521077, 0.9070493071435142, 0.9999999999999999],
+            [8650, 0.8528838919642594, 0.9055028064684599, 0.9999999999999999],
+            [8700, 0.8505927007686224, 0.9039781613768485, 0.9999999999999999],
+            [8750, 0.8483364252392798, 0.9024749324704098, 0.9999999999999999],
+            [8800, 0.8461143159213861, 0.9009926918208634, 0.9999999999999999],
+            [8850, 0.8439256439845436, 0.8995310225992059, 0.9999999999999999],
+            [8900, 0.8417697005298966, 0.8980895187193827, 0.9999999999999999],
+            [8950, 0.8396457959248025, 0.896667784, 0.9999999999999999],
+            [9000, 0.8375532591637825, 0.895265434, 0.9999999999999999],
+            [9050, 0.8354914372545832, 0.8938820923111505, 0.9999999999999999],
+            [9100, 0.8334596946281716, 0.8925173920772573, 0.9999999999999999],
+            [9150, 0.8314574125716125, 0.8911709763548034, 0.9999999999999999],
+            [9200, 0.8294839886827815, 0.8898424967596753, 0.9999999999999999],
+            [9250, 0.8275388363459447, 0.8885316135082445, 0.9999999999999999],
+            [9300, 0.8256213842272874, 0.8872379951551886, 0.9999999999999999],
+            [9350, 0.8237310757895041, 0.8859613183408825, 0.9999999999999999],
+            [9400, 0.8218673688246214, 0.8847012675479576, 0.9999999999999999],
+            [9450, 0.8200297350042594, 0.8834575348666319, 0.9999999999999999],
+            [9500, 0.8182176594465799, 0.8822298197684467, 0.9999999999999999],
+            [9550, 0.8164306402992045, 0.8810178288880548, 0.9999999999999999],
+            [9600, 0.8146681883374179, 0.8798212758127268, 0.9999999999999999],
+            [9650, 0.8129298265770154, 0.8786398808792536, 0.9999999999999999],
+            [9700, 0.8112150899011712, 0.8774733709779462, 0.9999999999999999],
+            [9750, 0.8095235247007427, 0.8763214793634342, 0.9999999999999999],
+            [9800, 0.8078546885274517, 0.8751839454719985, 0.9999999999999999],
+            [9850, 0.8062081497594092, 0.8740605147451647, 0.9999999999999999],
+            [9900, 0.8045834872784748, 0.8729509384593115, 0.9999999999999999],
+            [9950, 0.8029802901589708, 0.8718549735610528, 0.9999999999999999],
+            [10000, 0.8013981573672813, 0.8707723825081655, 0.9999999999999999]
+        ];
+
+        function getInterpolatedColor(kelvin) {
+            if (kelvin <= 2000) return [colorTable[0][1], colorTable[0][2], colorTable[0][3]];
+            if (kelvin >= 10000) return [colorTable[colorTable.length-1][1], colorTable[colorTable.length-1][2], colorTable[colorTable.length-1][3]];
+
+            const indexFloat = (kelvin - 2000) / 50;
+            const idx = Math.floor(indexFloat);
+            const t = indexFloat - idx;
+
+            if (idx >= colorTable.length - 1) {
+                return [colorTable[colorTable.length-1][1], colorTable[colorTable.length-1][2], colorTable[colorTable.length-1][3]];
+            }
+
+            const c1 = colorTable[idx];
+            const c2 = colorTable[idx+1];
+
+            const r = c1[1] + (c2[1] - c1[1]) * t;
+            const g = c1[2] + (c2[2] - c1[2]) * t;
+            const b = c1[3] + (c2[3] - c1[3]) * t;
+
+            return [r, g, b];
+        }
+
+        const vsGLSL = `#version 300 es
+        in vec2 a_pos;
+        void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }`;
+
+        const fsGLSL = `#version 300 es
+        precision highp float;
+        uniform vec3 u_color;
+        uniform float u_exp;
+        out vec4 fragColor;
+
+        void main() {
+            vec3 col = u_color;
+            float gain = pow(2.0, u_exp) - 0.015625;
+            col = col * max(0.0, gain);
+            fragColor = vec4(col, 1.0);
+        }`;
+
+        const codeWGSL = `
+        struct Uniforms {
+            color: vec4f,
+            exp: f32,
+            pad1: f32, pad2: f32, pad3: f32
+        };
+        @group(0) @binding(0) var outTex: texture_storage_2d<rgba16float, write>;
+        @group(0) @binding(1) var<uniform> u: Uniforms;
+
+        @compute @workgroup_size(1)
+        fn main(@builtin(global_invocation_id) id: vec3u) {
+            let dim = textureDimensions(outTex);
+            if(id.x >= dim.x || id.y >= dim.y) { return; }
+
+            var col = u.color.rgb;
+            col = col * 2.0;
+            let gain = pow(2.0, u.exp) - 0.015625;
+            col = col * max(0.0, gain);
+
+            textureStore(outTex, id.xy, vec4f(col, 1.0));
+        }`;
+
+        const ui = document.getElementById('ui');
+        const btnMin = document.getElementById('btn_min');
+        const valTemp = document.getElementById('val_temp');
+        const inTemp = document.getElementById('in_temp');
+        const valExp = document.getElementById('val_exp');
+        const inExp = document.getElementById('in_exp');
+        
+        const btnSRGB = document.getElementById('btn_srgb');
+        const btnP3 = document.getElementById('btn_p3');
+        const btn2020 = document.getElementById('btn_2020');
+        const btnHDR = document.getElementById('btn_hdr');
+        const btnFull = document.getElementById('btn_full');
+        
+        const toastEl = document.getElementById('custom_toast');
+        const toastText = document.getElementById('toast_text');
+        let toastTimer = null;
+
+        const showToast = (msg) => {
+            toastText.textContent = msg;
+            toastEl.classList.add('show');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
+        };
+
+        let state = {
+            temp: 6500,
+            exp: 0.0,
+            space: 'p3', 
+            isHDR: false,
+            isCollapsed: false
+        };
+
+        btnMin.onclick = () => {
+            state.isCollapsed = !state.isCollapsed;
+            ui.classList.toggle('collapsed', state.isCollapsed);
+            btnMin.textContent = state.isCollapsed ? '+' : '–';
+        };
+
+        const updateInputs = () => {
+            valTemp.textContent = state.temp + "K";
+            let ev = parseFloat(state.exp).toFixed(1);
+            if (state.exp == 0) ev = "0.0";
+            valExp.textContent = ev;
+        };
+
+        inTemp.oninput = () => { state.temp = parseInt(inTemp.value); updateInputs(); requestAnimationFrame(render); };
+        inExp.oninput = () => { state.exp = parseFloat(inExp.value); updateInputs(); requestAnimationFrame(render); };
+
+        const setSpace = (s) => {
+            state.space = s;
+            [btnSRGB, btnP3, btn2020].forEach(b => b.classList.remove('active'));
+            if(s==='srgb') btnSRGB.classList.add('active');
+            if(s==='p3') btnP3.classList.add('active');
+            if(s==='rec2020') btn2020.classList.add('active');
+            
+            if (state.isHDR && gpuCtx) {
+                configureWebGPU(s);
+            }
+            requestAnimationFrame(render);
+        };
+
+        btnSRGB.onclick = () => {
+            if (state.isHDR) {
+                showToast("HDR is not supported in sRGB color space.");
+                switchMode(false);
+            }
+            setSpace('srgb');
+        };
+        btnP3.onclick = () => setSpace('p3');
+        btn2020.onclick = () => setSpace('rec2020');
+
+        btnFull.onclick = () => {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(console.error);
+            else document.exitFullscreen();
+        };
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) { btnFull.textContent = "EXIT FULL"; btnFull.classList.add('active'); }
+            else { btnFull.textContent = "FULLSCREEN"; btnFull.classList.remove('active'); }
+        });
+
+        let gl = null;
+        let gpu = null;
+        let gpuCtx = null;
+        let canvas = null;
+
+        function resetCanvas() {
+            if(canvas) canvas.remove();
+            canvas = document.createElement('canvas');
+            document.body.appendChild(canvas);
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            return canvas;
+        }
+
+        async function initWebGL() {
+            resetCanvas();
+            gl = canvas.getContext('webgl2', { powerPreference: "high-performance" });
+            if (!gl) return;
+
+            const vs = gl.createShader(gl.VERTEX_SHADER);
+            gl.shaderSource(vs, vsGLSL);
+            gl.compileShader(vs);
+
+            const fs = gl.createShader(gl.FRAGMENT_SHADER);
+            gl.shaderSource(fs, fsGLSL);
+            gl.compileShader(fs);
+
+            const prog = gl.createProgram();
+            gl.attachShader(prog, vs);
+            gl.attachShader(prog, fs);
+            gl.linkProgram(prog);
+            
+            gl.useProgram(prog);
+
+            const buf = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+            
+            const loc = gl.getAttribLocation(prog, "a_pos");
+            gl.enableVertexAttribArray(loc);
+            gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+            gl.prog = prog;
+            gl.uColor = gl.getUniformLocation(prog, "u_color");
+            gl.uExp = gl.getUniformLocation(prog, "u_exp");
+        }
+
+        function configureWebGPU(space) {
+             if (!gpuCtx || !gpu) return;
+             
+             let cs = 'srgb';
+             if (space === 'p3') cs = 'display-p3';
+             if (space === 'rec2020') cs = 'display-p3'; 
+
+             const config = {
+                device: gpu.device,
+                format: 'rgba16float',
+                usage: GPUTextureUsage.STORAGE_BINDING,
+                colorSpace: cs
+            };
+            try {
+                gpuCtx.configure(config);
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        async function initWebGPU() {
+            if (!navigator.gpu) throw new Error("No WebGPU");
+            const adapter = await navigator.gpu.requestAdapter();
+            if (!adapter) throw new Error("No Adapter");
+            const device = await adapter.requestDevice();
+            
+            resetCanvas();
+            gpuCtx = canvas.getContext('webgpu');
+            
+            gpu = { device, pipeline: null, uBuff: null };
+            
+            configureWebGPU(state.space);
+
+            const mod = device.createShaderModule({ code: codeWGSL });
+            const pipeline = device.createComputePipeline({
+                layout: 'auto', compute: { module: mod, entryPoint: 'main' }
+            });
+
+            const uBuff = device.createBuffer({ size: 32, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+            
+            gpu.pipeline = pipeline;
+            gpu.uBuff = uBuff;
+        }
+
+        async function switchMode(hdr) {
+            if (hdr) {
+                try {
+                    await initWebGPU();
+                    state.isHDR = true;
+                    btnHDR.classList.add('active');
+                    requestAnimationFrame(render);
+                } catch (e) {
+                    showToast("WebGPU not supported.");
+                    state.isHDR = false;
+                    btnHDR.classList.remove('active');
+                    initWebGL();
+                    requestAnimationFrame(render);
+                }
+            } else {
+                state.isHDR = false;
+                btnHDR.classList.remove('active');
+                initWebGL();
+                requestAnimationFrame(render);
+            }
+        }
+
+        btnHDR.onclick = () => {
+            if (state.isHDR) {
+                switchMode(false);
+            } else {
+                if (state.space === 'srgb') {
+                    showToast("HDR is not supported in sRGB color space.");
+                    setSpace('p3');
+                }
+                switchMode(true);
+            }
+        };
+
+        function render() {
+            const rgb = getInterpolatedColor(state.temp);
+
+            if (state.isHDR && gpu && gpu.pipeline) {
+                const { device, pipeline, uBuff } = gpu;
+                const w = canvas.width, h = canvas.height;
+                
+                const data = new Float32Array([
+                    rgb[0], rgb[1], rgb[2], 1.0,
+                    state.exp, 0, 0, 0
+                ]);
+                device.queue.writeBuffer(uBuff, 0, data);
+
+                const bindGroup = device.createBindGroup({
+                    layout: pipeline.getBindGroupLayout(0),
+                    entries: [
+                        { binding: 0, resource: gpuCtx.getCurrentTexture().createView() },
+                        { binding: 1, resource: { buffer: uBuff } }
+                    ]
+                });
+
+                const enc = device.createCommandEncoder();
+                const pass = enc.beginComputePass();
+                pass.setPipeline(pipeline);
+                pass.setBindGroup(0, bindGroup);
+                pass.dispatchWorkgroups(Math.ceil(w), Math.ceil(h));
+                pass.end();
+                device.queue.submit([enc.finish()]);
+
+            } else if (gl) {
+                gl.viewport(0, 0, canvas.width, canvas.height);
+                gl.uniform3fv(gl.uColor, rgb);
+                gl.uniform1f(gl.uExp, state.exp);
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            }
+        }
+
+        window.onresize = () => {
+            if (canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                if (state.isHDR && gpuCtx) configureWebGPU(state.space);
+            }
+            requestAnimationFrame(render);
+        };
+
+        initWebGL().then(() => requestAnimationFrame(render));
+
+    </script>
+</body>
+</html>

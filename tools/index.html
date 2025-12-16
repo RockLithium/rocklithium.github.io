@@ -78,10 +78,10 @@
         }
 
         #button-container {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 30px;
-            flex-wrap: wrap;
-            justify-content: center;
+            justify-items: center;
             position: relative;
             z-index: 10;
             max-width: 1200px;
@@ -256,7 +256,7 @@
             }
 
             #button-container {
-                flex-direction: column;
+                grid-template-columns: 1fr;
                 gap: 25px;
             }
 
@@ -284,6 +284,10 @@
 
             <div class="tool-button" data-href="../freqanalyzer" data-desc="可视化音频频谱分析工具，支持本地文件和实时分析。本地文件支持导出最低频和峰值频率的 SRT 。">
                 频谱分析器
+            </div>
+
+            <div class="tool-button" data-href="../colortemp" data-desc="色温可视化工具。支持 HDR 和广色域显示。">
+                色温生成器
             </div>
         </div>
     </div>
