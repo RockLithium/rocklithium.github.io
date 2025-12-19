@@ -2,123 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=850, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Audio Frequency Analyzer</title>
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Condensed&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
     <style>
         @font-face {
-            font-family: 'Unispace Bd';
-            src: url('../fonts/Unispace Bd.otf') format('opentype');
+            font-family: 'Unispace Custom';
+            src: url('Unispace Bd.otf') format('opentype');
             font-weight: bold;
             font-style: normal;
             font-display: swap;
         }
-
-        @font-face {
-            font-family: 'Dempster';
-            src: url('../fonts/Dempster.otf') format('opentype');
-            font-weight: bold;
-            font-style: normal;
-            font-display: swap;
-            size-adjust: 120%;
-        }
-
         body {
-            background-color: #121212;
+            background-color: #1a1a1a;
             color: #E0E0E0;
             margin: 0;
             padding: 0;
-            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
+            font-family: 'Ubuntu Condensed', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            letter-spacing: 0.3px;
         }
-
         #homeButton {
             position: absolute;
             top: 20px;
             left: 20px;
-            padding: 10px 16px;
-            font-size: 0.9em;
-            color: rgba(255, 255, 255, 0.85);
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(20px) saturate(120%);
-            -webkit-backdrop-filter: blur(20px) saturate(120%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 30px;
+            padding: 10px 15px;
+            font-size: 16px;
+            color: #e0e0e0;
+            background-color: #2A2A2A;
+            border: 0.5px solid #505050;
+            border-radius: 5px;
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: background-color 0.3s;
             z-index: 100;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-
         #homeButton:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: scale(1.04);
+            background-color: #333333;
+            border-color: #FF7E00;
+            box-shadow: 0 0 5px rgba(255, 126, 0, 0.5);
         }
-
-        #langSelectorContainer {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-        }
-
-        .lang-select {
-            padding: 10px 16px;
-            font-size: 0.9em;
-            color: rgba(255, 255, 255, 0.85);
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(20px) saturate(120%);
-            -webkit-backdrop-filter: blur(20px) saturate(120%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            outline: none;
-            cursor: pointer;
-            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
-            transition: all 0.3s ease;
-        }
-
-        .lang-select option {
-            background-color: #1a1a1a;
-            color: #E0E0E0;
-        }
-
-        .container {
-            max-width: 800px;
-            width: 90%;
-            padding: 10px 0 40px 0;
-            margin-top: 70px;
-            margin-left: auto;
-            margin-right: auto;
-            background: rgba(30, 30, 30, 0.6);
-            backdrop-filter: blur(15px);
-            border-radius: 28px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-            text-align: center;
-            position: relative;
-        }
-
         h1 {
-            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
-            font-size: 48px;
+            font-family: 'Ubuntu Condensed', sans-serif;
+            font-size: 44px;
+            text-align: center;
+            margin-bottom: 10px;
+            margin-top: 0;
             background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-            letter-spacing: 2px;
+            background-clip: text;
+            color: transparent;
         }
-
         .subtitle {
             font-size: 18px;
             color: #888;
             margin-bottom: 40px;
         }
-
+        .container {
+            max-width: 800px;
+            width: 90%;
+            padding: 20px;
+            margin-top: 50px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+            position: relative;
+        }
         .input-group {
             margin-bottom: 20px;
             max-width: 600px;
@@ -126,29 +77,24 @@
             margin-right: auto;
             text-align: left;
         }
-
         .input-title-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 5px;
         }
-
         .input-title {
             font-family: 'Ubuntu Condensed', sans-serif;
             font-size: 18px;
             color: #E0E0E0;
             text-align: left;
-            margin-bottom: 5px;
         }
-
         .file-upload-wrapper {
             position: relative;
             width: 100%;
             height: 60px;
-            background-color: rgba(42, 42, 42, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
+            background-color: #2A2A2A;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -157,24 +103,19 @@
             overflow: hidden;
             border: 2px solid transparent;
         }
-
         .file-upload-wrapper.drag-active {
+            background-color: #333;
             border-color: #FF7E00;
-            box-shadow: 0 0 15px rgba(255, 126, 0, 0.3);
-            background-color: rgba(50, 50, 50, 1);
             border-style: dashed;
+            box-shadow: 0 0 15px rgba(255, 126, 0, 0.3);
             z-index: 50;
         }
-
         .file-upload-wrapper.drag-active .file-upload-text {
             color: #FF7E00;
         }
-
         .file-upload-wrapper:hover {
-            border-color: #FF7E00;
-            border-style: dashed;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
         }
-
         .file-upload-wrapper input[type=file] {
             position: absolute;
             left: 0;
@@ -185,9 +126,8 @@
             cursor: pointer;
             z-index: 100; 
         }
-
         .file-upload-text {
-            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+            font-family: 'Unispace Custom', "PingFang SC", sans-serif;
             font-weight: bold;
             font-size: 18px;
             color: #888;
@@ -198,106 +138,90 @@
             padding: 0 20px;
             transition: color 0.3s;
         }
-
         .options-grid {
             display: flex;
             gap: 10px;
             justify-content: space-between;
             margin-bottom: 10px;
         }
-
         .option-btn {
-            background-color: rgba(42, 42, 42, 0.5);
+            background-color: #2A2A2A;
             height: 50px;
             flex: 1; 
-            border-radius: 10px;
+            border-radius: 4px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+            font-family: 'Unispace Custom', "PingFang SC", sans-serif;
             font-weight: bold;
             font-size: 16px;
             color: #888;
-            border: 1px solid rgba(88, 88, 88, 0.3);
+            border: 0.5px solid #555;
             transition: all 0.2s;
             user-select: none;
         }
-
         .option-btn:hover {
+            border-color: #888;
+        }
+        .option-btn.active {
+            background: #222;
             border-color: #FF7E00;
             color: #E0E0E0;
+            box-shadow: 0 0 8px rgba(255, 126, 0, 0.3);
+            text-shadow: 0 0 1px #FF7E00;
         }
-
-        .option-btn.active {
-            background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            color: transparent; 
-            border: 1px solid #FF7E00; 
-            box-shadow: 0 0 10px rgba(255, 126, 0, 0.3); 
-        }
-
         .option-btn.active::before {
             content: "✔ ";
             color: #FF7E00;
             margin-right: 5px;
         }
-
         #optRealTime.active::before {
             content: "" !important;
             margin: 0;
         }
-
         .hidden {
             display: none !important;
         }
-
         .param-box {
-            background-color: rgba(42, 42, 42, 0.5);
+            background-color: #2A2A2A;
             height: 50px;
             flex: 1; 
-            border-radius: 10px;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 15px;
-            border: 1px solid rgba(88, 88, 88, 0.3);
+            border: 0.5px solid #555;
             transition: border-color 0.2s;
-            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+            font-family: 'Unispace Custom', "PingFang SC", sans-serif;
         }
-
         .param-box:focus-within {
-            border-color: #FF7E00;
+            border-color: #888;
         }
-
         .param-label {
             color: #888;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             user-select: none;
             white-space: nowrap;
         }
-
         .param-input {
             background: transparent;
             border: none;
             color: #E0E0E0;
-            font-family: 'Unispace Bd', monospace;
+            font-family: 'Unispace Custom', monospace;
             font-size: 16px;
             text-align: right;
             width: 100%; 
             outline: none;
             font-weight: bold;
         }
-
         .param-input:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             color: #666;
         }
-
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
             -webkit-appearance: none; margin: 0; 
@@ -308,7 +232,6 @@
             max-width: 600px;
             margin: 0 auto 20px auto;
         }
-
         .main-btn {
             width: 100%;
             padding: 10px 40px;
@@ -316,7 +239,7 @@
             cursor: pointer;
             color: #E0E0E0;
             border: none;
-            border-radius: 10px;
+            border-radius: 4px;
             font-family: 'Ubuntu Condensed', sans-serif;
             transition: all 0.3s;
             text-transform: uppercase;
@@ -324,59 +247,49 @@
             text-shadow: none; 
             box-shadow: none;
         }
-
         .process-button {
             background: linear-gradient(45deg, #2E8B57 0%, #3CB371 100%);
         }
-
         .process-button:hover:not(:disabled) {
             filter: brightness(1.1);
             transform: translateY(-1px);
         }
-
         .process-button:disabled {
             background: #444;
             color: #888;
             cursor: not-allowed;
         }
-
         .process-button.is-processing {
             background: linear-gradient(45deg, #8B0000 0%, #B22222 100%);
             animation: pulse 2s infinite;
         }
-
         .process-button.is-complete {
             background: linear-gradient(45deg, #1E90FF 0%, #00BFFF 100%);
             cursor: default;
         }
-
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(178, 34, 34, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(178, 34, 34, 0); }
             100% { box-shadow: 0 0 0 0 rgba(178, 34, 34, 0); }
         }
-
         .download-button {
             background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
             width: 100%;
             max-width: 600px;
         }
-
         .download-button:disabled {
             background: #444;
             color: #888;
             cursor: not-allowed;
             display: none; 
         }
-
         .download-button:active {
             transform: scale(0.98);
         }
-
         .preview-box {
-            background-color: rgba(42, 42, 42, 0.5);
+            background-color: #2A2A2A;
             border: 1px dashed #505050;
-            border-radius: 10px;
+            border-radius: 4px;
             min-height: 150px;
             display: flex;
             align-items: center;
@@ -386,23 +299,20 @@
             position: relative;
             overflow: hidden;
         }
-
         .preview-placeholder {
             color: #555;
-            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+            font-family: 'Unispace Custom', "PingFang SC", sans-serif;
             font-weight: bold;
             text-align: center;
         }
-
         .status-text {
-            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+            font-family: 'Unispace Custom', "PingFang SC", sans-serif;
             font-weight: bold;
             margin-top: 10px;
             font-size: 14px;
             color: #888;
             min-height: 20px;
         }
-
         .visualizer-container {
             position: relative;
             width: 100%;
@@ -410,13 +320,11 @@
             background: #000;
             touch-action: manipulation;
         }
-
         canvas {
             display: block;
             width: 100%;
             height: 100%;
         }
-
         .vis-overlay {
             position: absolute;
             bottom: 10px;
@@ -426,7 +334,6 @@
             justify-content: center;
             pointer-events: none;
         }
-
         .vis-controls {
             pointer-events: auto;
             background: rgba(20, 20, 20, 0.9);
@@ -442,16 +349,13 @@
             opacity: 1;
             transform: translateY(0);
         }
-
         .vis-controls.hide-ui {
             transform: translateY(150%);
             opacity: 0;
         }
-
         .visualizer-container.hide-cursor {
             cursor: none;
         }
-
         .vis-btn {
             background: none;
             border: none;
@@ -468,16 +372,13 @@
             flex-shrink: 0;
             padding: 0;
         }
-
         .vis-btn svg {
             width: 20px;
             height: 20px;
             fill: currentColor;
             display: block;
         }
-
         .vis-btn:hover { color: #FF7E00; background: rgba(255,255,255,0.1); }
-
         .vis-pitch-btn {
             position: absolute;
             top: 10px;
@@ -487,38 +388,33 @@
             border: 1px solid #555;
             color: #888;
             padding: 4px 10px;
-            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+            font-family: 'Unispace Custom', monospace;
             font-size: 12px;
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s;
             outline: none;
         }
-
         .vis-pitch-btn:hover {
             border-color: #888;
             color: #aaa;
         }
-
         .vis-pitch-btn.active {
             background: #222;
             border-color: #FF7E00;
             color: #FF7E00;
             box-shadow: 0 0 5px rgba(255, 126, 0, 0.3);
         }
-
         .vis-progress-container {
             flex-grow: 1;
             display: flex;
             align-items: center;
         }
-
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
             background: transparent;
         }
-
         input[type=range]:focus { outline: none; }
         
         input[type=range]::-webkit-slider-thumb {
@@ -531,7 +427,6 @@
             margin-top: -5px;
             box-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
-
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
             height: 4px;
@@ -539,7 +434,6 @@
             background: #444;
             border-radius: 2px;
         }
-
         input[type=range]::-moz-range-thumb {
             height: 14px;
             width: 14px;
@@ -549,7 +443,6 @@
             border: none;
             box-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
-
         input[type=range]::-moz-range-track {
             width: 100%;
             height: 4px;
@@ -557,34 +450,39 @@
             background: #444;
             border-radius: 2px;
         }
-
         .vis-hint {
             position: absolute;
             top: 10px;
             right: 10px;
             color: rgba(255,255,255,0.3);
-            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+            font-family: 'Unispace Custom', monospace;
             font-size: 10px;
             pointer-events: none;
         }
-
+        @media (max-width: 820px) {
+            #homeButton { top: 10px; left: 10px; padding: 8px 12px; }
+            h1 { font-size: 36px; margin-top: 20px; }
+            .container { margin-top: 40px; }
+            .main-btn { font-size: 20px; }
+        }
+        @media (max-width: 600px) {
+            .options-grid {
+                flex-direction: column;
+            }
+            .param-box, .option-btn {
+                flex: none;
+                width: 100%;
+                box-sizing: border-box;
+                height: 50px;
+            }
+        }
     </style>
 </head>
 <body>
     <a href="../tools" id="homeButton">← Go Back</a>
-
-    <div id="langSelectorContainer">
-        <select class="lang-select" onchange="changeLanguage(this.value)">
-            <option value="en-US" selected>English</option>
-            <option value="zh-Hans">简体中文</option>
-            <option value="fr-FR">Français</option>
-            <option value="ru-RU">Русский</option>
-        </select>
-    </div>
-
     <div class="container">
-        <h1 id="main-title">Audio Frequency Analyzer</h1>
-        <div class="subtitle" id="main-subtitle">Visualize audio spectrums, detect peaks, and optional SRT export.</div>
+        <h1>Audio Frequency Analyzer</h1>
+        <div class="subtitle">Visualize audio spectrums, detect peaks, and optional SRT export.</div>
         
         <div class="input-group">
              <div class="options-grid">
@@ -593,7 +491,7 @@
         </div>
 
         <div class="input-group" id="fileInputGroup">
-            <div class="input-title" id="label-select-file">SELECT MEDIA FILE</div>
+            <div class="input-title">SELECT MEDIA FILE</div>
             <div class="file-upload-wrapper" id="dropZone">
                 <span class="file-upload-text" id="fileNameDisplay">Click or drop file here...</span>
                 <input type="file" id="fileInput" accept=".wav, .mp3, .flac, .aac, .m4a, .ogg, .wma, .mp4, .mov, .mkv, .webm, .avi">
@@ -602,26 +500,26 @@
         </div>
         
         <div class="input-group" style="margin-bottom: 10px;">
-            <div class="input-title" id="label-algorithm">ALGORITHM OPTIONS</div>
+            <div class="input-title">ALGORITHM OPTIONS</div>
             
             <div class="options-grid" style="margin-bottom: 10px;" id="optionsRow1">
                 <div class="param-box" id="boxRate">
-                    <span class="param-label" id="label-rate">Analysis Rate (Hz)</span>
+                    <span class="param-label">Sampling Rate (Hz)</span>
                     <input type="number" id="inputRate" value="10" min="1" step="1" class="param-input">
                 </div>
                 <div class="param-box" id="boxDB">
-                    <span class="param-label" id="label-db">Peak Threshold</span>
+                    <span class="param-label">dB Below Peak</span>
                     <input type="number" id="inputDB" value="15" min="0" step="0.5" class="param-input">
                 </div>
             </div>
 
             <div class="options-grid" style="margin-bottom: 10px;" id="optionsRow2">
                 <div class="param-box" id="boxWindow">
-                    <span class="param-label" id="label-window">Window Size (ms)</span>
+                    <span class="param-label">Window (ms)</span>
                     <input type="number" id="inputWindow" value="500" min="10" max="1000" step="10" class="param-input">
                 </div>
                 <div class="param-box" id="boxHighPass">
-                    <span class="param-label" id="label-high-pass">High Pass Filter (Hz)</span>
+                    <span class="param-label">High Pass (Hz)</span>
                     <input type="number" id="inputHighPass" value="20" min="0" step="1" class="param-input">
                 </div>
             </div>
@@ -641,7 +539,7 @@
                 <div class="input-title"><span id="previewTitle">PREVIEW</span></div>
             </div>
             <div class="preview-box" id="previewArea">
-                <span class="preview-placeholder" id="placeholder-text">No media loaded</span>
+                <span class="preview-placeholder">No media loaded</span>
             </div>
         </div>
         <div class="input-group" style="text-align: center;" id="downloadGroup">
@@ -649,202 +547,6 @@
         </div>
     </div>
     <script>
-        const translations = {
-            'en-US': {
-                goBack: "← Go Back",
-                title: "Audio Spectrum Analyzer",
-                subtitle: "Visualize audio spectrums, detect peaks, and optional SRT export.",
-                realTime: "Real-Time Analysis",
-                selectFile: "SELECT MEDIA FILE",
-                dropText: "Click or drop file here...",
-                algorithm: "ANALYSIS PARAMETERS",
-                rate: "Analysis Rate (Hz)",
-                db: "Peak Threshold (dB)",
-                window: "Window Size (ms)",
-                highPass: "High Pass Filter (Hz)",
-                genSpectrum: "Generate Spectrum",
-                genSRT: "Generate SRT",
-                startProc: "Start Analysis",
-                stopProc: "Stop Analysis",
-                procComp: "Analysis Complete",
-                preview: "PREVIEW",
-                spectrum: "SPECTRUM",
-                noMedia: "No media loaded",
-                dlSRT: "DOWNLOAD SRT",
-                waitInput: "Waiting for input...",
-                selected: "Selected: ",
-                loading: "Loading media data...",
-                decoding: "Decoding audio track...",
-                analyzing: "Analyzing: ",
-                complete: "Analysis complete.",
-                error: "Error: ",
-                freqPitch: "FREQ / PITCH",
-                fsHint: "Double-Click/F: Fullscreen",
-                playPauseHint: "Space: Play/Pause"
-            },
-            'zh-Hans': {
-                goBack: "← 返回",
-                title: "音频频谱分析器",
-                subtitle: "可视化音频频谱，检测最低频与峰值，并可导出 SRT。",
-                realTime: "实时分析",
-                selectFile: "选择媒体文件",
-                dropText: "点击选择或拖拽文件至此...",
-                algorithm: "分析参数设置",
-                rate: "采样频率 (Hz)",
-                db: "峰下阈值 (dB)",
-                window: "窗口时长 (ms)",
-                highPass: "高通滤波 (Hz)",
-                genSpectrum: "生成频谱图",
-                genSRT: "生成 SRT",
-                startProc: "开始分析",
-                stopProc: "停止分析",
-                procComp: "分析完成",
-                preview: "预览",
-                spectrum: "实时频谱",
-                noMedia: "未加载媒体",
-                dlSRT: "下载 SRT",
-                waitInput: "等待输入文件...",
-                selected: "已选择：",
-                loading: "正在加载媒体数据...",
-                decoding: "正在解码音轨...",
-                analyzing: "分析中：",
-                complete: "分析完成。",
-                error: "错误：",
-                freqPitch: "频率 / 音高",
-                fsHint: "双击/F：全屏",
-                playPauseHint: "空格：播放/暂停"
-            },
-            'fr-FR': {
-                goBack: "← Retour",
-                title: "Analyseur de spectre audio",
-                subtitle: "Visualisez les spectres, détectez les pics et exportez en SRT.",
-                realTime: "Temps réel",
-                selectFile: "CHOISIR UN FICHIER",
-                dropText: "Cliquez ou glissez-déposez ici...",
-                algorithm: "PARAMÈTRES D'ANALYSE",
-                rate: "Taux d'analyse (Hz)",
-                db: "Seuil de crête (dB)",
-                window: "Fenêtre (ms)",
-                highPass: "Filtre passe-haut (Hz)",
-                genSpectrum: "Générer le spectre",
-                genSRT: "Générer le SRT",
-                startProc: "Lancer l'analyse",
-                stopProc: "Arrêter l'analyse",
-                procComp: "Analyse terminée",
-                preview: "APERÇU",
-                spectrum: "SPECTRE",
-                noMedia: "Aucun média",
-                dlSRT: "TÉLÉCHARGER LE SRT",
-                waitInput: "En attente d'un fichier...",
-                selected: "Sélectionné : ",
-                loading: "Chargement des données...",
-                decoding: "Décodage de l'audio...",
-                analyzing: "Analyse en cours : ",
-                complete: "Analyse terminée.",
-                error: "Erreur : ",
-                freqPitch: "FREQ / TON",
-                fsHint: "Double-clic/F : Plein écran",
-                playPauseHint: "Espace : Lire/Pause"
-            },
-            'ru-RU': {
-                goBack: "← Назад",
-                title: "Анализатор спектра",
-                subtitle: "Визуализация аудиоспектра, поиск пиков и экспорт в SRT.",
-                realTime: "Режим реального времени",
-                selectFile: "ВЫБРАТЬ ФАЙЛ",
-                dropText: "Нажмите или перетащите файл...",
-                algorithm: "ПАРАМЕТРЫ АНАЛИЗА",
-                rate: "Частота анализа (Hz)",
-                db: "Порог пика (dB)",
-                window: "Длина окна (ms)",
-                highPass: "ФВЧ (Hz)",
-                genSpectrum: "Построить спектр",
-                genSRT: "Создать SRT",
-                startProc: "Начать анализ",
-                stopProc: "Остановить анализ",
-                procComp: "Анализ завершен",
-                preview: "ПРЕДПРОСМОТР",
-                spectrum: "СПЕКТР",
-                noMedia: "Медиа не загружено",
-                dlSRT: "СКАЧАТЬ SRT",
-                waitInput: "Ожидание файла...",
-                selected: "Выбрано: ",
-                loading: "Загрузка данных...",
-                decoding: "Декодирование аудиоданных...",
-                analyzing: "Анализ: ",
-                complete: "Анализ завершен.",
-                error: "Ошибка: ",
-                freqPitch: "ЧАСТОТА / ВЫСОТА",
-                fsHint: "Двойной клик/F: Полный экран",
-                playPauseHint: "Пробел: Воспроизведение/Пауза"
-            }
-        };
-
-        let currentLang = 'en-US';
-
-        function changeLanguage(lang) {
-            currentLang = lang;
-            const t = translations[lang];
-            
-            document.getElementById('homeButton').textContent = t.goBack;
-            document.getElementById('main-title').textContent = t.title;
-            document.getElementById('main-subtitle').textContent = t.subtitle;
-            document.getElementById('optRealTime').textContent = t.realTime;
-            document.getElementById('label-select-file').textContent = t.selectFile;
-            document.getElementById('label-algorithm').textContent = t.algorithm;
-            document.getElementById('label-rate').textContent = t.rate;
-            document.getElementById('label-db').textContent = t.db;
-            document.getElementById('label-window').textContent = t.window;
-            document.getElementById('label-high-pass').textContent = t.highPass;
-            document.getElementById('optSpectrum').textContent = t.genSpectrum;
-            document.getElementById('optSRT').textContent = t.genSRT;
-            
-            if (isProcessing) {
-                processBtn.textContent = t.stopProc;
-            } else if (processBtn.classList.contains('is-complete')) {
-                processBtn.textContent = t.procComp;
-            } else {
-                processBtn.textContent = t.startProc;
-            }
-
-            document.getElementById('previewTitle').textContent = optRealTime.classList.contains('active') ? t.spectrum : t.preview;
-            document.getElementById('downloadBtn').textContent = t.dlSRT;
-            
-            const placeholder = document.getElementById('placeholder-text');
-            if (placeholder) placeholder.textContent = t.noMedia;
-
-            if (optRealTime.classList.contains('active')) {
-                statusText.textContent = t.realTime;
-            } else if (!selectedFile) {
-                statusText.textContent = t.waitInput;
-                fileNameDisplay.textContent = t.dropText;
-            } else {
-                switch (currentProcessingState.type) {
-                    case 'loading': statusText.textContent = t.loading; break;
-                    case 'decoding': statusText.textContent = t.decoding; break;
-                    case 'analyzing': 
-                        statusText.textContent = t.analyzing + Math.round(currentProcessingState.progress * 100) + "%"; 
-                        break;
-                    case 'complete': statusText.textContent = t.complete; break;
-                    default:
-                        const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
-                        statusText.textContent = `${t.selected}${selectedFile.name} (${sizeMB} MB)`;
-                }
-            }
-
-            const visPitchBtn = document.getElementById('visPitchBtn');
-            if (visPitchBtn) visPitchBtn.textContent = t.freqPitch;
-
-            const visHint = document.querySelector('.vis-hint');
-            if (visHint) {
-                if (optRealTime.classList.contains('active')) {
-                    visHint.textContent = t.fsHint;
-                } else {
-                    visHint.textContent = `${t.fsHint} | ${t.playPauseHint}`;
-                }
-            }
-        }
-
         function transform(real, imag) {
             const n = real.length;
             if (n <= 1) return;
@@ -1035,11 +737,6 @@
 
         let isPitchMode = false;
 
-        let currentProcessingState = {
-            type: 'idle',
-            progress: 0
-        };
-
         optRealTime.addEventListener('click', () => {
             const isActive = optRealTime.classList.toggle('active');
             if (isActive) {
@@ -1050,9 +747,7 @@
         });
 
         async function enableRealTimeMode() {
-            const t = translations[currentLang];
-            resetUIOnOptionChange();
-            previewTitle.textContent = t.spectrum;
+            previewTitle.textContent = "SPECTRUM";
             savedParams = {
                 rate: inputRate.value,
                 db: inputDB.value,
@@ -1075,7 +770,7 @@
             if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
             stopVisualizer();
             previewArea.innerHTML = '';
-            statusText.textContent = t.realTime + "...";
+            statusText.textContent = "Requesting microphone access...";
             
             try {
                 const constraints = {
@@ -1088,19 +783,18 @@
                     }
                 };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                statusText.textContent = t.realTime;
+                statusText.textContent = "Real-time analysis active.";
                 startRealTimeVisualizer(stream);
             } catch (err) {
                 console.error(err);
-                statusText.textContent = t.error + "Mic denied.";
+                statusText.textContent = "Error: Microphone access denied or not available.";
                 optRealTime.classList.remove('active');
                 disableRealTimeMode();
             }
         }
 
         function disableRealTimeMode() {
-            const t = translations[currentLang];
-            previewTitle.textContent = t.preview;
+            previewTitle.textContent = "PREVIEW";
             stopRealTimeVisualizer();
             
             fileInputGroup.classList.remove('hidden');
@@ -1113,40 +807,13 @@
             boxRate.classList.remove('hidden');
             boxHighPass.classList.remove('hidden');
 
-            currentProcessingState.type = 'idle'; 
-            currentProcessingState.progress = 0;
-            processBtn.classList.remove('is-complete', 'is-processing');
-            processBtn.textContent = t.startProc;
-
             if (savedParams.rate) inputRate.value = savedParams.rate;
             if (savedParams.db) inputDB.value = savedParams.db;
             if (savedParams.window) inputWindow.value = savedParams.window;
             if (savedParams.highPass) inputHighPass.value = savedParams.highPass;
 
-            if (!selectedFile) {
-                statusText.textContent = t.waitInput;
-                previewArea.innerHTML = `<span class="preview-placeholder" id="placeholder-text">${t.noMedia}</span>`;
-                processBtn.disabled = true;
-            } else {
-                const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
-                statusText.textContent = `${t.selected}${selectedFile.name} (${sizeMB} MB)`;
-                
-                previewArea.innerHTML = '';
-                const audio = document.createElement('audio'); 
-                audio.src = currentObjectUrl; 
-                audio.controls = true; 
-                audio.style.width = "90%"; 
-                audio.style.height = "50px"; 
-                audio.style.marginTop = "10px";
-                const wrapper = document.createElement('div');
-                wrapper.style.textAlign = "center";
-                wrapper.style.width = "100%"; 
-                wrapper.innerHTML = `<div style="font-size:48px; margin-bottom:5px;">🎵</div>`;
-                wrapper.appendChild(audio);
-                previewArea.appendChild(wrapper);
-                
-                processBtn.disabled = false;
-            }
+            statusText.textContent = "Real-time analysis stopped.";
+            previewArea.innerHTML = '<span class="preview-placeholder">No media loaded</span>';
         }
 
         function stopRealTimeVisualizer() {
@@ -1161,15 +828,14 @@
         }
 
         function startRealTimeVisualizer(stream) {
-            const t = translations[currentLang];
             stopRealTimeVisualizer();
             rtStream = stream;
 
             previewArea.innerHTML = `
                 <div class="visualizer-container" id="visContainer">
-                    <button class="vis-pitch-btn ${isPitchMode ? 'active' : ''}" id="visPitchBtn">${t.freqPitch}</button>
+                    <button class="vis-pitch-btn ${isPitchMode ? 'active' : ''}" id="visPitchBtn">FREQ / PITCH</button>
                     <canvas id="visCanvas"></canvas>
-                    <div class="vis-hint">${t.fsHint}</div>
+                    <div class="vis-hint">Double-Click/F: Fullscreen</div>
                 </div>
             `;
 
@@ -1252,7 +918,7 @@
                     return height - (norm * height);
                 }
 
-                ctx.font = "16px 'Unispace Bd', monospace";
+                ctx.font = "16px 'Unispace Custom', monospace";
                 ctx.textAlign = "center";
 
                 if (!isPitchMode) {
@@ -1379,7 +1045,7 @@
                 }
 
                 ctx.textAlign = "center";
-                ctx.font = "14px 'Unispace Bd', monospace";
+                ctx.font = "14px 'Unispace Custom', monospace";
                 displayPeaks.forEach(p => {
                     const x = getX(p.freq);
                     const y = getY(p.db);
@@ -1400,17 +1066,16 @@
         }
 
         function resetUIOnOptionChange() {
-            const t = translations[currentLang];
             if (optRealTime.classList.contains('active')) return;
 
-            if (generatedSrtContent || isProcessing || processBtn.classList.contains('is-complete')) {
+            if (generatedSrtContent || isProcessing || processBtn.textContent.includes("COMPLETE")) {
                 generatedSrtContent = "";
                 isProcessing = false;
                 downloadBtn.disabled = true;
-                processBtn.textContent = t.startProc;
+                processBtn.textContent = "START ANALYSIS";
                 processBtn.className = "main-btn process-button";
                 processBtn.disabled = false;
-                statusText.textContent = t.waitInput;
+                statusText.textContent = "Parameters changed. Please re-analyze.";
                 
                 inputRate.disabled = false;
                 inputDB.disabled = false;
@@ -1448,7 +1113,6 @@
         }, false);
 
         fileInput.addEventListener('change', function(e) {
-            const t = translations[currentLang];
             const file = e.target.files[0];
             if (!file) return;
 
@@ -1456,7 +1120,7 @@
             fileNameDisplay.textContent = file.name;
             fileNameDisplay.style.color = "#E0E0E0";
             const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-            statusText.textContent = `${t.selected}${file.name} (${sizeMB} MB).`;
+            statusText.textContent = `Selected: ${file.name} (${sizeMB} MB). Ready to analyze.`;
             
             resetProcessButton();
             processBtn.disabled = false;
@@ -1485,29 +1149,26 @@
         });
 
         processBtn.addEventListener('click', async function() {
-            const t = translations[currentLang];
             if (isProcessing) {
                 activeWorkers.forEach(w => w.terminate());
                 activeWorkers = [];
                 stopProcessingState();
-                statusText.textContent = t.waitInput;
+                statusText.textContent = "Analysis aborted by user.";
             } else if (selectedFile) {
                 startProcessing();
             }
         });
 
         function resetProcessButton() {
-            const t = translations[currentLang];
             isProcessing = false; 
-            processBtn.textContent = t.startProc; 
+            processBtn.textContent = "START ANALYSIS"; 
             processBtn.className = "main-btn process-button"; 
             processBtn.disabled = true;
         }
 
         function stopProcessingState() {
-            const t = translations[currentLang];
             isProcessing = false;
-            processBtn.textContent = t.startProc;
+            processBtn.textContent = "START ANALYSIS";
             processBtn.className = "main-btn process-button";
             processBtn.disabled = false;
             
@@ -1519,22 +1180,29 @@
 
         async function startProcessing() {
             if (!selectedFile) return;
-            const t = translations[currentLang];
             
             let rateVal = parseFloat(inputRate.value);
             let dbVal = parseFloat(inputDB.value);
             let winMs = parseFloat(inputWindow.value);
             let hpFreq = parseFloat(inputHighPass.value);
 
-            if (isNaN(rateVal) || rateVal < 1) { alert("Rate >= 1"); return; }
-            if (isNaN(dbVal) || dbVal < 0) { alert("dB >= 0"); return; }
-            if (isNaN(winMs) || winMs < 10 || winMs > 1000) { alert("Window 10-1000ms"); return; }
+            if (isNaN(rateVal) || rateVal < 1) { alert("Sampling Rate must be >= 1"); inputRate.value = 10; return; }
+            if (isNaN(dbVal) || dbVal < 0) { alert("dB Below Peak must be >= 0"); inputDB.value = 15; return; }
+            if (isNaN(winMs) || winMs < 10 || winMs > 1000) { alert("Window must be between 10ms and 1000ms"); inputWindow.value = 500; return; }
+            if (isNaN(hpFreq) || hpFreq < 0) { hpFreq = 0; inputHighPass.value = 0; }
+
+            const windowSec = winMs / 1000;
+            const minRequiredRate = 1 / windowSec;
+
+            if (rateVal < minRequiredRate) {
+                alert(`Error: Sampling Rate is too slow for this Window Size.\nWith a ${winMs}ms window, you need at least ${minRequiredRate.toFixed(2)} Hz sampling rate to avoid gaps.`);
+                return;
+            }
 
             isProcessing = true;
-            currentProcessingState.type = 'loading';
-            processBtn.textContent = t.stopProc;
+            processBtn.textContent = "STOP ANALYSIS";
             processBtn.className = "main-btn process-button is-processing";
-            statusText.textContent = translations[currentLang].loading;
+            statusText.textContent = "Loading media data...";
             downloadBtn.disabled = true;
             inputRate.disabled = true;
             inputDB.disabled = true;
@@ -1546,8 +1214,7 @@
                 if (!isProcessing) return; 
 
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                currentProcessingState.type = 'decoding';
-                statusText.textContent = t.decoding;
+                statusText.textContent = "Decoding audio track (Main Thread)...";
                 const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
                 
                 if (!isProcessing) return; 
@@ -1555,43 +1222,55 @@
                 const nyquist = audioBuffer.sampleRate / 2;
                 if (hpFreq > nyquist) {
                     hpFreq = nyquist;
-                    inputHighPass.value = nyquist;
+                    inputHighPass.value = nyquist; 
+                    statusText.textContent = `High Pass clamped to Nyquist (${nyquist}Hz)`;
                 }
 
                 let processingBuffer = audioBuffer;
                 if (hpFreq > 0) {
+                    statusText.textContent = `Applying High Pass Filter (${hpFreq}Hz)...`;
                     processingBuffer = await applyHighPassFilter(audioBuffer, hpFreq);
                 }
 
                 if (!isProcessing) return; 
 
                 if (optSRT.classList.contains('active')) {
-                    currentProcessingState.type = 'analyzing';
-                    const threadCount = Math.min(navigator.hardwareConcurrency || 4, 16);
-                    statusText.textContent = t.analyzing + "0%";
+                    const maxThreads = 16;
+                    const logicalCores = navigator.hardwareConcurrency || 4;
+                    const threadCount = Math.min(logicalCores, maxThreads);
+
+                    statusText.textContent = `Analyzing with ${threadCount} threads...`;
                     
-                    generatedSrtContent = await runParallelAnalysis(processingBuffer, threadCount, rateVal, dbVal, winMs / 1000);
+                    generatedSrtContent = await runParallelAnalysis(processingBuffer, threadCount, rateVal, dbVal, windowSec);
                     
-                    if (generatedSrtContent) {
+                    if (!generatedSrtContent && isProcessing) {
+                    } else if (generatedSrtContent) {
                         downloadBtn.disabled = false;
+                        downloadBtn.textContent = "DOWNLOAD SRT";
+                        
                         downloadBtn.onclick = () => {
+                            if (!generatedSrtContent) return;
                             const blob = new Blob([generatedSrtContent], {type: "text/srt"});
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement("a");
                             a.href = url;
                             a.download = selectedFile.name.replace(/\.[^/.]+$/, "") + ".srt";
+                            document.body.appendChild(a);
                             a.click();
+                            document.body.removeChild(a);
                             URL.revokeObjectURL(url);
                         };
                     }
+                } else {
+                    generatedSrtContent = "";
+                    downloadBtn.disabled = true;
                 }
 
                 if (!isProcessing) return;
 
                 isProcessing = false;
-                currentProcessingState.type = 'complete';
-                statusText.textContent = t.complete;
-                processBtn.textContent = t.procComp;
+                statusText.textContent = "Analysis complete.";
+                processBtn.textContent = "PROCESSING COMPLETE";
                 processBtn.className = "main-btn process-button is-complete";
                 
                 inputRate.disabled = false;
@@ -1600,12 +1279,13 @@
                 inputHighPass.disabled = false;
 
                 if (optSpectrum.classList.contains('active')) {
+                    statusText.textContent = "Analysis complete. Loading Visualization...";
                     initVisualizer(selectedFile, processingBuffer);
                 }
 
             } catch (err) {
                 console.error(err);
-                statusText.textContent = t.error + err.message;
+                statusText.textContent = "Error: " + err.message;
                 stopProcessingState();
             }
         }
@@ -1629,7 +1309,9 @@
             source.buffer = inputBuffer;
             const filter1 = offlineCtx.createBiquadFilter();
             filter1.type = 'highpass'; filter1.frequency.value = frequency; filter1.Q.value = 0.707;
-            source.connect(filter1); filter1.connect(offlineCtx.destination);
+            const filter2 = offlineCtx.createBiquadFilter();
+            filter2.type = 'highpass'; filter2.frequency.value = frequency; filter2.Q.value = 0.707;
+            source.connect(filter1); filter1.connect(filter2); filter2.connect(offlineCtx.destination);
             source.start();
             return await offlineCtx.startRendering();
         }
@@ -1637,13 +1319,18 @@
         function runParallelAnalysis(buffer, threadCount, rateVal, dbVal, windowSec) {
             return new Promise((resolve, reject) => {
                 const channelData = buffer.getChannelData(0); 
+                const originalLength = channelData.length;
                 const sr = buffer.sampleRate;
                 const windowSamples = Math.floor(sr * windowSec);
-                const hopSamples = Math.floor(sr / rateVal);
-                const originalLength = channelData.length;
+                const halfWindow = Math.floor(windowSamples / 2);
+                const hopSec = 1.0 / rateVal;
+                const hopSamples = Math.floor(sr * hopSec);
+                const paddedLength = originalLength + (2 * halfWindow);
+                const paddedData = new Float32Array(paddedLength);
+                paddedData.set(channelData, halfWindow);
                 const validStartIndices = [];
                 for (let i = 0; i < originalLength; i += hopSamples) {
-                    if (i + windowSamples <= originalLength) validStartIndices.push(i);
+                    if (i + windowSamples <= paddedData.length) validStartIndices.push(i);
                 }
                 const totalTasks = validStartIndices.length;
                 const tasksPerWorker = Math.ceil(totalTasks / threadCount);
@@ -1666,7 +1353,9 @@
                     }
                     const firstSampleIndex = validStartIndices[startTaskIndex];
                     const lastSampleIndex = validStartIndices[endTaskIndex - 1];
-                    const chunk = channelData.slice(firstSampleIndex, lastSampleIndex + windowSamples);
+                    const sliceStart = firstSampleIndex; 
+                    const sliceEnd = lastSampleIndex + windowSamples;
+                    const chunk = paddedData.slice(sliceStart, sliceEnd);
                     
                     worker.postMessage({
                         paddedChunk: chunk, sampleRate: sr, globalStartSampleIndex: firstSampleIndex,
@@ -1677,9 +1366,7 @@
                         if (e.data.type === 'progress') {
                             progressMap[w] = e.data.progress;
                             const totalProgress = progressMap.reduce((a, b) => a + b, 0) / threadCount;
-                            
-                            currentProcessingState.progress = totalProgress;
-                            statusText.textContent = translations[currentLang].analyzing + `${Math.round(totalProgress * 100)}%`;
+                            statusText.textContent = `Analyzing: ${Math.round(totalProgress * 100)}%`;
                         } else if (e.data.type === 'done') {
                             allResults.push(...e.data.results);
                             completedWorkers++;
@@ -1691,7 +1378,9 @@
                             }
                         }
                     };
+                    worker.onerror = function(e) { reject(new Error(`Worker error: ${e.message}`)); };
                 }
+                if (activeWorkers.length === 0 && totalTasks === 0) resolve(""); 
             });
         }
 
@@ -1727,7 +1416,6 @@
         }
 
         function initVisualizer(file, decodedBuffer) {
-            const t = translations[currentLang];
             stopVisualizer();
 
             const iconPlay = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
@@ -1735,9 +1423,9 @@
 
             previewArea.innerHTML = `
                 <div class="visualizer-container" id="visContainer">
-                    <button class="vis-pitch-btn \${isPitchMode ? 'active' : ''}" id="visPitchBtn">FREQ / PITCH</button>
+                    <button class="vis-pitch-btn ${isPitchMode ? 'active' : ''}" id="visPitchBtn">FREQ / PITCH</button>
                     <canvas id="visCanvas"></canvas>
-                    <div class="vis-hint">${t.fsHint} | ${t.playPauseHint}</div>
+                    <div class="vis-hint">Double-Click/F: Fullscreen | Space: Play/Pause</div>
                     <div class="vis-overlay">
                         <div class="vis-controls" id="visControls">
                             <button class="vis-btn" id="visToggle">
@@ -1760,7 +1448,7 @@
             document.getElementById('visPitchBtn').addEventListener('click', function(e) {
                 e.stopPropagation();
                 isPitchMode = !isPitchMode;
-                if (isPitchMode) this.classList.add('active');
+                if(isPitchMode) this.classList.add('active');
                 else this.classList.remove('active');
             });
 
@@ -1772,12 +1460,13 @@
             const toggleBtn = document.getElementById('visToggle');
             const progressBar = document.getElementById('visProgress');
             const fsBtn = document.getElementById('visFS');
-
+            
             visAudio.src = URL.createObjectURL(file);
             visAudio.loop = false;
 
             let isDragging = false;
-            let dataArray;
+            let dataArray; 
+            
             let idleTimer = null;
 
             function toggleFullscreen() {
@@ -1787,7 +1476,7 @@
                     document.exitFullscreen();
                 }
             }
-
+            
             fsBtn.onclick = (e) => {
                 e.stopPropagation();
                 toggleFullscreen();
@@ -1811,6 +1500,7 @@
 
             const handleFullscreenChange = () => {
                 if (visControls.classList.contains('hide-ui')) return;
+
                 if (!document.fullscreenElement) {
                     showUI();
                     if (idleTimer) clearTimeout(idleTimer);
@@ -1826,6 +1516,7 @@
                     resetIdleTimer();
                     return;
                 }
+
                 if (visControls.classList.contains('hide-ui')) {
                     resetIdleTimer();
                 } else {
@@ -1836,43 +1527,43 @@
             function updateScrub(time) {
                 if (!decodedBuffer) return;
                 const sr = decodedBuffer.sampleRate;
-                const fftSize = 8192;
+                const fftSize = 8192; 
                 const sampleIndex = Math.floor(time * sr);
                 const channelData = decodedBuffer.getChannelData(0);
                 if (sampleIndex + fftSize >= channelData.length) return;
-
+                
                 const rawChunk = channelData.slice(sampleIndex, sampleIndex + fftSize);
                 const windowed = new Float32Array(fftSize);
-                for (let i = 0; i < fftSize; i++) {
-                    const alpha = 0.42 - 0.5 * Math.cos(2 * Math.PI * i / (fftSize - 1)) + 0.08 * Math.cos(4 * Math.PI * i / (fftSize - 1));
+                for(let i=0; i<fftSize; i++) {
+                    const alpha = 0.42 - 0.5 * Math.cos(2*Math.PI*i/(fftSize-1)) + 0.08 * Math.cos(4*Math.PI*i/(fftSize-1));
                     windowed[i] = rawChunk[i] * alpha;
                 }
-
+                
                 const real = new Float32Array(fftSize);
                 const imag = new Float32Array(fftSize);
                 real.set(windowed);
                 transform(real, imag);
-
-                if (!dataArray) dataArray = new Float32Array(fftSize / 2);
+                
+                if (!dataArray) dataArray = new Float32Array(fftSize/2);
                 const normalizationFactor = fftSize * 0.42 / 2;
 
-                for (let i = 0; i < dataArray.length; i++) {
-                    const mag = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
+                for(let i=0; i<dataArray.length; i++) {
+                    const mag = Math.sqrt(real[i]*real[i] + imag[i]*imag[i]);
                     let val = mag / normalizationFactor;
                     let db = 20 * Math.log10(val + 1e-9);
                     dataArray[i] = db;
                 }
                 const smoothed = new Float32Array(dataArray.length);
-                for (let i = 1; i < dataArray.length - 1; i++) {
-                    smoothed[i] = (dataArray[i - 1] + dataArray[i] + dataArray[i + 1]) / 3;
+                for(let i=1; i<dataArray.length-1; i++) {
+                    smoothed[i] = (dataArray[i-1] + dataArray[i] + dataArray[i+1]) / 3;
                 }
                 dataArray.set(smoothed);
             }
 
             function togglePlay() {
                 if (visAudio.paused) {
-                    if (!visualizerCtx) setupAudioContext();
-                    else if (visualizerCtx.state === 'suspended') visualizerCtx.resume();
+                    if(!visualizerCtx) setupAudioContext();
+                    else if(visualizerCtx.state === 'suspended') visualizerCtx.resume();
                     visAudio.play();
                     toggleBtn.innerHTML = iconPause;
                     resetIdleTimer();
@@ -1884,10 +1575,10 @@
             }
 
             toggleBtn.onclick = (e) => {
-                e.stopPropagation();
+                e.stopPropagation(); 
                 togglePlay();
             };
-
+            
             visAudio.onended = () => {
                 toggleBtn.innerHTML = iconPlay;
                 progressBar.value = 100;
@@ -1905,11 +1596,11 @@
                 visAudio.currentTime = seekTime;
                 resetIdleTimer();
                 if (visAudio.paused) {
-                    if (!visualizerCtx) setupAudioContext();
+                    if(!visualizerCtx) setupAudioContext(); 
                     updateScrub(seekTime);
                 }
             });
-
+            
             visContainer.addEventListener('dblclick', (e) => {
                 if (e.target.closest('.vis-controls') || e.target.classList.contains('vis-pitch-btn')) return;
                 toggleFullscreen();
@@ -1922,19 +1613,23 @@
 
             visSpaceListener = (e) => {
                 const tag = document.activeElement.tagName;
+                
                 if (e.code === 'KeyF' || e.key.toLowerCase() === 'f') {
                     if (tag === 'INPUT' && document.activeElement.type !== 'range') return;
                     e.preventDefault();
                     toggleFullscreen();
                     return;
                 }
+
                 if (e.code === 'Space') {
                     if (tag === 'INPUT' && document.activeElement.type === 'range') {
                         e.preventDefault();
                         togglePlay();
                         return;
                     }
-                    if (tag === 'BUTTON' || tag === 'INPUT') return;
+                    if (tag === 'BUTTON') return; 
+                    if (tag === 'INPUT') return; 
+                    
                     e.preventDefault();
                     togglePlay();
                 }
@@ -1944,8 +1639,10 @@
             function resize() {
                 const dpr = window.devicePixelRatio || 1;
                 const superSample = 2;
+                
                 canvas.width = visContainer.clientWidth * dpr * superSample;
                 canvas.height = visContainer.clientHeight * dpr * superSample;
+                
                 ctx.scale(dpr * superSample, dpr * superSample);
             }
             window.addEventListener('resize', resize);
@@ -1955,10 +1652,13 @@
                 visualizerCtx = new (window.AudioContext || window.webkitAudioContext)();
                 visSource = visualizerCtx.createMediaElementSource(visAudio);
                 visAnalyser = visualizerCtx.createAnalyser();
-                visAnalyser.fftSize = 8192;
+                
+                visAnalyser.fftSize = 8192; 
                 visAnalyser.smoothingTimeConstant = 0.3;
+                
                 visSource.connect(visAnalyser);
                 visAnalyser.connect(visualizerCtx.destination);
+
                 dataArray = new Float32Array(visAnalyser.frequencyBinCount);
                 draw(performance.now());
             }
@@ -1984,11 +1684,11 @@
                     visAnalyser.getFloatFrequencyData(dataArray);
                 }
 
-                if (!dataArray) return;
+                if (!dataArray) return; 
 
                 const width = visContainer.clientWidth;
                 const height = visContainer.clientHeight;
-
+                
                 ctx.fillStyle = '#000';
                 ctx.fillRect(0, 0, width, height);
 
@@ -2013,7 +1713,7 @@
                     return height - (norm * height);
                 }
 
-                ctx.font = "16px 'Unispace Bd', monospace";
+                ctx.font = "16px 'Unispace Custom', monospace";
                 ctx.textAlign = "center";
 
                 if (!isPitchMode) {
@@ -2025,41 +1725,37 @@
                             if (freq > maxFreq) return;
                             const rawX = getX(freq);
                             const x = Math.floor(rawX) + 0.5;
-                            const isMajor = (m === 1 && freq !== 10);
+                            const isMajor = (m === 1 && freq !== 10); 
                             ctx.beginPath();
                             ctx.moveTo(x, 0);
                             ctx.lineTo(x, height);
                             if (isMajor) {
-                                ctx.lineWidth = 1.5;
-                                ctx.strokeStyle = '#888888';
-                                ctx.stroke();
+                                ctx.lineWidth = 1.5; ctx.strokeStyle = '#888888'; ctx.stroke();
                                 ctx.fillStyle = '#E0E0E0';
-                                let label = freq >= 1000 ? (freq / 1000) + "k" : freq;
+                                let label = freq >= 1000 ? (freq/1000) + "k" : freq;
                                 ctx.fillText(label, x + 2, height - 5);
                             } else {
-                                ctx.lineWidth = 1;
-                                ctx.strokeStyle = 'rgba(136, 136, 136, 0.5)';
-                                ctx.stroke();
+                                ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(136, 136, 136, 0.5)'; ctx.stroke();
                             }
                         });
                     });
                 } else {
-                    for (let m = 0; m <= 135; m++) {
+                     for (let m = 0; m <= 135; m++) {
                         const freq = 440 * Math.pow(2, (m - 69) / 12);
                         if (freq < minFreq) continue;
                         if (freq > maxFreq) break;
-
+                        
                         const rawX = getX(freq);
                         const x = Math.floor(rawX) + 0.5;
-                        const noteIndex = m % 12;
+                        const noteIndex = m % 12; 
                         const octave = Math.floor(m / 12) - 1;
-
+                        
                         ctx.beginPath();
                         ctx.moveTo(x, 0);
                         ctx.lineTo(x, height);
 
                         if (noteIndex === 0) {
-                            ctx.lineWidth = 1.5;
+                            ctx.lineWidth = 1.5; 
                             ctx.strokeStyle = '#888888';
                             ctx.stroke();
                             ctx.fillStyle = '#E0E0E0';
@@ -2067,11 +1763,11 @@
                         } else {
                             const isNatural = [0, 2, 4, 5, 7, 9, 11].includes(noteIndex);
                             if (isNatural) {
-                                ctx.lineWidth = 1;
+                                ctx.lineWidth = 1; 
                                 ctx.strokeStyle = 'rgba(136, 136, 136, 0.5)';
                                 ctx.stroke();
                             } else {
-                                ctx.lineWidth = 1;
+                                ctx.lineWidth = 1; 
                                 ctx.strokeStyle = 'rgba(136, 136, 136, 0.25)';
                                 ctx.stroke();
                             }
@@ -2086,17 +1782,12 @@
                     const isMajor = (db % 20 === 0 && db !== 0 && db !== -100);
                     ctx.beginPath();
                     ctx.moveTo(0, y);
-                    ctx.lineTo(width, y);
+                    ctx.lineTo(width, y); 
                     if (isMajor) {
-                        ctx.lineWidth = 1.5;
-                        ctx.strokeStyle = '#888888';
-                        ctx.stroke();
-                        ctx.fillStyle = '#E0E0E0';
-                        ctx.fillText(db, 5, y - 3);
+                        ctx.lineWidth = 1.5; ctx.strokeStyle = '#888888'; ctx.stroke();
+                        ctx.fillStyle = '#E0E0E0'; ctx.fillText(db, 5, y - 3);
                     } else {
-                        ctx.lineWidth = 1;
-                        ctx.strokeStyle = 'rgba(136, 136, 136, 0.5)';
-                        ctx.stroke();
+                        ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(136, 136, 136, 0.5)'; ctx.stroke();
                     }
                 }
 
@@ -2109,18 +1800,13 @@
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 let hasStarted = false;
-                for (let i = 0; i < bufferLength; i++) {
-                    const freq = i * sampleRate / (2 * bufferLength);
+                for(let i = 0; i < bufferLength; i++) {
+                    const freq = i * sampleRate / (2 * bufferLength); 
                     if (freq < minFreq) continue;
                     if (freq > maxFreq) break;
                     const x = getX(freq);
                     const y = getY(dataArray[i]);
-                    if (!hasStarted) {
-                        ctx.moveTo(x, y);
-                        hasStarted = true;
-                    } else {
-                        ctx.lineTo(x, y);
-                    }
+                    if (!hasStarted) { ctx.moveTo(x, y); hasStarted = true; } else { ctx.lineTo(x, y); }
                 }
                 ctx.stroke();
 
@@ -2128,14 +1814,11 @@
                 const noiseFloor = -80;
                 for (let i = 2; i < bufferLength - 2; i++) {
                     const freq = i * sampleRate / (bufferLength * 2);
-                    if (freq < minFreq) continue;
+                    if (freq < minFreq) continue; 
                     const val = dataArray[i];
                     if (val > noiseFloor) {
-                        if (val > dataArray[i - 1] && val > dataArray[i - 2] && val > dataArray[i + 1] && val > dataArray[i + 2]) {
-                            peaks.push({
-                                freq,
-                                db: val
-                            });
+                        if (val > dataArray[i-1] && val > dataArray[i-2] && val > dataArray[i+1] && val > dataArray[i+2]) {
+                            peaks.push({ freq, db: val });
                         }
                     }
                 }
@@ -2144,10 +1827,10 @@
                 const dbThresholdVal = parseFloat(document.getElementById('inputDB').value) || 15;
                 const cutoffDB = frameMaxDB - dbThresholdVal;
                 const validPeaks = peaks.filter(p => p.db >= cutoffDB);
-                validPeaks.sort((a, b) => a.freq - b.freq);
+                validPeaks.sort((a, b) => a.freq - b.freq); 
                 const lowPeak = validPeaks.length > 0 ? validPeaks[0] : null;
 
-                peaks.sort((a, b) => b.db - a.db);
+                peaks.sort((a, b) => b.db - a.db); 
                 let displayPeaks = peaks.slice(0, 10);
                 if (lowPeak) {
                     const exists = displayPeaks.find(p => Math.abs(p.freq - lowPeak.freq) < 1);
@@ -2155,26 +1838,23 @@
                 }
 
                 ctx.textAlign = "center";
-                ctx.font = "14px 'Unispace Bd', monospace";
-
+                ctx.font = "14px 'Unispace Custom', monospace";
                 displayPeaks.forEach(p => {
                     const x = getX(p.freq);
                     const y = getY(p.db);
                     ctx.fillStyle = (p === lowPeak) ? '#FF7E00' : '#FFF';
                     ctx.beginPath();
-                    ctx.arc(x, y, 4, 0, Math.PI * 2);
+                    ctx.arc(x, y, 4, 0, Math.PI*2);
                     ctx.fill();
                     const text = Math.round(p.freq) + "Hz";
                     const tw = ctx.measureText(text).width;
                     ctx.fillStyle = "rgba(0,0,0,0.7)";
-                    ctx.fillRect(x - tw / 2 - 2, y - 20, tw + 4, 16);
+                    ctx.fillRect(x - tw/2 - 2, y - 20, tw + 4, 16);
                     ctx.fillStyle = (p === lowPeak) ? '#FF7E00' : '#FFF';
                     ctx.fillText(text, x, y - 8);
                 });
             }
         }
-
-        changeLanguage('en-US');
     </script>
 </body>
 </html>
