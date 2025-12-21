@@ -2,113 +2,79 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=850, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VRAM Bandwidth Test</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Condensed&display=swap" rel="stylesheet">
-    
     <style>
         * {
             box-sizing: border-box;
         }
 
         body {
-            background-color: #121212;
-            color: #E0E0E0;
+            font-family: 'Ubuntu', sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
             margin: 0;
             padding: 0;
-            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
             min-height: 100vh;
-            letter-spacing: 0.3px;
+            overflow: hidden; 
         }
         
         #homeButton {
-            position: absolute;
+            position: absolute; 
             top: 20px;
             left: 20px;
-            padding: 10px 16px;
+            padding: 10px 15px;
             font-size: 0.9em;
-            color: rgba(255, 255, 255, 0.85);
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(20px) saturate(120%);
-            -webkit-backdrop-filter: blur(20px) saturate(120%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 30px;
+            color: #e0e0e0; 
+            background-color: #333333;
+            border: 1px solid #505050;
+            border-radius: 5px;
             text-decoration: none;
-            transition: all 0.3s ease;
-            z-index: 100;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        #homeButton:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: scale(1.04);
-        }
-
-        #homeButton:active {
-            transform: scale(0.96);
-            transition: transform 0.05s;
-        }
-
-        .gradient-text {
-            background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            color: transparent; 
+            transition: background-color 0.3s;
+            z-index: 100; 
         }
 
         .container {
-            max-width: 800px;
             width: 90%;
-            height: 80vh;
-            padding: 10px 25px 25px 25px;
-            margin-top: 70px;
-            margin-left: auto;
-            margin-right: auto;
-            background: rgba(30, 30, 30, 0.6);
-            backdrop-filter: blur(15px);
-            border-radius: 28px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            max-width: 800px;
+            height: 700px;
+            max-height: 80vh;
+            padding: 25px;
             text-align: center;
+            background: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
         }
 
         h1 {
-            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
-            font-size: 48px;
-            text-align: center;
-            margin-bottom: 10px;
-            letter-spacing: 2px;
-        }
-
-        .subtitle {
-            font-size: 18px;
-            color: #888;
-            margin-bottom: 20px;
+            color: #ff9800;
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            flex-shrink: 0;
         }
 
         button {
-            padding: 10px 40px;
-            width: 250px;
-            font-size: 24px;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
             cursor: pointer;
             background: #2196f3;
             color: white;
             border: none;
-            border-radius: 10px;
-            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
-            transition: all 0.3s;
-            font-weight: bold;
-            text-shadow: none; 
-            box-shadow: none;
+            border-radius: 50px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+            font-family: 'Ubuntu', sans-serif;
             flex-shrink: 0;
             margin-bottom: 20px;
             align-self: center;
@@ -131,18 +97,15 @@
         #log {
             text-align: left;
             background: #000000;
-            width: 700px;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 8px;
             border: 1px solid #333;
-            font-family: 'Ubuntu'; 
+            font-family: 'Ubuntu', monospace; 
             font-size: 14px;
             line-height: 1.5;
             flex: 1;
             overflow-y: auto; 
             min-height: 0;
-            align-self: center;
-            margin-bottom: 20px;
         }
 
         .success { color: #4caf50; font-weight: bold; }
@@ -155,12 +118,10 @@
 </head>
 <body>
 
-    <a href="./stress_tests/" id="homeButton">← Go Back</a>
+    <a href="./stress_tests/" id="homeButton">← Back</a>
 
     <div class="container">
-        <h1 class="gradient-text" id="main-title">VRAM Bandwidth Test</h1>
-
-        <div class="subtitle" id="main-subtitle">Test the peak bandwidth of your VRAM.</div>
+        <h1>VRAM Bandwidth Test</h1>
         
         <button id="runBtn" onclick="runBenchmark()">Start Benchmark</button>
 
