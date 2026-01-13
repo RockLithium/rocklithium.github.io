@@ -245,43 +245,62 @@
             var res: u32 = 0;
             var a_m = a % m;
             var b_m = b;
+            
             while (b_m > 0) {
-                if (b_m % 2 == 1) { res = (res + a_m) % m; }
-                a_m = (a_m * 2) % m;
-                b_m /= 2;
+                if ((b_m & 1u) == 1u) {
+                    if (res >= m - a_m) {
+                        res = res + a_m - m;
+                    } else {
+                        res = res + a_m;
+                    }
+                }
+                if (a_m >= m - a_m) {
+                    a_m = a_m * 2u - m;
+                } else {
+                    a_m = a_m * 2u;
+                }
+                b_m >>= 1u;
             }
             return res;
         }
 
         fn pow_mod(base: u32, exp: u32, m: u32) -> u32 {
-            var res: u32 = 1;
+            var res: u32 = 1u;
             var b = base % m;
             var e = exp;
-            while (e > 0) {
-                if (e % 2 == 1) { res = mul_mod(res, b, m); }
+            while (e > 0u) {
+                if ((e & 1u) == 1u) { res = mul_mod(res, b, m); }
                 b = mul_mod(b, b, m);
-                e /= 2;
+                e >>= 1u;
             }
             return res;
         }
 
         fn is_prime(n: u32) -> bool {
-            if (n < 2) { return false; }
-            if (n == 2 || n == 3) { return true; }
-            if (n % 2 == 0) { return false; }
-            var d = n - 1;
-            var s = 0;
-            while (d % 2 == 0) { d /= 2; s += 1; }
-            let bases = array<u32, 3>(2, 7, 61);
+            if (n < 2u) { return false; }
+            if (n == 2u || n == 3u) { return true; }
+            if ((n & 1u) == 0u) { return false; }
+            
+            var d = n - 1u;
+            var s = 0u;
+            while ((d & 1u) == 0u) { 
+                d >>= 1u; 
+                s += 1u; 
+            }
+            
+            let bases = array<u32, 3>(2u, 7u, 61u);
             for (var i = 0; i < 3; i++) {
                 let a = bases[i];
                 if (n <= a) { break; }
                 var x = pow_mod(a, d, n);
-                if (x == 1 || x == n - 1) { continue; }
+                if (x == 1u || x == n - 1u) { continue; }
                 var composite = true;
-                for (var r = 1; r < s; r++) {
+                for (var r = 1u; r < s; r++) {
                     x = mul_mod(x, x, n);
-                    if (x == n - 1) { composite = false; break; }
+                    if (x == n - 1u) {
+                        composite = false;
+                        break;
+                    }
                 }
                 if (composite) { return false; }
             }
@@ -290,9 +309,11 @@
 
         @compute @workgroup_size(64)
         fn main(@builtin(global_invocation_id) id: vec3<u32>) {
-            let n = params.start_num + (id.x * 2u);
+            let index = id.x;
+            let n = params.start_num + (index * 2u);
             if (n > params.limit) { return; }
-            output_data[id.x] = select(0u, n, is_prime(n));
+            
+            output_data[index] = select(0u, n, is_prime(n));
         }
     </script>
 
