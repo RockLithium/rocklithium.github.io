@@ -286,8 +286,12 @@
                 软件光线追踪
             </div>
 
-            <div class="tool-button" data-href="../bandwidthtest.html" data-desc="评估 GPU 显存带宽的基准测试。利用 WebGPU 直接对显存执行大规模的高强度读写拷贝操作，以衡量显存峰值带宽。包含自动预热、速率校准与分批峰值采样机制，以排除系统干扰。（需要 WebGPU 支持）">
+            <div class="tool-button" data-href="../bandwidthtest.html" data-desc="评估 GPU 显存带宽的基准测试。使用 WebGPU 直接对显存执行大规模的高强度读写拷贝操作，以衡量显存峰值带宽。包含自动预热、速率校准与分批峰值采样机制，以排除系统干扰。（需要 WebGPU 支持）">
                 显存带宽测试
+            </div>
+
+            <div class="tool-button" data-href="../primenumbergpu.html" data-desc="基于 WebGPU 的大范围质数查找工具。将 Miller-Rabin 素性检验算法下放至 GPU 并行执行，实现远超 CPU 版本的运算吞吐量。具备自动分块搜索及多线程 Web Worker 异步管线处理功能，适合评估 GPU 的 INT32 算力。（需要 WebGPU 支持）">
+                GPU 质数查找器
             </div>
             
             <div class="tool-button" data-href="../raytracing.html" data-desc="基于 SDF 光线步进算法，完全利用着色器而非硬件光追单元实现的 GPU 实时渲染演示。场景完全由数学公式动态构建，通过运行高复杂度着色器代码，对 GPU 的浮点运算单元施加巨大压力。支持 HDR 色调映射与多档画质调节，支持 WebGL 2.0 与 WebGPU 双后端热切换，支持实时帧率显示。">

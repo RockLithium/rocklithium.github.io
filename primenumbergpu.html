@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>WebGPU 质数查找器</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #1a1a1a; 
+            color: #d3d3d3; 
+        }
+        
+        .value, 
+        #exponentInput,
+        #currentProgress,
+        .progress-fill,
+        .monospace-value {
+            font-family: 'Ubuntu Mono', Consolas, monospace !important;
+        }
+
+        .stage-value {
+            color: #90ee90;
+            font-weight: bold;
+            font-family: 'PingFang SC', 'Helvetica Neue', sans-serif !important;
+        }
+
+        #homeButton {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            color: #e0e0e0;
+            background-color: #333333;
+            border: 1px solid #778899;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            z-index: 100;
+        }
+
+        h1 {
+            color: #aae0e0; 
+            text-shadow: 0 0 5px rgba(170, 224, 224, 0.3); 
+            font-weight: 900; 
+        }
+        
+        #controls {
+            margin-bottom: 25px;
+            background: rgba(40, 40, 40, 0.8); 
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #778899;
+            text-align: center;
+            width: 95%; 
+            max-width: 600px; 
+        }
+
+        #configGroup {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-line {
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             gap: 10px;
+             margin-bottom: 5px;
+        }
+        
+        #exponentInput {
+            background: #333333;
+            color: #d3d3d3;
+            border: 1px solid #778899;
+            padding: 5px;
+            width: 80px; 
+            border-radius: 3px;
+            text-align: center;
+        }
+        
+        #exponentInput.numerical {
+             width: 120px; 
+        }
+        
+        #modeSwitchButton {
+            padding: 5px 10px;
+            font-size: 0.9em;
+            background-color: #555555;
+            color: #d3d3d3;
+            border: 1px solid #778899;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+
+        #limitDisplay {
+            color: #90ee90;
+            font-weight: bold;
+            font-size: 1.1em; 
+            text-align: center; 
+            margin-top: 5px; 
+            min-height: 20px;
+        }
+
+        #stageButton {
+            padding: 10px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+            font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+        }
+        
+        #stageButton.start-btn { background-color: #40a0a0; }
+        #stageButton.stop-btn { background-color: #cc6666; }
+
+        #stageMessage {
+            color: #778899; 
+            min-height: 40px; 
+            padding: 5px 0;
+            margin: 0;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            word-wrap: break-word;
+        }
+
+        #statusArea, #resultArea {
+            width: 95%; 
+            max-width: 1200px;
+            margin-top: 15px;
+            padding: 20px;
+            background: rgba(40, 40, 40, 0.8);
+            border-radius: 10px;
+        }
+        
+        .status-line {
+            margin: 10px 0;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-bar-container {
+            height: 12px;
+            background-color: #333333;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 5px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #40e0d0; 
+            line-height: 12px;
+            color: #1a1a1a;
+            font-size: 0.7em;
+            text-align: center;
+            transition: width 0.1s ease-out;
+        }
+
+        #downloadButton {
+            padding: 10px 20px;
+            font-size: 1.1em;
+            background-color: #40a0a0;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body onload="initializeUI()">
+    
+    <a href="./stress_tests/" id="homeButton">← 返回上一级</a>
+
+    <h1>质数查找器</h1>
+
+    <div id="controls">
+        <div id="configGroup">
+            <div class="config-line" id="exponentGroup">
+                <label id="limitLabel" style="color: #aae0e0;">质数查找上限 (2^N), N=</label>
+                <input type="number" id="exponentInput" value="24">
+                <button id="modeSwitchButton" onclick="window.toggleMode()">切换模式</button>
+            </div>
+            <span id="limitDisplay"></span>
+        </div>
+        
+        <button id="stageButton" class="start-btn" onclick="window.handleStageControl()">开始计算</button>
+        <p id="stageMessage"></p>
+    </div>
+    
+    <div id="statusArea">
+        <div class="status-line">
+            <span>当前阶段：</span>
+            <span id="currentStage" class="stage-value">等待配置</span>
+        </div>
+        <div class="status-line">
+            <span>累计已用时间：</span>
+            <span id="elapsedTime" class="monospace-value">0.000s</span>
+        </div>
+        <div class="status-line">
+            <span id="progressLabel">总进度:</span>
+            <span id="currentProgress" class="value">0 / 0</span>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-fill" id="progressFill">0%</div>
+        </div>
+    </div>
+
+    <div id="resultArea" style="display: none;">
+        <h3 style="color: #40e0d0; text-align: center;">计算任务完成</h3>
+        <p id="resultSummary" style="text-align: center; font-family: 'PingFang SC', sans-serif; padding: 0 10px;"></p>
+        <div style="text-align: center;">
+            <button id="downloadButton" onclick="window.downloadPrimes()">下载质数列表 (.txt)</button>
+        </div>
+    </div>
+
+    <script id="webgpu-shader" type="text/plain">
+        struct Params {
+            start_num: u32,
+            limit: u32,
+        };
+        @group(0) @binding(0) var<uniform> params: Params;
+        @group(0) @binding(1) var<storage, read_write> output_data: array<u32>;
+
+        fn mul_mod(a: u32, b: u32, m: u32) -> u32 {
+            var res: u32 = 0;
+            var a_m = a % m;
+            var b_m = b;
+            while (b_m > 0) {
+                if (b_m % 2 == 1) { res = (res + a_m) % m; }
+                a_m = (a_m * 2) % m;
+                b_m /= 2;
+            }
+            return res;
+        }
+
+        fn pow_mod(base: u32, exp: u32, m: u32) -> u32 {
+            var res: u32 = 1;
+            var b = base % m;
+            var e = exp;
+            while (e > 0) {
+                if (e % 2 == 1) { res = mul_mod(res, b, m); }
+                b = mul_mod(b, b, m);
+                e /= 2;
+            }
+            return res;
+        }
+
+        fn is_prime(n: u32) -> bool {
+            if (n < 2) { return false; }
+            if (n == 2 || n == 3) { return true; }
+            if (n % 2 == 0) { return false; }
+            var d = n - 1;
+            var s = 0;
+            while (d % 2 == 0) { d /= 2; s += 1; }
+            let bases = array<u32, 3>(2, 7, 61);
+            for (var i = 0; i < 3; i++) {
+                let a = bases[i];
+                if (n <= a) { break; }
+                var x = pow_mod(a, d, n);
+                if (x == 1 || x == n - 1) { continue; }
+                var composite = true;
+                for (var r = 1; r < s; r++) {
+                    x = mul_mod(x, x, n);
+                    if (x == n - 1) { composite = false; break; }
+                }
+                if (composite) { return false; }
+            }
+            return true;
+        }
+
+        @compute @workgroup_size(64)
+        fn main(@builtin(global_invocation_id) id: vec3<u32>) {
+            let n = params.start_num + (id.x * 2u);
+            if (n > params.limit) { return; }
+            output_data[id.x] = select(0u, n, is_prime(n));
+        }
+    </script>
+
+    <script>
+        const MIN_EXPONENT = 1; 
+        const MAX_EXPONENT = 31;
+        const MAX_VALUE_NUM = 2147483648n;
+        const GPU_BATCH_SIZE = 1 << 21;
+        const SAVE_CHUNK_SIZE = 1 << 28; 
+
+        let STAGE_MAX_NUMBER = 0n;
+        let isRunning = false;
+        let isExponentMode = true;
+        let currentExponent = 24;
+        
+        let startTime = 0;
+        let totalSearchTime = 0; 
+        let totalFormatTime = 0;
+        let timerInterval = null;
+        
+        let totalPrimeCount = 0;
+        let accumulatedParts = [];
+        let currentRawResults = []; 
+
+        const workerCode = `
+            self.onmessage = function(e) {
+                const { data, index } = e.data;
+                let str = "";
+                let count = 0;
+                for(let i = 0; i < data.length; i++) {
+                    if(data[i] !== 0) {
+                        str += data[i] + " ";
+                        count++;
+                    }
+                }
+                self.postMessage({str, count, index});
+            };
+        `;
+
+        function initializeUI() {
+            exponentInput = document.getElementById('exponentInput');
+            limitLabel = document.getElementById('limitLabel');
+            limitDisplay = document.getElementById('limitDisplay');
+            stageButton = document.getElementById('stageButton');
+            stageMessage = document.getElementById('stageMessage');
+            currentStage = document.getElementById('currentStage');
+            currentProgress = document.getElementById('currentProgress');
+            progressFill = document.getElementById('progressFill');
+            elapsedTimeDisplay = document.getElementById('elapsedTime');
+            resultArea = document.getElementById('resultArea');
+            resultSummary = document.getElementById('resultSummary');
+
+            exponentInput.oninput = window.updateLimitDisplay;
+            window.updateLimitDisplay();
+        }
+
+        window.toggleMode = function() {
+            const currentLimit = parseLimitInput(exponentInput.value);
+            isExponentMode = !isExponentMode;
+            if (isExponentMode) {
+                limitLabel.textContent = '质数查找上限 (2^N), N=';
+                exponentInput.type = 'number';
+                exponentInput.classList.remove('numerical');
+                currentExponent = Math.min(MAX_EXPONENT, Math.max(MIN_EXPONENT, Math.round(Math.log2(Number(currentLimit) || 1))));
+                exponentInput.value = currentExponent;
+            } else {
+                limitLabel.textContent = '质数查找上限 (数值)=';
+                exponentInput.type = 'text';
+                exponentInput.classList.add('numerical');
+                exponentInput.value = currentLimit.toLocaleString();
+            }
+            window.updateLimitDisplay();
+        }
+
+        function parseLimitInput(value) {
+            let limit = 0n;
+            if (isExponentMode) {
+                let exp = parseInt(value);
+                if (isNaN(exp)) exp = currentExponent;
+                let clampedExp = Math.min(MAX_EXPONENT, Math.max(MIN_EXPONENT, exp));
+                if (exp !== clampedExp) exponentInput.value = clampedExp;
+                limit = (1n << BigInt(clampedExp));
+                currentExponent = clampedExp;
+            } else {
+                try {
+                    limit = BigInt(value.replace(/,/g, ''));
+                    if (limit > MAX_VALUE_NUM) {
+                        limit = MAX_VALUE_NUM;
+                        exponentInput.value = MAX_VALUE_NUM.toLocaleString();
+                    }
+                    if (limit < 1n) {
+                        limit = 1n;
+                        exponentInput.value = "1";
+                    }
+                } catch (e) { limit = 1n; }
+            }
+            return limit;
+        }
+
+        window.updateLimitDisplay = function() {
+            STAGE_MAX_NUMBER = parseLimitInput(exponentInput.value);
+            const formattedLimit = STAGE_MAX_NUMBER.toLocaleString('en-US');
+            limitDisplay.innerHTML = `上限 ${isExponentMode ? '(2^' + currentExponent + ')' : '(数值)'}：<span class="value">${formattedLimit}</span>`;
+            if (!isRunning) {
+                stageMessage.textContent = `点击“开始计算”：将使用 WebGPU 并行测试 2 到 ${formattedLimit} 的所有数字。`;
+            }
+        }
+
+        window.handleStageControl = function() {
+            isRunning ? stopStressTest() : startSearch();
+        }
+
+        function stopStressTest() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            stageButton.textContent = '开始计算';
+            stageButton.className = 'start-btn';
+            exponentInput.disabled = false;
+            document.getElementById('modeSwitchButton').disabled = false;
+            stageMessage.textContent = '程序已停止。您可以修改配置后再次点击“开始计算”。';
+        }
+
+        async function startSearch() {
+            if (!navigator.gpu) { alert("此浏览器不支持 WebGPU"); return; }
+            
+            isRunning = true;
+            totalPrimeCount = 0;
+            accumulatedParts = [];
+            currentRawResults = [];
+            totalSearchTime = 0;
+            totalFormatTime = 0;
+            startTime = Date.now();
+            
+            resultArea.style.display = 'none';
+            stageButton.textContent = '停止计算';
+            stageButton.className = 'stop-btn';
+            exponentInput.disabled = true;
+            document.getElementById('modeSwitchButton').disabled = true;
+            currentStage.textContent = "并行查找 (Miller-Rabin)";
+
+            timerInterval = setInterval(() => {
+                elapsedTimeDisplay.innerHTML = `<span class="monospace-value">${((Date.now() - startTime) / 1000).toFixed(3)}s</span>`;
+            }, 50);
+
+            const adapter = await navigator.gpu.requestAdapter();
+            const device = await adapter.requestDevice();
+            const shader = device.createShaderModule({ code: document.getElementById('webgpu-shader').textContent });
+            const pipeline = device.createComputePipeline({ layout: 'auto', compute: { module: shader, entryPoint: 'main' } });
+
+            let current = 3n;
+            const max = STAGE_MAX_NUMBER;
+            if (max >= 2n) { accumulatedParts.push("2 "); totalPrimeCount++; }
+
+            const outputBuf = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
+            const readBuf = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+            const uniformBuf = device.createBuffer({ size: 8, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+
+            let processedInRange = 0n;
+
+            while (current <= max && isRunning) {
+                const searchStepStart = performance.now();
+                
+                const processNow = Math.min(Number((max - current) / 2n) + 1, GPU_BATCH_SIZE);
+                device.queue.writeBuffer(uniformBuf, 0, new Uint32Array([Number(current), Number(max)]));
+
+                const bindGroup = device.createBindGroup({
+                    layout: pipeline.getBindGroupLayout(0),
+                    entries: [{ binding: 0, resource: { buffer: uniformBuf } }, { binding: 1, resource: { buffer: outputBuf } }]
+                });
+
+                const encoder = device.createCommandEncoder();
+                const pass = encoder.beginComputePass();
+                pass.setPipeline(pipeline);
+                pass.setBindGroup(0, bindGroup);
+                pass.dispatchWorkgroups(Math.ceil(processNow / 64));
+                pass.end();
+                encoder.copyBufferToBuffer(outputBuf, 0, readBuf, 0, processNow * 4);
+                device.queue.submit([encoder.finish()]);
+
+                await readBuf.mapAsync(GPUMapMode.READ);
+                const res = new Uint32Array(readBuf.getMappedRange(0, processNow * 4).slice());
+                readBuf.unmap();
+                
+                totalSearchTime += (performance.now() - searchStepStart);
+                
+                currentRawResults.push(res);
+                const rangeSize = BigInt(processNow) * 2n;
+                processedInRange += rangeSize;
+                current += rangeSize;
+                updateUIProgress(current, max);
+
+                if (processedInRange >= BigInt(SAVE_CHUNK_SIZE) || current > max) {
+                    const formatStepStart = performance.now();
+                    currentStage.textContent = "多线程转换与整理中...";
+                    await parallelFormatAndFlush();
+                    totalFormatTime += (performance.now() - formatStepStart);
+                    processedInRange = 0n;
+                    if (isRunning) currentStage.textContent = "并行查找 (Miller-Rabin)";
+                }
+            }
+
+            if (isRunning) finish();
+        }
+
+        async function parallelFormatAndFlush() {
+            if (currentRawResults.length === 0) return;
+
+            const numWorkers = navigator.hardwareConcurrency || 4;
+            const blob = new Blob([workerCode], { type: 'application/javascript' });
+            const workerUrl = URL.createObjectURL(blob);
+
+            const tempResults = new Array(numWorkers).fill("");
+            const tempCounts = new Array(numWorkers).fill(0);
+            
+            const promises = [];
+            const itemsPerWorker = Math.ceil(currentRawResults.length / numWorkers);
+
+            for (let i = 0; i < numWorkers; i++) {
+                const batch = currentRawResults.slice(i * itemsPerWorker, (i + 1) * itemsPerWorker);
+                if (batch.length === 0) continue;
+
+                promises.push(new Promise(resolve => {
+                    const w = new Worker(workerUrl);
+                    const workerIndex = i;
+                    
+                    w.onmessage = (e) => {
+                        tempResults[workerIndex] = e.data.str;
+                        tempCounts[workerIndex] = e.data.count;
+                        w.terminate();
+                        resolve();
+                    };
+                    
+                    const totalLen = batch.reduce((acc, arr) => acc + arr.length, 0);
+                    const combined = new Uint32Array(totalLen);
+                    let offset = 0;
+                    for (const arr of batch) {
+                        combined.set(arr, offset);
+                        offset += arr.length;
+                    }
+                    w.postMessage({ data: combined, index: workerIndex }, [combined.buffer]);
+                }));
+            }
+
+            await Promise.all(promises);
+            
+            for (let i = 0; i < tempResults.length; i++) {
+                if (tempResults[i]) {
+                    accumulatedParts.push(tempResults[i]);
+                    totalPrimeCount += tempCounts[i];
+                }
+            }
+
+            currentRawResults = [];
+            URL.revokeObjectURL(workerUrl);
+        }
+
+        function updateUIProgress(cur, max) {
+            let displayCur = cur > max ? max : cur;
+            const percent = Number((displayCur * 10000n) / max) / 100;
+            currentProgress.textContent = `${Number(displayCur).toLocaleString()} / ${Number(max).toLocaleString()}`;
+            progressFill.style.width = percent.toFixed(2) + "%";
+            progressFill.textContent = percent.toFixed(2) + "%";
+        }
+
+        function finish() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            
+            const wallTimeTotal = (Date.now() - startTime) / 1000;
+            const searchTimeSec = totalSearchTime / 1000;
+            const formatTimeSec = totalFormatTime / 1000;
+
+            currentStage.textContent = "已完成";
+            stageMessage.textContent = "✅ 计算任务已完成！结果已准备好下载。";
+            
+            resultSummary.textContent = `共发现 ${totalPrimeCount.toLocaleString()} 个质数，总耗时 ${wallTimeTotal.toFixed(3)} 秒。查找累计耗时 ${searchTimeSec.toFixed(3)} 秒，转换和整理累计耗时 ${formatTimeSec.toFixed(3)} 秒。`;
+            
+            resultArea.style.display = 'block';
+            stageButton.textContent = '开始计算';
+            stageButton.className = 'start-btn';
+            exponentInput.disabled = false;
+            document.getElementById('modeSwitchButton').disabled = false;
+            progressFill.style.width = "100%";
+            progressFill.textContent = "100.00%";
+        }
+
+        window.downloadPrimes = function() {
+            const blob = new Blob(accumulatedParts, { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `primes_up_to_${Number(STAGE_MAX_NUMBER)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
