@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=850, user-scalable=yes">
-    <title>Audio Frequency Analyzer</title>
+    <title>Audio Frequency Shifter</title>
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Condensed&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -204,54 +204,6 @@
             gap: 10px;
             justify-content: space-between;
             margin-bottom: 10px;
-        }
-
-        .option-btn {
-            background-color: rgba(42, 42, 42, 0.5);
-            height: 50px;
-            flex: 1; 
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
-            font-weight: bold;
-            font-size: 16px;
-            color: #888;
-            border: 1px solid rgba(88, 88, 88, 0.3);
-            transition: all 0.2s;
-            user-select: none;
-        }
-
-        .option-btn:hover {
-            border-color: #FF7E00;
-            color: #E0E0E0;
-        }
-
-        .option-btn.active {
-            background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            color: transparent; 
-            border: 1px solid #FF7E00; 
-            box-shadow: 0 0 10px rgba(255, 126, 0, 0.3); 
-        }
-
-        .option-btn.active::before {
-            content: "✔ ";
-            color: #FF7E00;
-            margin-right: 5px;
-        }
-
-        #optRealTime.active::before {
-            content: "" !important;
-            margin: 0;
-        }
-
-        .hidden {
-            display: none !important;
         }
 
         .param-box {
@@ -567,7 +519,6 @@
             font-size: 10px;
             pointer-events: none;
         }
-
     </style>
 </head>
 <body>
@@ -583,15 +534,9 @@
     </div>
 
     <div class="container">
-        <h1 id="main-title">Audio Frequency Analyzer</h1>
-        <div class="subtitle" id="main-subtitle">Visualize audio spectrums, detect peaks, and optional SRT export.</div>
+        <h1 id="main-title">Audio Frequency Shifter</h1>
+        <div class="subtitle" id="main-subtitle">Shift all frequencies linearly. Negative frequencies are phase-inverted.</div>
         
-        <div class="input-group">
-             <div class="options-grid">
-                <div class="option-btn" id="optRealTime">Real-Time Analysis</div>
-            </div>
-        </div>
-
         <div class="input-group" id="fileInputGroup">
             <div class="input-title" id="label-select-file">SELECT MEDIA FILE</div>
             <div class="file-upload-wrapper" id="dropZone">
@@ -602,38 +547,18 @@
         </div>
         
         <div class="input-group" style="margin-bottom: 10px;">
-            <div class="input-title" id="label-algorithm">ALGORITHM OPTIONS</div>
+            <div class="input-title" id="label-parameters">PARAMETERS</div>
             
             <div class="options-grid" style="margin-bottom: 10px;" id="optionsRow1">
-                <div class="param-box" id="boxRate">
-                    <span class="param-label" id="label-rate">Analysis Rate (Hz)</span>
-                    <input type="number" id="inputRate" value="10" min="1" step="1" class="param-input">
+                <div class="param-box" id="boxShift">
+                    <span class="param-label" id="label-shift">Frequency Shift (Hz)</span>
+                    <input type="number" id="inputShift" value="0" min="-24000" max="24000" step="1" class="param-input">
                 </div>
-                <div class="param-box" id="boxDB">
-                    <span class="param-label" id="label-db">Peak Threshold</span>
-                    <input type="number" id="inputDB" value="15" min="0" step="0.5" class="param-input">
-                </div>
-            </div>
-
-            <div class="options-grid" style="margin-bottom: 10px;" id="optionsRow2">
-                <div class="param-box" id="boxWindow">
-                    <span class="param-label" id="label-window">Window Size (ms)</span>
-                    <input type="number" id="inputWindow" value="500" min="10" max="1000" step="10" class="param-input">
-                </div>
-                <div class="param-box" id="boxHighPass">
-                    <span class="param-label" id="label-high-pass">High Pass Filter (Hz)</span>
-                    <input type="number" id="inputHighPass" value="20" min="0" step="1" class="param-input">
-                </div>
-            </div>
-
-            <div class="options-grid" id="genSpectrumBtnGroup">
-                <div class="option-btn active" id="optSpectrum">Generate Spectrum</div>
-                <div class="option-btn" id="optSRT">Generate SRT</div>
             </div>
         </div>
 
         <div class="process-btn-container" id="processBtnContainer">
-            <button id="processBtn" class="main-btn process-button" disabled>Start Analysis</button>
+            <button id="processBtn" class="main-btn process-button" disabled>Start Processing</button>
         </div>
         
         <div class="input-group">
@@ -645,38 +570,31 @@
             </div>
         </div>
         <div class="input-group" style="text-align: center;" id="downloadGroup">
-            <button id="downloadBtn" class="main-btn download-button" disabled>DOWNLOAD SRT</button>
+            <button id="downloadBtn" class="main-btn download-button" disabled>DOWNLOAD WAV</button>
         </div>
     </div>
     <script>
         const translations = {
             'en-US': {
                 goBack: "← Go Back",
-                title: "Audio Spectrum Analyzer",
-                subtitle: "Visualize audio spectrums, detect peaks, and optional SRT export.",
-                realTime: "Real-Time Analysis",
+                title: "Audio Frequency Shifter",
+                subtitle: "Shift all frequencies linearly. Negative frequencies will be phase-inverted.",
                 selectFile: "SELECT MEDIA FILE",
                 dropText: "Click or drop file here...",
-                algorithm: "ANALYSIS PARAMETERS",
-                rate: "Analysis Rate (Hz)",
-                db: "Peak Threshold (dB)",
-                window: "Window Size (ms)",
-                highPass: "High Pass Filter (Hz)",
-                genSpectrum: "Generate Spectrum",
-                genSRT: "Generate SRT",
-                startProc: "Start Analysis",
-                stopProc: "Stop Analysis",
-                procComp: "Analysis Complete",
+                parameters: "PARAMETERS",
+                shift: "Frequency Shift (Hz)",
+                startProc: "Start Processing",
+                stopProc: "Stop Processing",
+                procComp: "Processing Complete",
                 preview: "PREVIEW",
-                spectrum: "SPECTRUM",
                 noMedia: "No media loaded",
-                dlSRT: "DOWNLOAD SRT",
+                dlWav: "DOWNLOAD WAV",
                 waitInput: "Waiting for input...",
                 selected: "Selected: ",
                 loading: "Loading media data...",
                 decoding: "Decoding audio track...",
-                analyzing: "Analyzing: ",
-                complete: "Analysis complete.",
+                processing: "Processing: ",
+                complete: "Processing complete.",
                 error: "Error: ",
                 freqPitch: "FREQ / PITCH",
                 fsHint: "Double-Click/F: Fullscreen",
@@ -685,31 +603,24 @@
             },
             'zh-Hans': {
                 goBack: "← 返回",
-                title: "音频频谱分析器",
-                subtitle: "可视化音频频谱，检测最低频与峰值，并可导出 SRT。",
-                realTime: "实时分析",
+                title: "音频频率偏移器",
+                subtitle: "线性偏移所有频率。负频率将被反相。",
                 selectFile: "选择媒体文件",
                 dropText: "点击选择或拖拽文件至此...",
-                algorithm: "分析参数设置",
-                rate: "采样频率 (Hz)",
-                db: "峰下阈值 (dB)",
-                window: "窗口时长 (ms)",
-                highPass: "高通滤波 (Hz)",
-                genSpectrum: "生成频谱图",
-                genSRT: "生成 SRT",
-                startProc: "开始分析",
-                stopProc: "停止分析",
-                procComp: "分析完成",
+                parameters: "参数设置",
+                shift: "频率偏移 (Hz)",
+                startProc: "开始处理",
+                stopProc: "停止处理",
+                procComp: "处理完成",
                 preview: "预览",
-                spectrum: "实时频谱",
                 noMedia: "未加载媒体",
-                dlSRT: "下载 SRT",
+                dlWav: "下载 WAV",
                 waitInput: "等待输入文件...",
                 selected: "已选择：",
                 loading: "正在加载媒体数据...",
                 decoding: "正在解码音轨...",
-                analyzing: "分析中：",
-                complete: "分析完成。",
+                processing: "处理中：",
+                complete: "处理完成。",
                 error: "错误：",
                 freqPitch: "频率 / 音高",
                 fsHint: "双击/F：全屏",
@@ -718,31 +629,24 @@
             },
             'fr-FR': {
                 goBack: "← Retour",
-                title: "Analyseur de spectre audio",
-                subtitle: "Visualisez les spectres, détectez les pics et exportez en SRT.",
-                realTime: "Temps réel",
+                title: "Décaleur de fréquence audio",
+                subtitle: "Décalez les fréquences linéairement. Les fréquences négatives seront inversées.",
                 selectFile: "CHOISIR UN FICHIER",
                 dropText: "Cliquez ou glissez-déposez ici...",
-                algorithm: "PARAMÈTRES D'ANALYSE",
-                rate: "Taux d'analyse (Hz)",
-                db: "Seuil de crête (dB)",
-                window: "Fenêtre (ms)",
-                highPass: "Filtre passe-haut (Hz)",
-                genSpectrum: "Générer le spectre",
-                genSRT: "Générer le SRT",
-                startProc: "Lancer l'analyse",
-                stopProc: "Arrêter l'analyse",
-                procComp: "Analyse terminée",
+                parameters: "PARAMÈTRES",
+                shift: "Décalage (Hz)",
+                startProc: "Lancer le traitement",
+                stopProc: "Arrêter le traitement",
+                procComp: "Traitement terminé",
                 preview: "APERÇU",
-                spectrum: "SPECTRE",
                 noMedia: "Aucun média",
-                dlSRT: "TÉLÉCHARGER LE SRT",
-                waitInput: "En attente d'un fichier...",
+                dlWav: "TÉLÉCHARGER WAV",
+                waitInput: "En attente...",
                 selected: "Sélectionné : ",
                 loading: "Chargement des données...",
                 decoding: "Décodage de l'audio...",
-                analyzing: "Analyse en cours : ",
-                complete: "Analyse terminée.",
+                processing: "Traitement : ",
+                complete: "Traitement terminé.",
                 error: "Erreur : ",
                 freqPitch: "FREQ / TON",
                 fsHint: "Double-clic/F : Plein écran",
@@ -751,35 +655,28 @@
             },
             'ru-RU': {
                 goBack: "← Назад",
-                title: "Анализатор спектра",
-                subtitle: "Визуализация аудиоспектра, поиск пиков и экспорт в SRT.",
-                realTime: "Режим реального времени",
+                title: "Сдвиг частоты аудио",
+                subtitle: "Линейный сдвиг частот. Отрицательные частоты инвертируются по фазе.",
                 selectFile: "ВЫБРАТЬ ФАЙЛ",
                 dropText: "Нажмите или перетащите файл...",
-                algorithm: "ПАРАМЕТРЫ АНАЛИЗА",
-                rate: "Частота анализа (Hz)",
-                db: "Порог пика (dB)",
-                window: "Длина окна (ms)",
-                highPass: "ФВЧ (Hz)",
-                genSpectrum: "Построить спектр",
-                genSRT: "Создать SRT",
-                startProc: "Начать анализ",
-                stopProc: "Остановить анализ",
-                procComp: "Анализ завершен",
+                parameters: "ПАРАМЕТРЫ",
+                shift: "Сдвиг (Hz)",
+                startProc: "Начать обработку",
+                stopProc: "Остановить",
+                procComp: "Обработка завершена",
                 preview: "ПРЕДПРОСМОТР",
-                spectrum: "СПЕКТР",
                 noMedia: "Медиа не загружено",
-                dlSRT: "СКАЧАТЬ SRT",
-                waitInput: "Ожидание файла...",
+                dlWav: "СКАЧАТЬ WAV",
+                waitInput: "Ожидание...",
                 selected: "Выбрано: ",
                 loading: "Загрузка данных...",
-                decoding: "Декодирование аудиоданных...",
-                analyzing: "Анализ: ",
-                complete: "Анализ завершен.",
+                decoding: "Декодирование...",
+                processing: "Обработка: ",
+                complete: "Готово.",
                 error: "Ошибка: ",
                 freqPitch: "ЧАСТОТА / ВЫСОТА",
                 fsHint: "Двойной клик/F: Полный экран",
-                playPauseHint: "Пробел: Воспроизведение/Пауза",
+                playPauseHint: "Пробел: Старт/Пауза",
                 optionsChanged: "Настройки изменены."
             }
         };
@@ -793,15 +690,9 @@
             document.getElementById('homeButton').textContent = t.goBack;
             document.getElementById('main-title').textContent = t.title;
             document.getElementById('main-subtitle').textContent = t.subtitle;
-            document.getElementById('optRealTime').textContent = t.realTime;
             document.getElementById('label-select-file').textContent = t.selectFile;
-            document.getElementById('label-algorithm').textContent = t.algorithm;
-            document.getElementById('label-rate').textContent = t.rate;
-            document.getElementById('label-db').textContent = t.db;
-            document.getElementById('label-window').textContent = t.window;
-            document.getElementById('label-high-pass').textContent = t.highPass;
-            document.getElementById('optSpectrum').textContent = t.genSpectrum;
-            document.getElementById('optSRT').textContent = t.genSRT;
+            document.getElementById('label-parameters').textContent = t.parameters;
+            document.getElementById('label-shift').textContent = t.shift;
             
             if (isProcessing) {
                 processBtn.textContent = t.stopProc;
@@ -811,28 +702,30 @@
                 processBtn.textContent = t.startProc;
             }
 
-            document.getElementById('previewTitle').textContent = optRealTime.classList.contains('active') ? t.spectrum : t.preview;
-            document.getElementById('downloadBtn').textContent = t.dlSRT;
+            document.getElementById('previewTitle').textContent = t.preview;
+            document.getElementById('downloadBtn').textContent = t.dlWav;
             
             const placeholder = document.getElementById('placeholder-text');
             if (placeholder) placeholder.textContent = t.noMedia;
 
-            if (optRealTime.classList.contains('active')) {
-                statusText.textContent = t.realTime;
-            } else if (!selectedFile) {
+            if (!selectedFile) {
                 statusText.textContent = t.waitInput;
                 fileNameDisplay.textContent = t.dropText;
             } else {
                 switch (currentProcessingState.type) {
                     case 'loading': statusText.textContent = t.loading; break;
                     case 'decoding': statusText.textContent = t.decoding; break;
-                    case 'analyzing': 
-                        statusText.textContent = t.analyzing + Math.round(currentProcessingState.progress * 100) + "%"; 
+                    case 'processing': 
+                        statusText.textContent = t.processing + Math.round(currentProcessingState.progress * 100) + "%"; 
                         break;
                     case 'complete': statusText.textContent = t.complete; break;
                     default:
-                        const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
-                        statusText.textContent = `${t.selected}${selectedFile.name} (${sizeMB} MB)`;
+                        if (processBtn.classList.contains('is-complete') === false && !isProcessing) {
+                             statusText.textContent = t.optionsChanged;
+                        } else if (!isProcessing && !processBtn.classList.contains('is-complete')) {
+                             const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
+                             statusText.textContent = `${t.selected}${selectedFile.name} (${sizeMB} MB)`;
+                        }
                 }
             }
 
@@ -841,11 +734,7 @@
 
             const visHint = document.querySelector('.vis-hint');
             if (visHint) {
-                if (optRealTime.classList.contains('active')) {
-                    visHint.textContent = t.fsHint;
-                } else {
-                    visHint.textContent = `${t.fsHint} | ${t.playPauseHint}`;
-                }
+                visHint.textContent = `${t.fsHint} | ${t.playPauseHint}`;
             }
         }
 
@@ -877,69 +766,113 @@
 
         const workerScript = `
             self.onmessage = function(e) {
-                const { paddedChunk, sampleRate, globalStartSampleIndex, rateVal, dbThreshold, hopSamples, windowSec } = e.data;
-                const sr = sampleRate;
-                const windowSamples = Math.floor(sr * windowSec);
-                const hopSec = 1.0 / rateVal;
+                const { channelData, sampleRate, shiftHz } = e.data;
+                const length = channelData.length;
+                
+                const winSize = 4096;
+                const hopSize = 1024;
+                const scaleFactor = 0.5;
 
-                let n_fft = 1;
-                while (n_fft < windowSamples * 4) n_fft *= 2; 
+                const window = new Float32Array(winSize);
+                for(let i=0; i<winSize; i++) {
+                    window[i] = Math.sin(Math.PI * i / winSize);
+                }
 
-                const results = [];
-                let localIndex = 0;
-                const maxLocalI = paddedChunk.length - windowSamples;
+                const fftSize = winSize; 
+                const binWidth = sampleRate / fftSize;
+                const halfSize = fftSize / 2;
+                
+                const shiftBins = Math.round(shiftHz / binWidth);
 
-                for (let i = 0; i <= maxLocalI; i += hopSamples) {
-                    if (localIndex % 50 === 0) { self.postMessage({ type: 'progress', progress: i / maxLocalI }); }
+                const phaseIncrementPerHop = 2 * Math.PI * shiftBins * hopSize / fftSize;
+                let currentPhaseShift = 0;
 
-                    const chunk = paddedChunk.slice(i, i + windowSamples);
-                    const currentGlobalSample = globalStartSampleIndex + i;
-                    const startTime = currentGlobalSample / sr;
-                    const endTime = startTime + hopSec;
+                const output = new Float32Array(length);
+                const tempReal = new Float32Array(fftSize);
+                const tempImag = new Float32Array(fftSize);
+                const newReal = new Float32Array(fftSize);
+                const newImag = new Float32Array(fftSize);
 
-                    const result = getFreqData(chunk, sr, n_fft, dbThreshold);
-                    
-                    let text = "[Silence]";
-                    if (result.low > 0 || result.peak > 0) {
-                        const lowStr = result.low > 0 ? \`Low: \${result.low.toFixed(1)} Hz\` : "";
-                        const peakStr = result.peak > 0 ? \`Peak: \${result.peak.toFixed(1)} Hz\` : "";
-                        if (lowStr && peakStr) text = \`\${lowStr} | \${peakStr}\`;
-                        else if (lowStr) text = lowStr;
-                        else if (peakStr) text = peakStr;
+                let processedSamples = 0;
+
+                for (let i = 0; i < length - winSize; i += hopSize) {
+                    if (processedSamples % 100 === 0) {
+                        self.postMessage({ type: 'progress', progress: i / length });
+                    }
+                    processedSamples++;
+
+                    for(let j=0; j<winSize; j++) {
+                        tempReal[j] = channelData[i+j] * window[j];
+                        tempImag[j] = 0;
                     }
 
-                    results.push({ startTime: startTime, endTime: endTime, text: text });
-                    localIndex++;
+                    performFFT(tempReal, tempImag);
+
+                    newReal.fill(0);
+                    newImag.fill(0);
+
+                    const cosVal = Math.cos(currentPhaseShift);
+                    const sinVal = Math.sin(currentPhaseShift);
+
+                    for (let k = 1; k < halfSize; k++) {
+                        const r = tempReal[k];
+                        const im = tempImag[k];
+                        
+                        let targetK = k + shiftBins;
+                        let rotatedR = r * cosVal - im * sinVal;
+                        let rotatedI = r * sinVal + im * cosVal;
+
+                        if (targetK < 0) {
+                            targetK = -targetK;
+                            rotatedR = -rotatedR;
+                        }
+
+                        if (targetK > 0 && targetK < halfSize) {
+                            newReal[targetK] += rotatedR;
+                            newImag[targetK] += rotatedI;
+                        }
+                    }
+
+                    for (let k = 1; k < halfSize; k++) {
+                        newReal[fftSize - k] = newReal[k];
+                        newImag[fftSize - k] = -newImag[k];
+                    }
+
+                    newReal[0] = 0; newImag[0] = 0;
+                    newReal[halfSize] = 0; newImag[halfSize] = 0;
+
+                    performIFFT(newReal, newImag);
+
+                    for(let j=0; j<winSize; j++) {
+                        if (i + j < length) {
+                            output[i+j] += newReal[j] * window[j] * scaleFactor;
+                        }
+                    }
+
+                    currentPhaseShift -= phaseIncrementPerHop;
+                    
+                    while (currentPhaseShift > Math.PI) currentPhaseShift -= 2 * Math.PI;
+                    while (currentPhaseShift < -Math.PI) currentPhaseShift += 2 * Math.PI;
                 }
-                self.postMessage({ type: 'done', results: results });
+
+                self.postMessage({ type: 'done', result: output });
             };
 
-            function getFreqData(y, sr, n_fft, dbThreshold) {
-                let sumSq = 0;
-                for (let k = 0; k < y.length; k++) sumSq += y[k] * y[k];
-                const rms = Math.sqrt(sumSq / y.length);
-                if (rms < 0.003) return { low: 0, peak: 0 };
-
-                const n_samples = y.length;
-                const windowed = new Float32Array(n_samples);
-                for (let k = 0; k < n_samples; k++) {
-                    const multiplier = 0.5 * (1 - Math.cos(2 * Math.PI * k / (n_samples - 1)));
-                    windowed[k] = y[k] * multiplier;
-                }
-
-                const real = new Float32Array(n_fft); 
-                const imag = new Float32Array(n_fft);
-                real.set(windowed);
-                
+            function performFFT(real, imag) {
                 const n = real.length;
                 let i = 0, j = 0;
                 for (i = 0; i < n; i++) {
-                    if (i < j) { [real[i], real[j]] = [real[j], real[i]]; [imag[i], imag[j]] = [imag[j], imag[i]]; }
+                    if (i < j) { 
+                        let tr = real[i]; real[i] = real[j]; real[j] = tr;
+                        let ti = imag[i]; imag[i] = imag[j]; imag[j] = ti;
+                    }
                     let m = n >> 1; while (m >= 1 && j >= m) { j -= m; m >>= 1; } j += m;
                 }
                 for (let m = 2; m <= n; m <<= 1) {
-                    const mh = m >> 1; const phi = (2 * Math.PI) / m; 
-                    const w_real_m = Math.cos(phi); const w_imag_m = -Math.sin(phi);
+                    const mh = m >> 1;
+                    const phi = (2 * Math.PI) / m;
+                    const w_real_m = Math.cos(phi);
+                    const w_imag_m = -Math.sin(phi);
                     for (let k = 0; k < n; k += m) {
                         let w_real = 1; let w_imag = 0;
                         for (let r = 0; r < mh; r++) {
@@ -953,37 +886,37 @@
                         }
                     }
                 }
+            }
 
-                let global_max_db = -Infinity;
-                let peak_freq_bin = 0;
-                const magnitudes = [];
-                const binWidth = sr / n_fft;
-                const minBin = Math.floor(20 / binWidth); 
-                const maxBin = Math.floor(n_fft / 2);
-
-                for (let k = 0; k <= maxBin; k++) {
-                    const mag = Math.sqrt(real[k]*real[k] + imag[k]*imag[k]);
-                    const db = 20 * Math.log10(mag + 1e-9);
-                    magnitudes[k] = db;
-                    if (k >= minBin && db > global_max_db) {
-                        global_max_db = db;
-                        peak_freq_bin = k;
+            function performIFFT(real, imag) {
+                const n = real.length;
+                let i = 0, j = 0;
+                for (i = 0; i < n; i++) {
+                    if (i < j) { 
+                        let tr = real[i]; real[i] = real[j]; real[j] = tr;
+                        let ti = imag[i]; imag[i] = imag[j]; imag[j] = ti;
+                    }
+                    let m = n >> 1; while (m >= 1 && j >= m) { j -= m; m >>= 1; } j += m;
+                }
+                for (let m = 2; m <= n; m <<= 1) {
+                    const mh = m >> 1;
+                    const phi = (2 * Math.PI) / m;
+                    const w_real_m = Math.cos(phi);
+                    const w_imag_m = Math.sin(phi);
+                    for (let k = 0; k < n; k += m) {
+                        let w_real = 1; let w_imag = 0;
+                        for (let r = 0; r < mh; r++) {
+                            const t_index = k + r + mh; const u_index = k + r;
+                            const t_real = w_real * real[t_index] - w_imag * imag[t_index];
+                            const t_imag = w_real * imag[t_index] + w_imag * real[t_index];
+                            const u_real = real[u_index]; const u_imag = imag[u_index];
+                            real[u_index] = u_real + t_real; imag[u_index] = u_imag + t_imag;
+                            real[t_index] = u_real - t_real; imag[t_index] = u_imag - t_imag;
+                            const w_temp = w_real; w_real = w_real * w_real_m - w_imag * w_imag_m; w_imag = w_temp * w_imag_m + w_imag * w_real_m;
+                        }
                     }
                 }
-
-                const relative_threshold = global_max_db - dbThreshold;
-                const absolute_noise_floor = -40;
-                const final_threshold = Math.max(relative_threshold, absolute_noise_floor);
-
-                let low_freq = 0;
-                for (let k = minBin; k <= maxBin; k++) {
-                    if (magnitudes[k] > final_threshold) {
-                        low_freq = k * binWidth;
-                        break; 
-                    }
-                }
-                const peak_freq = peak_freq_bin * binWidth;
-                return { low: low_freq, peak: peak_freq };
+                for(let k=0; k<n; k++) { real[k] /= n; imag[k] /= n; }
             }
         `;
 
@@ -995,32 +928,15 @@
         const previewArea = document.getElementById('previewArea');
         const processBtn = document.getElementById('processBtn');
         const previewTitle = document.getElementById('previewTitle');
-        
-        const inputHighPass = document.getElementById('inputHighPass');
-        const inputRate = document.getElementById('inputRate');
-        const inputDB = document.getElementById('inputDB');
-        const inputWindow = document.getElementById('inputWindow');
-        
-        const optSpectrum = document.getElementById('optSpectrum');
-        const optSRT = document.getElementById('optSRT');
-        
-        const optRealTime = document.getElementById('optRealTime');
+        const inputShift = document.getElementById('inputShift');
         const fileInputGroup = document.getElementById('fileInputGroup');
-        const genSpectrumBtnGroup = document.getElementById('genSpectrumBtnGroup');
         const processBtnContainer = document.getElementById('processBtnContainer');
         const downloadGroup = document.getElementById('downloadGroup');
-        
-        const optionsRow1 = document.getElementById('optionsRow1');
-        const optionsRow2 = document.getElementById('optionsRow2');
-        const boxRate = document.getElementById('boxRate');
-        const boxDB = document.getElementById('boxDB');
-        const boxWindow = document.getElementById('boxWindow');
-        const boxHighPass = document.getElementById('boxHighPass');
         
         let selectedFile = null;
         let isProcessing = false;
         let currentObjectUrl = null;
-        let generatedSrtContent = "";
+        let processedBlob = null;
         let audioCtx = null;
         let activeWorkers = [];
         
@@ -1029,388 +945,21 @@
         let visAnalyser = null;
         let visAnimationId = null;
         let visSpaceListener = null;
-        
-        let rtContext = null;
-        let rtStream = null;
-        let rtSource = null;
-        let rtAnalyser = null;
-        let rtAnimationId = null;
-        let savedParams = {};
-
         let isPitchMode = false;
+        let processedAudioBuffer = null;
 
         let currentProcessingState = {
             type: 'idle',
             progress: 0
         };
 
-        optRealTime.addEventListener('click', () => {
-            const isActive = optRealTime.classList.toggle('active');
-            if (isActive) {
-                enableRealTimeMode();
-            } else {
-                disableRealTimeMode();
-            }
-        });
-
-        async function enableRealTimeMode() {
-            const t = translations[currentLang];
-            resetUIOnOptionChange();
-            previewTitle.textContent = t.spectrum;
-            savedParams = {
-                rate: inputRate.value,
-                db: inputDB.value,
-                window: inputWindow.value,
-                highPass: inputHighPass.value
-            };
-
-            inputDB.value = 15;
-            inputWindow.value = 33;
-
-            fileInputGroup.classList.add('hidden');
-            genSpectrumBtnGroup.classList.add('hidden');
-            processBtnContainer.classList.add('hidden');
-            downloadGroup.classList.add('hidden');
-            boxRate.classList.add('hidden');
-            boxHighPass.classList.add('hidden');
-            optionsRow2.classList.add('hidden');
-            optionsRow1.appendChild(boxWindow);
-
-            if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
-            stopVisualizer();
-            previewArea.innerHTML = '';
-            statusText.textContent = t.realTime + "...";
-            
-            try {
-                const constraints = {
-                    audio: {
-                        echoCancellation: false,
-                        noiseSuppression: false,
-                        autoGainControl: false,
-                        mozAutoGainControl: false,
-                        googAutoGainControl: false
-                    }
-                };
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                statusText.textContent = t.realTime;
-                startRealTimeVisualizer(stream);
-            } catch (err) {
-                console.error(err);
-                statusText.textContent = t.error + "Mic denied.";
-                optRealTime.classList.remove('active');
-                disableRealTimeMode();
-            }
-        }
-
-        function disableRealTimeMode() {
-            const t = translations[currentLang];
-            previewTitle.textContent = t.preview;
-            stopRealTimeVisualizer();
-            
-            fileInputGroup.classList.remove('hidden');
-            genSpectrumBtnGroup.classList.remove('hidden');
-            processBtnContainer.classList.remove('hidden');
-            downloadGroup.classList.remove('hidden');
-            
-            optionsRow2.insertBefore(boxWindow, boxHighPass);
-            optionsRow2.classList.remove('hidden');
-            boxRate.classList.remove('hidden');
-            boxHighPass.classList.remove('hidden');
-
-            currentProcessingState.type = 'idle'; 
-            currentProcessingState.progress = 0;
-            processBtn.classList.remove('is-complete', 'is-processing');
-            processBtn.textContent = t.startProc;
-
-            if (savedParams.rate) inputRate.value = savedParams.rate;
-            if (savedParams.db) inputDB.value = savedParams.db;
-            if (savedParams.window) inputWindow.value = savedParams.window;
-            if (savedParams.highPass) inputHighPass.value = savedParams.highPass;
-
-            if (!selectedFile) {
-                statusText.textContent = t.waitInput;
-                previewArea.innerHTML = `<span class="preview-placeholder" id="placeholder-text">${t.noMedia}</span>`;
-                processBtn.disabled = true;
-            } else {
-                const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
-                statusText.textContent = `${t.selected}${selectedFile.name} (${sizeMB} MB)`;
-                
-                previewArea.innerHTML = '';
-                const audio = document.createElement('audio'); 
-                audio.src = currentObjectUrl; 
-                audio.controls = true; 
-                audio.style.width = "90%"; 
-                audio.style.height = "50px"; 
-                audio.style.marginTop = "10px";
-                const wrapper = document.createElement('div');
-                wrapper.style.textAlign = "center";
-                wrapper.style.width = "100%"; 
-                wrapper.innerHTML = `<div style="font-size:48px; margin-bottom:5px;">🎵</div>`;
-                wrapper.appendChild(audio);
-                previewArea.appendChild(wrapper);
-                
-                processBtn.disabled = false;
-            }
-        }
-
-        function stopRealTimeVisualizer() {
-            if (rtAnimationId) cancelAnimationFrame(rtAnimationId);
-            if (rtSource) { rtSource.disconnect(); rtSource = null; }
-            if (rtStream) {
-                rtStream.getTracks().forEach(track => track.stop());
-                rtStream = null;
-            }
-            if (rtContext && rtContext.state !== 'closed') rtContext.close();
-            rtContext = null;
-        }
-
-        function startRealTimeVisualizer(stream) {
-            const t = translations[currentLang];
-            stopRealTimeVisualizer();
-            rtStream = stream;
-
-            previewArea.innerHTML = `
-                <div class="visualizer-container" id="visContainer">
-                    <button class="vis-pitch-btn ${isPitchMode ? 'active' : ''}" id="visPitchBtn">${t.freqPitch}</button>
-                    <canvas id="visCanvas"></canvas>
-                    <div class="vis-hint">${t.fsHint}</div>
-                </div>
-            `;
-
-            document.getElementById('visPitchBtn').addEventListener('click', function(e) {
-                e.stopPropagation();
-                isPitchMode = !isPitchMode;
-                if(isPitchMode) this.classList.add('active');
-                else this.classList.remove('active');
-            });
-            
-            const canvas = document.getElementById('visCanvas');
-            const visContainer = document.getElementById('visContainer');
-            const ctx = canvas.getContext('2d');
-
-            rtContext = new (window.AudioContext || window.webkitAudioContext)();
-            rtSource = rtContext.createMediaStreamSource(stream);
-            rtAnalyser = rtContext.createAnalyser();
-
-            rtAnalyser.fftSize = 4096; 
-            rtAnalyser.minDecibels = -140;
-            rtAnalyser.smoothingTimeConstant = 0.3; 
-            rtSource.connect(rtAnalyser);
-
-            const dataArray = new Float32Array(rtAnalyser.frequencyBinCount);
-
-            visContainer.addEventListener('dblclick', () => {
-                if (!document.fullscreenElement) {
-                    visContainer.requestFullscreen().catch(err => console.log(err));
-                } else {
-                    document.exitFullscreen();
-                }
-            });
-
-            function resize() {
-                const dpr = window.devicePixelRatio || 1;
-                const superSample = 2;
-                canvas.width = visContainer.clientWidth * dpr * superSample;
-                canvas.height = visContainer.clientHeight * dpr * superSample;
-                ctx.scale(dpr * superSample, dpr * superSample);
-            }
-            window.addEventListener('resize', resize);
-            resize();
-
-            function draw() {
-                rtAnimationId = requestAnimationFrame(draw);
-                
-                const winVal = parseFloat(inputWindow.value);
-                if (!isNaN(winVal)) {
-                    let s = 0.3; 
-                    if (s < 0) s = 0; if (s > 0.95) s = 0.95;
-                    rtAnalyser.smoothingTimeConstant = s;
-                }
-
-                rtAnalyser.getFloatFrequencyData(dataArray);
-
-                const width = visContainer.clientWidth;
-                const height = visContainer.clientHeight;
-                
-                ctx.fillStyle = '#000';
-                ctx.fillRect(0, 0, width, height);
-
-                const minFreq = 10;
-                const sampleRate = rtContext.sampleRate;
-                const maxFreq = sampleRate / 2;
-                const logMin = Math.log10(minFreq);
-                const logMax = Math.log10(maxFreq);
-                const scale = width / (logMax - logMin);
-
-                function getX(f) {
-                    if (f < minFreq) return 0;
-                    return (Math.log10(f) - logMin) * scale;
-                }
-
-                function getY(db) {
-                    const minDb = -140;
-                    const maxDb = 0;
-                    let norm = (db - minDb) / (maxDb - minDb);
-                    if (norm < 0) norm = 0;
-                    if (norm > 1) norm = 1;
-                    return height - (norm * height);
-                }
-
-                ctx.font = "16px 'Unispace Bd', monospace";
-                ctx.textAlign = "center";
-
-                if (!isPitchMode) {
-                    const powers = [10, 100, 1000, 10000];
-                    const multipliers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-                    powers.forEach(p => {
-                        multipliers.forEach(m => {
-                            const freq = p * m;
-                            if (freq > maxFreq) return;
-                            const rawX = getX(freq);
-                            const x = Math.floor(rawX) + 0.5;
-                            const isMajor = (m === 1 && freq !== 10); 
-                            ctx.beginPath();
-                            ctx.moveTo(x, 0);
-                            ctx.lineTo(x, height);
-                            if (isMajor) {
-                                ctx.lineWidth = 1.5; ctx.strokeStyle = '#888888'; ctx.stroke();
-                                ctx.fillStyle = '#E0E0E0';
-                                let label = freq >= 1000 ? (freq/1000) + "k" : freq;
-                                ctx.fillText(label, x + 2, height - 5);
-                            } else {
-                                ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(136, 136, 136, 0.5)'; ctx.stroke();
-                            }
-                        });
-                    });
-                } else {
-                    for (let m = 0; m <= 135; m++) {
-                        const freq = 440 * Math.pow(2, (m - 69) / 12);
-                        if (freq < minFreq) continue;
-                        if (freq > maxFreq) break;
-                        
-                        const rawX = getX(freq);
-                        const x = Math.floor(rawX) + 0.5;
-                        const noteIndex = m % 12; 
-                        const octave = Math.floor(m / 12) - 1;
-                        
-                        ctx.beginPath();
-                        ctx.moveTo(x, 0);
-                        ctx.lineTo(x, height);
-
-                        if (noteIndex === 0) {
-                            ctx.lineWidth = 1.5; 
-                            ctx.strokeStyle = '#888888';
-                            ctx.stroke();
-                            
-                            ctx.fillStyle = '#E0E0E0';
-                            ctx.fillText("C" + octave, x + 2, height - 5);
-                        } else {
-                            const isNatural = [0, 2, 4, 5, 7, 9, 11].includes(noteIndex);
-                            if (isNatural) {
-                                ctx.lineWidth = 1; 
-                                ctx.strokeStyle = 'rgba(136, 136, 136, 0.5)';
-                                ctx.stroke();
-                            } else {
-                                ctx.lineWidth = 1; 
-                                ctx.strokeStyle = 'rgba(136, 136, 136, 0.25)';
-                                ctx.stroke();
-                            }
-                        }
-                    }
-                }
-
-                ctx.textAlign = "left";
-                for (let db = -140; db <= 0; db += 4) {
-                    const rawY = getY(db);
-                    const y = Math.floor(rawY) + 0.5;
-                    const isMajor = (db % 20 === 0 && db !== 0 && db !== -140);
-                    ctx.beginPath();
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(width, y); 
-                    if (isMajor) {
-                        ctx.lineWidth = 1.5; ctx.strokeStyle = '#888888'; ctx.stroke();
-                        ctx.fillStyle = '#E0E0E0'; ctx.fillText(db, 5, y - 3);
-                    } else {
-                        ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(136, 136, 136, 0.5)'; ctx.stroke();
-                    }
-                }
-
-                const bufferLength = dataArray.length;
-                const gradient = ctx.createLinearGradient(0, 0, width, 0);
-                gradient.addColorStop(0, '#A52A2A');
-                gradient.addColorStop(0.5, '#FF7E00');
-                gradient.addColorStop(1, '#DAA520');
-                ctx.strokeStyle = gradient;
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                let hasStarted = false;
-                for(let i = 0; i < bufferLength; i++) {
-                    const freq = i * sampleRate / (2 * bufferLength); 
-                    if (freq < minFreq) continue;
-                    if (freq > maxFreq) break;
-                    const x = getX(freq);
-                    const y = getY(dataArray[i]);
-                    if (!hasStarted) { ctx.moveTo(x, y); hasStarted = true; } else { ctx.lineTo(x, y); }
-                }
-                ctx.stroke();
-
-                const peaks = [];
-                const noiseFloor = -100;
-                for (let i = 2; i < bufferLength - 2; i++) {
-                    const val = dataArray[i];
-                    if (val > noiseFloor) {
-                        if (val > dataArray[i-1] && val > dataArray[i-2] && val > dataArray[i+1] && val > dataArray[i+2]) {
-                            const freq = i * sampleRate / (bufferLength * 2);
-                            if (freq > minFreq) peaks.push({ freq, db: val });
-                        }
-                    }
-                }
-                
-                let frameMaxDB = -Infinity;
-                peaks.forEach(p => frameMaxDB = Math.max(frameMaxDB, p.db));
-                const dbThresholdVal = parseFloat(inputDB.value) || 15;
-                const cutoffDB = frameMaxDB - dbThresholdVal;
-                
-                const validPeaks = peaks.filter(p => p.db >= cutoffDB);
-                validPeaks.sort((a, b) => a.freq - b.freq); 
-                const lowPeak = validPeaks.length > 0 ? validPeaks[0] : null;
-
-                peaks.sort((a, b) => b.db - a.db); 
-                let displayPeaks = peaks.slice(0, 10);
-                if (lowPeak) {
-                    const exists = displayPeaks.find(p => Math.abs(p.freq - lowPeak.freq) < 1);
-                    if (!exists) displayPeaks.push(lowPeak);
-                }
-
-                ctx.textAlign = "center";
-                ctx.font = "14px 'Unispace Bd', monospace";
-                displayPeaks.forEach(p => {
-                    const x = getX(p.freq);
-                    const y = getY(p.db);
-                    ctx.fillStyle = (p === lowPeak) ? '#FF7E00' : '#FFF';
-                    ctx.beginPath();
-                    ctx.arc(x, y, 4, 0, Math.PI*2);
-                    ctx.fill();
-                    
-                    const text = Math.round(p.freq) + "Hz";
-                    const tw = ctx.measureText(text).width;
-                    ctx.fillStyle = "rgba(0,0,0,0.7)";
-                    ctx.fillRect(x - tw/2 - 2, y - 20, tw + 4, 16);
-                    ctx.fillStyle = (p === lowPeak) ? '#FF7E00' : '#FFF';
-                    ctx.fillText(text, x, y - 8);
-                });
-            }
-            draw();
-        }
-
         function resetUIOnOptionChange() {
             const t = translations[currentLang];
-            if (optRealTime.classList.contains('active')) return;
-
             const wasComplete = processBtn.classList.contains('is-complete');
 
-            if (generatedSrtContent || isProcessing || processBtn.classList.contains('is-complete')) {
-                generatedSrtContent = "";
+            if (processedBlob || isProcessing || processBtn.classList.contains('is-complete')) {
+                processedBlob = null;
+                processedAudioBuffer = null;
                 isProcessing = false;
                 currentProcessingState.type = 'idle'; 
                 currentProcessingState.progress = 0;
@@ -1426,28 +975,30 @@
                     statusText.textContent = t.waitInput;
                 }
                 
-                inputRate.disabled = false;
-                inputDB.disabled = false;
-                inputWindow.disabled = false;
-                inputHighPass.disabled = false;
-                stopVisualizer(); 
+                inputShift.disabled = false;
+                stopVisualizer();
+                if (selectedFile) {
+                    previewArea.innerHTML = '';
+                    const audio = document.createElement('audio'); 
+                    audio.src = currentObjectUrl; 
+                    audio.controls = true; 
+                    audio.style.width = "90%"; 
+                    audio.style.height = "50px"; 
+                    audio.style.marginTop = "10px";
+                    
+                    const wrapper = document.createElement('div');
+                    wrapper.style.textAlign = "center";
+                    wrapper.style.width = "100%"; 
+                    wrapper.innerHTML = `<div style="font-size:48px; margin-bottom:5px;">🎵</div>`;
+                    wrapper.appendChild(audio);
+                    previewArea.appendChild(wrapper);
+                } else {
+                    previewArea.innerHTML = `<span class="preview-placeholder" id="placeholder-text">${t.noMedia}</span>`;
+                }
             }
         }
 
-        optSpectrum.addEventListener('click', () => {
-            optSpectrum.classList.toggle('active');
-            resetUIOnOptionChange();
-        });
-
-        optSRT.addEventListener('click', () => {
-            optSRT.classList.toggle('active');
-            resetUIOnOptionChange();
-        });
-
-        inputHighPass.addEventListener('input', resetUIOnOptionChange);
-        inputRate.addEventListener('input', resetUIOnOptionChange);
-        inputDB.addEventListener('input', resetUIOnOptionChange);
-        inputWindow.addEventListener('input', resetUIOnOptionChange);
+        inputShift.addEventListener('input', resetUIOnOptionChange);
 
         let dragCounter = 0; 
         dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation(); dragCounter++; dropZone.classList.add('drag-active'); }, false);
@@ -1475,7 +1026,8 @@
             resetProcessButton();
             processBtn.disabled = false;
             downloadBtn.disabled = true;
-            generatedSrtContent = "";
+            processedBlob = null;
+            processedAudioBuffer = null;
 
             if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
             currentObjectUrl = URL.createObjectURL(file);
@@ -1524,25 +1076,17 @@
             processBtn.textContent = t.startProc;
             processBtn.className = "main-btn process-button";
             processBtn.disabled = false;
-            
-            inputRate.disabled = false;
-            inputDB.disabled = false;
-            inputWindow.disabled = false;
-            inputHighPass.disabled = false;
+            inputShift.disabled = false;
         }
 
         async function startProcessing() {
             if (!selectedFile) return;
             const t = translations[currentLang];
             
-            let rateVal = parseFloat(inputRate.value);
-            let dbVal = parseFloat(inputDB.value);
-            let winMs = parseFloat(inputWindow.value);
-            let hpFreq = parseFloat(inputHighPass.value);
-
-            if (isNaN(rateVal) || rateVal < 1) { alert("Rate >= 1"); return; }
-            if (isNaN(dbVal) || dbVal < 0) { alert("dB >= 0"); return; }
-            if (isNaN(winMs) || winMs < 10 || winMs > 1000) { alert("Window 10-1000ms"); return; }
+            let shiftVal = parseFloat(inputShift.value);
+            if (isNaN(shiftVal)) { shiftVal = 0; }
+            if (shiftVal < -24000) shiftVal = -24000;
+            if (shiftVal > 24000) shiftVal = 24000;
 
             isProcessing = true;
             currentProcessingState.type = 'loading';
@@ -1550,72 +1094,55 @@
             processBtn.className = "main-btn process-button is-processing";
             statusText.textContent = translations[currentLang].loading;
             downloadBtn.disabled = true;
-            inputRate.disabled = true;
-            inputDB.disabled = true;
-            inputWindow.disabled = true;
-            inputHighPass.disabled = true;
+            inputShift.disabled = true;
             
             try {
                 const arrayBuffer = await readFileAsArrayBuffer(selectedFile);
                 if (!isProcessing) return; 
 
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const TARGET_RATE = 48000;
+                const tempCtx = new OfflineAudioContext(1, 1, TARGET_RATE);
+                
                 currentProcessingState.type = 'decoding';
                 statusText.textContent = t.decoding;
-                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                
+                const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
                 
                 if (!isProcessing) return; 
 
-                const nyquist = audioBuffer.sampleRate / 2;
-                if (hpFreq > nyquist) {
-                    hpFreq = nyquist;
-                    inputHighPass.value = nyquist;
-                }
+                currentProcessingState.type = 'processing';
+                statusText.textContent = t.processing + "0%";
 
-                let processingBuffer = audioBuffer;
-                if (hpFreq > 0) {
-                    processingBuffer = await applyHighPassFilter(audioBuffer, hpFreq);
-                }
-
-                if (!isProcessing) return; 
-
-                if (optSRT.classList.contains('active')) {
-                    currentProcessingState.type = 'analyzing';
-                    const threadCount = Math.min(navigator.hardwareConcurrency || 4, 16);
-                    statusText.textContent = t.analyzing + "0%";
-                    
-                    generatedSrtContent = await runParallelAnalysis(processingBuffer, threadCount, rateVal, dbVal, winMs / 1000);
-                    
-                    if (generatedSrtContent) {
-                        downloadBtn.disabled = false;
-                        downloadBtn.onclick = () => {
-                            const blob = new Blob([generatedSrtContent], {type: "text/srt"});
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = selectedFile.name.replace(/\.[^/.]+$/, "") + ".srt";
-                            a.click();
-                            URL.revokeObjectURL(url);
-                        };
-                    }
-                }
+                const channelData = audioBuffer.getChannelData(0);
+                
+                const resultData = await runWorkerProcessing(channelData, TARGET_RATE, shiftVal);
 
                 if (!isProcessing) return;
 
+                processedAudioBuffer = tempCtx.createBuffer(1, resultData.length, TARGET_RATE);
+                processedAudioBuffer.copyToChannel(resultData, 0);
+
+                processedBlob = encodeWAV(resultData, TARGET_RATE);
+                
                 isProcessing = false;
                 currentProcessingState.type = 'complete';
                 statusText.textContent = t.complete;
                 processBtn.textContent = t.procComp;
                 processBtn.className = "main-btn process-button is-complete";
                 
-                inputRate.disabled = false;
-                inputDB.disabled = false;
-                inputWindow.disabled = false;
-                inputHighPass.disabled = false;
+                inputShift.disabled = false;
+                downloadBtn.disabled = false;
 
-                if (optSpectrum.classList.contains('active')) {
-                    initVisualizer(selectedFile, processingBuffer);
-                }
+                downloadBtn.onclick = () => {
+                    const url = URL.createObjectURL(processedBlob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "shifted_" + selectedFile.name.replace(/\.[^/.]+$/, "") + ".wav";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                };
+
+                initVisualizer(processedBlob, processedAudioBuffer);
 
             } catch (err) {
                 console.error(err);
@@ -1633,100 +1160,72 @@
             });
         }
 
-        async function applyHighPassFilter(inputBuffer, frequency) {
-            const offlineCtx = new OfflineAudioContext(
-                inputBuffer.numberOfChannels,
-                inputBuffer.length,
-                inputBuffer.sampleRate
-            );
-            const source = offlineCtx.createBufferSource();
-            source.buffer = inputBuffer;
-            const filter1 = offlineCtx.createBiquadFilter();
-            filter1.type = 'highpass'; filter1.frequency.value = frequency; filter1.Q.value = 0.707;
-            source.connect(filter1); filter1.connect(offlineCtx.destination);
-            source.start();
-            return await offlineCtx.startRendering();
-        }
-
-        function runParallelAnalysis(buffer, threadCount, rateVal, dbVal, windowSec) {
+        function runWorkerProcessing(channelData, sampleRate, shiftHz) {
             return new Promise((resolve, reject) => {
-                const channelData = buffer.getChannelData(0); 
-                const sr = buffer.sampleRate;
-                const windowSamples = Math.floor(sr * windowSec);
-                const hopSamples = Math.floor(sr / rateVal);
-                const originalLength = channelData.length;
-                const validStartIndices = [];
-                for (let i = 0; i < originalLength; i += hopSamples) {
-                    if (i + windowSamples <= originalLength) validStartIndices.push(i);
-                }
-                const totalTasks = validStartIndices.length;
-                const tasksPerWorker = Math.ceil(totalTasks / threadCount);
                 const blob = new Blob([workerScript], {type: 'application/javascript'});
                 const workerUrl = URL.createObjectURL(blob);
-                
-                activeWorkers = [];
-                let completedWorkers = 0;
-                let allResults = [];
-                let progressMap = new Array(threadCount).fill(0);
+                const worker = new Worker(workerUrl);
+                activeWorkers.push(worker);
 
-                for (let w = 0; w < threadCount; w++) {
-                    const worker = new Worker(workerUrl);
-                    activeWorkers.push(worker);
-                    const startTaskIndex = w * tasksPerWorker;
-                    const endTaskIndex = Math.min((w + 1) * tasksPerWorker, totalTasks);
-                    
-                    if (startTaskIndex >= endTaskIndex) {
-                        completedWorkers++; worker.terminate(); continue;
+                worker.postMessage({
+                    channelData: channelData,
+                    sampleRate: sampleRate,
+                    shiftHz: shiftHz
+                });
+
+                worker.onmessage = function(e) {
+                    if (e.data.type === 'progress') {
+                        currentProcessingState.progress = e.data.progress;
+                        statusText.textContent = translations[currentLang].processing + `${Math.round(e.data.progress * 100)}%`;
+                    } else if (e.data.type === 'done') {
+                        URL.revokeObjectURL(workerUrl);
+                        activeWorkers = [];
+                        resolve(e.data.result);
                     }
-                    const firstSampleIndex = validStartIndices[startTaskIndex];
-                    const lastSampleIndex = validStartIndices[endTaskIndex - 1];
-                    const chunk = channelData.slice(firstSampleIndex, lastSampleIndex + windowSamples);
-                    
-                    worker.postMessage({
-                        paddedChunk: chunk, sampleRate: sr, globalStartSampleIndex: firstSampleIndex,
-                        rateVal: rateVal, dbThreshold: dbVal, hopSamples: hopSamples, windowSec: windowSec
-                    }, [chunk.buffer]);
-
-                    worker.onmessage = function(e) {
-                        if (e.data.type === 'progress') {
-                            progressMap[w] = e.data.progress;
-                            const totalProgress = progressMap.reduce((a, b) => a + b, 0) / threadCount;
-                            
-                            currentProcessingState.progress = totalProgress;
-                            statusText.textContent = translations[currentLang].analyzing + `${Math.round(totalProgress * 100)}%`;
-                        } else if (e.data.type === 'done') {
-                            allResults.push(...e.data.results);
-                            completedWorkers++;
-                            worker.terminate();
-                            if (completedWorkers === activeWorkers.length) {
-                                URL.revokeObjectURL(workerUrl);
-                                activeWorkers = []; 
-                                finishAggregation(allResults, resolve);
-                            }
-                        }
-                    };
-                }
+                };
+                
+                worker.onerror = function(e) {
+                    URL.revokeObjectURL(workerUrl);
+                    reject(new Error("Worker error"));
+                };
             });
         }
 
-        function finishAggregation(allResults, resolve) {
-            allResults.sort((a, b) => a.startTime - b.startTime);
-            let srtOutput = [];
-            let index = 1;
-            allResults.forEach(item => {
-                const timeStr = `${secondsToSrtTime(item.startTime)} --> ${secondsToSrtTime(item.endTime)}`;
-                srtOutput.push(`${index}\n${timeStr}\n${item.text}\n`);
-                index++;
-            });
-            resolve(srtOutput.join('\n'));
+        function encodeWAV(samples, sampleRate) {
+            const buffer = new ArrayBuffer(44 + samples.length * 2);
+            const view = new DataView(buffer);
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + samples.length * 2, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, samples.length * 2, true);
+
+            floatTo16BitPCM(view, 44, samples);
+
+            return new Blob([view], { type: 'audio/wav' });
         }
 
-        function secondsToSrtTime(totalSeconds) {
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const secs = Math.floor(totalSeconds % 60);
-            const millis = Math.round((totalSeconds % 1) * 1000);
-            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(millis).padStart(3, '0')}`;
+        function floatTo16BitPCM(output, offset, input) {
+            for (let i = 0; i < input.length; i++, offset += 2) {
+                let s = Math.max(-1, Math.min(1, input[i]));
+                s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                output.setInt16(offset, s, true);
+            }
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
         }
 
         function stopVisualizer() {
@@ -1740,7 +1239,7 @@
             }
         }
 
-        function initVisualizer(file, decodedBuffer) {
+        function initVisualizer(blob, decodedBuffer) {
             const t = translations[currentLang];
             stopVisualizer();
 
@@ -1787,7 +1286,7 @@
             const progressBar = document.getElementById('visProgress');
             const fsBtn = document.getElementById('visFS');
 
-            visAudio.src = URL.createObjectURL(file);
+            visAudio.src = URL.createObjectURL(blob);
             visAudio.loop = false;
 
             let isDragging = false;
@@ -2007,7 +1506,7 @@
                 ctx.fillRect(0, 0, width, height);
 
                 const minFreq = 10;
-                const sampleRate = visualizerCtx ? visualizerCtx.sampleRate : 44100;
+                const sampleRate = visualizerCtx ? visualizerCtx.sampleRate : 48000;
                 const maxFreq = sampleRate / 2;
                 const logMin = Math.log10(minFreq);
                 const logMax = Math.log10(maxFreq);
@@ -2137,32 +1636,35 @@
                     }
                 }
                 ctx.stroke();
-
+                
                 const peaks = [];
                 const noiseFloor = -80;
+                
                 for (let i = 2; i < bufferLength - 2; i++) {
                     const freq = i * sampleRate / (bufferLength * 2);
                     if (freq < minFreq) continue;
                     const val = dataArray[i];
+                    
                     if (val > noiseFloor) {
                         if (val > dataArray[i - 1] && val > dataArray[i - 2] && val > dataArray[i + 1] && val > dataArray[i + 2]) {
-                            peaks.push({
-                                freq,
-                                db: val
-                            });
+                            peaks.push({ freq, db: val });
                         }
                     }
                 }
+                
                 let frameMaxDB = -Infinity;
                 peaks.forEach(p => frameMaxDB = Math.max(frameMaxDB, p.db));
-                const dbThresholdVal = parseFloat(document.getElementById('inputDB').value) || 15;
+                
+                const dbThresholdVal = 20; 
                 const cutoffDB = frameMaxDB - dbThresholdVal;
+                
                 const validPeaks = peaks.filter(p => p.db >= cutoffDB);
                 validPeaks.sort((a, b) => a.freq - b.freq);
                 const lowPeak = validPeaks.length > 0 ? validPeaks[0] : null;
 
                 peaks.sort((a, b) => b.db - a.db);
                 let displayPeaks = peaks.slice(0, 10);
+
                 if (lowPeak) {
                     const exists = displayPeaks.find(p => Math.abs(p.freq - lowPeak.freq) < 1);
                     if (!exists) displayPeaks.push(lowPeak);
@@ -2174,14 +1676,19 @@
                 displayPeaks.forEach(p => {
                     const x = getX(p.freq);
                     const y = getY(p.db);
+                    
                     ctx.fillStyle = (p === lowPeak) ? '#FF7E00' : '#FFF';
+                    
                     ctx.beginPath();
                     ctx.arc(x, y, 4, 0, Math.PI * 2);
                     ctx.fill();
+                    
                     const text = Math.round(p.freq) + "Hz";
                     const tw = ctx.measureText(text).width;
+                    
                     ctx.fillStyle = "rgba(0,0,0,0.7)";
                     ctx.fillRect(x - tw / 2 - 2, y - 20, tw + 4, 16);
+                    
                     ctx.fillStyle = (p === lowPeak) ? '#FF7E00' : '#FFF';
                     ctx.fillText(text, x, y - 8);
                 });
