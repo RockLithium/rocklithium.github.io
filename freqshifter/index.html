@@ -771,11 +771,11 @@
                 
                 const winSize = 4096;
                 const hopSize = 1024;
-                const scaleFactor = 0.5;
+                const scaleFactor = 2.0 / 3.0; 
 
                 const window = new Float32Array(winSize);
                 for(let i=0; i<winSize; i++) {
-                    window[i] = Math.sin(Math.PI * i / winSize);
+                    window[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / winSize));
                 }
 
                 const fftSize = winSize; 
@@ -819,12 +819,16 @@
                         const im = tempImag[k];
                         
                         let targetK = k + shiftBins;
+
                         let rotatedR = r * cosVal - im * sinVal;
                         let rotatedI = r * sinVal + im * cosVal;
 
                         if (targetK < 0) {
                             targetK = -targetK;
+                            rotatedI = -rotatedI;
+                            
                             rotatedR = -rotatedR;
+                            rotatedI = -rotatedI;
                         }
 
                         if (targetK > 0 && targetK < halfSize) {
@@ -849,8 +853,7 @@
                         }
                     }
 
-                    currentPhaseShift -= phaseIncrementPerHop;
-                    
+                    currentPhaseShift += phaseIncrementPerHop;
                     while (currentPhaseShift > Math.PI) currentPhaseShift -= 2 * Math.PI;
                     while (currentPhaseShift < -Math.PI) currentPhaseShift += 2 * Math.PI;
                 }
@@ -902,7 +905,7 @@
                     const mh = m >> 1;
                     const phi = (2 * Math.PI) / m;
                     const w_real_m = Math.cos(phi);
-                    const w_imag_m = Math.sin(phi);
+                    const w_imag_m = Math.sin(phi); 
                     for (let k = 0; k < n; k += m) {
                         let w_real = 1; let w_imag = 0;
                         for (let r = 0; r < mh; r++) {
