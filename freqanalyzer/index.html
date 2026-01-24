@@ -103,6 +103,51 @@
             position: relative;
         }
 
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            margin: 0 auto 25px auto;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+        }
+
+        .nav-link {
+            flex: 1;
+            max-width: 150px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 8px 0;
+            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
+            font-size: 18px;
+            margin-top: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-radius: 20px;
+            border: 1px solid transparent; 
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .nav-link:hover {
+            color: #E0E0E0;
+            background: rgba(255, 255, 255, 0.05);
+            background-origin: border-box;
+        }
+
+        .nav-link.active {
+            color: #121212;
+            background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(255, 126, 0, 0.3);
+            background-origin: border-box;
+            background-clip: border-box;
+        }
+
         h1 {
             font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
             font-size: 48px;
@@ -583,6 +628,11 @@
     </div>
 
     <div class="container">
+        <div class="nav-tabs">
+            <a href="../freqanalyzer" class="nav-link active" id="tab-analyzer">Analyzer</a>
+            <a href="../pitchshifter" class="nav-link" id="tab-pitch">Pitch Shift</a>
+            <a href="../freqshifter" class="nav-link" id="tab-freq">Freq Shift</a>
+        </div>
         <h1 id="main-title">Audio Frequency Analyzer</h1>
         <div class="subtitle" id="main-subtitle">Visualize audio spectrums, detect peaks, and optional SRT export.</div>
         
@@ -652,6 +702,9 @@
         const translations = {
             'en-US': {
                 goBack: "← Go Back",
+                tabAnalyzer: "SPECTRUM",
+                tabPitch: "PITCH SHIFT",
+                tabFreq: "FREQ SHIFT",
                 title: "Audio Spectrum Analyzer",
                 subtitle: "Visualize audio spectrums, detect peaks, and optional SRT export.",
                 realTime: "Real-Time Analysis",
@@ -685,6 +738,9 @@
             },
             'zh-Hans': {
                 goBack: "← 返回",
+                tabAnalyzer: "频谱分析",
+                tabPitch: "变调器",
+                tabFreq: "移频器",
                 title: "音频频谱分析器",
                 subtitle: "可视化音频频谱，检测最低频与峰值，并可导出 SRT。",
                 realTime: "实时分析",
@@ -718,7 +774,10 @@
             },
             'fr-FR': {
                 goBack: "← Retour",
-                title: "Analyseur de spectre audio",
+                tabAnalyzer: "SPECTRE",
+                tabPitch: "HAUTEUR",
+                tabFreq: "FRÉQUENCE",
+                title: "Analyseur de spectre",
                 subtitle: "Visualisez les spectres, détectez les pics et exportez en SRT.",
                 realTime: "Temps réel",
                 selectFile: "CHOISIR UN FICHIER",
@@ -750,6 +809,10 @@
                 optionsChanged: "Options modifiées. Relancer?"
             },
             'ru-RU': {
+                goBack: "← Назад",
+                tabAnalyzer: "СПЕКТР",
+                tabPitch: "ТОН",
+                tabFreq: "СДВИГ",
                 goBack: "← Назад",
                 title: "Анализатор спектра",
                 subtitle: "Визуализация аудиоспектра, поиск пиков и экспорт в SRT.",
@@ -791,6 +854,9 @@
             const t = translations[lang];
             
             document.getElementById('homeButton').textContent = t.goBack;
+            document.getElementById('tab-analyzer').textContent = t.tabAnalyzer;
+            document.getElementById('tab-pitch').textContent = t.tabPitch;
+            document.getElementById('tab-freq').textContent = t.tabFreq;
             document.getElementById('main-title').textContent = t.title;
             document.getElementById('main-subtitle').textContent = t.subtitle;
             document.getElementById('optRealTime').textContent = t.realTime;
