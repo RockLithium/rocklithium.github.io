@@ -453,7 +453,7 @@
             width: 100%;
             height: 300px;
             background: #000;
-            touch-action: manipulation;
+            touch-action: none;
         }
 
         canvas {
@@ -1232,6 +1232,10 @@
             }
             if (rtContext && rtContext.state !== 'closed') rtContext.close();
             rtContext = null;
+            if (visSpaceListener) {
+                document.removeEventListener('keydown', visSpaceListener);
+                visSpaceListener = null;
+            }
         }
         function startRealTimeVisualizer(stream) {
             const t = translations[currentLang];
@@ -1278,6 +1282,19 @@
                     document.exitFullscreen();
                 }
             });
+
+            visSpaceListener = (e) => {
+                if (e.code === 'KeyF' || e.key.toLowerCase() === 'f') {
+                    if (document.activeElement.tagName === 'INPUT') return;
+                    e.preventDefault();
+                    if (!document.fullscreenElement) {
+                        visContainer.requestFullscreen().catch(err => console.log(err));
+                    } else {
+                        document.exitFullscreen();
+                    }
+                }
+            };
+            document.addEventListener('keydown', visSpaceListener);
 
             function resize() {
                 const dpr = window.devicePixelRatio || 1;
