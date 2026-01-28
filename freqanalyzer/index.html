@@ -453,7 +453,7 @@
             width: 100%;
             height: 300px;
             background: #000;
-            touch-action: none;
+            touch-action: manipulation;
         }
 
         canvas {
@@ -1955,15 +1955,27 @@
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
             document.addEventListener('fullscreenchange', handleFullscreenChange);
 
+            let lastTapTime = 0;
             visContainer.addEventListener('click', (e) => {
                 if (e.target.closest('.vis-controls') || e.target.classList.contains('vis-pitch-btn')) {
                     resetIdleTimer();
                     return;
                 }
-                if (visControls.classList.contains('hide-ui')) {
-                    resetIdleTimer();
+
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTapTime;
+
+                if (tapLength < 300 && tapLength > 0) {
+                    e.preventDefault();
+                    toggleFullscreen();
+                    lastTapTime = 0;
                 } else {
-                    hideUI();
+                    if (visControls.classList.contains('hide-ui')) {
+                        resetIdleTimer();
+                    } else {
+                        hideUI();
+                    }
+                    lastTapTime = currentTime;
                 }
             });
 
@@ -2042,11 +2054,6 @@
                     if (!visualizerCtx) setupAudioContext();
                     updateScrub(seekTime);
                 }
-            });
-
-            visContainer.addEventListener('dblclick', (e) => {
-                if (e.target.closest('.vis-controls') || e.target.classList.contains('vis-pitch-btn')) return;
-                toggleFullscreen();
             });
 
             visContainer.addEventListener('mousemove', (e) => {
