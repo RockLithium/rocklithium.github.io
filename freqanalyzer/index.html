@@ -1955,27 +1955,15 @@
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
             document.addEventListener('fullscreenchange', handleFullscreenChange);
 
-            let lastTapTime = 0;
             visContainer.addEventListener('click', (e) => {
                 if (e.target.closest('.vis-controls') || e.target.classList.contains('vis-pitch-btn')) {
                     resetIdleTimer();
                     return;
                 }
-
-                const currentTime = new Date().getTime();
-                const tapLength = currentTime - lastTapTime;
-
-                if (tapLength < 300 && tapLength > 0) {
-                    e.preventDefault();
-                    toggleFullscreen();
-                    lastTapTime = 0;
+                if (visControls.classList.contains('hide-ui')) {
+                    resetIdleTimer();
                 } else {
-                    if (visControls.classList.contains('hide-ui')) {
-                        resetIdleTimer();
-                    } else {
-                        hideUI();
-                    }
-                    lastTapTime = currentTime;
+                    hideUI();
                 }
             });
 
@@ -2054,6 +2042,11 @@
                     if (!visualizerCtx) setupAudioContext();
                     updateScrub(seekTime);
                 }
+            });
+
+            visContainer.addEventListener('dblclick', (e) => {
+                if (e.target.closest('.vis-controls') || e.target.classList.contains('vis-pitch-btn')) return;
+                toggleFullscreen();
             });
 
             visContainer.addEventListener('mousemove', (e) => {
