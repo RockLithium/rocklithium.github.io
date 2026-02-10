@@ -6,9 +6,6 @@
     <title>编码器配置参数</title>
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* ------------------------------------------------ */
-        /* 核心全局和表格样式 */
-        /* ------------------------------------------------ */
         body { 
             font-family: 'Ubuntu', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif; 
             display: flex; 
@@ -19,20 +16,19 @@
             color: #E0E0E0;            
         }
 
-         /* 返回主页按钮样式 */
         #homeButton {
-            position: absolute; /* 绝对定位 */
+            position: absolute;
             top: 20px;
             left: 20px;
             padding: 10px 15px;
             font-size: 0.9em;
-            color: #e0e0e0; /* 保持与主页颜色一致 */
+            color: #e0e0e0;
             background-color: #333333;
             border: 1px solid #778899;
             border-radius: 5px;
             text-decoration: none;
             transition: background-color 0.3s;
-            z-index: 100; /* 确保按钮在最上层 */
+            z-index: 100;
         }
         
         h1 {
@@ -77,14 +73,10 @@
             text-decoration: underline; 
         }
 
-        /* ------------------------------------------------ */
-        /* 导航按钮样式 */
-        /* ------------------------------------------------ */
         .nav-buttons-container {
-            /* 让按钮居中显示，并在按钮容器上下增加间距 */
             display: flex;
             justify-content: center;
-            gap: 20px; /* 按钮之间的间距 */
+            gap: 20px;
             margin: 0px auto 20px auto; 
             width: 100%;
             max-width: 960px;
@@ -112,7 +104,6 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
         }
 
-        /* 统一的表格容器样式 */
         .controls-table-container {
             width: 95%; 
             max-width: 1650px; 
@@ -139,8 +130,8 @@
             color: #E0E0E0;
             font-size: 14px; 
             border: 1px solid #555555; 
-            vertical-align: middle; /* 垂直居中 */
-            text-align: center; /* 水平居中 */
+            vertical-align: middle;
+            text-align: center;
             padding: 8px 5px;
             height: auto; 
             box-sizing: border-box; 
@@ -148,11 +139,6 @@
             line-height: 1.5;
         }
 
-        /* ------------------------------------------------ */
-        /* 固定和宽度控制 */
-        /* ------------------------------------------------ */
-
-        /* 表头行 - 固定顶部 */
         .controls-table thead th {
             background-color: #444444; 
             font-weight: bold;
@@ -162,18 +148,15 @@
             z-index: 10;
         }
 
-        /* 针对所有非命令行的配置详情单元格设置最小高度 */
         .controls-table tbody tr:not(.command-row) td {
-            height: 55px; /* 设置一个固定高度来模拟两行空间 */
+            height: 55px;
             box-sizing: border-box;
         }
 
-        /* 排除第一列，因为它有 rowspan 和不同的背景色 */
         .controls-table tbody tr:not(.command-row) td:first-child {
-            height: auto; /* 保持第一列的高度根据 rowspan 自动计算 */
+            height: auto;
         }
 
-        /* 第一列 (编码器名称) - 固定左侧，两行合并 */
         .controls-table td:first-child[rowspan], 
         .controls-table th:first-child {
             width: 6%; 
@@ -188,26 +171,22 @@
             vertical-align: middle; 
         }
         
-        /* 16 列宽度定义 (保持不变) */
-        .controls-table thead th:nth-child(2) { width: 4.5%; min-width: 40px; } /* 编码 */
-        .controls-table thead th:nth-child(3) { width: 5.0%; min-width: 40px; } /* 分辨率 */
-        .controls-table thead th:nth-child(4) { width: 2.5%; min-width: 30px; } /* 帧率 */
-        .controls-table thead th:nth-child(5) { width: 3.0%; min-width: 30px; } /* 封装 */
-        .controls-table thead th:nth-child(6) { width: 5.0%; min-width: 40px; } /* 色度采样 */
-        .controls-table thead th:nth-child(7) { width: 3.5%; min-width: 30px; } /* 色深 */
-        .controls-table thead th:nth-child(8) { width: 5.0%; min-width: 40px; } /* 色域 */
-        .controls-table thead th:nth-child(9) { width: 5.0%; min-width: 40px; } /* Preset */
-        .controls-table thead th:nth-child(10) { width: 4.5%; min-width: 40px; } /* Profile */
-        .controls-table thead th:nth-child(11) { width: 3.0%; min-width: 30px; } /* Level */
-        .controls-table thead th:nth-child(12) { width: 3.0%; min-width: 30px; } /* Tier */
-        .controls-table thead th:nth-child(13) { width: 20.0%; min-width: 160px; } /* 其他 (Wider) */
-        .controls-table thead th:nth-child(14) { width: 3.0%; min-width: 40px; } /* RC */
-        .controls-table thead th:nth-child(15) { width: 16.0%; min-width: 120px; } /* 测试硬件 (Wider) */
-        .controls-table thead th:nth-child(16) { width: 5.5%; min-width: 40px; } /* Speed */
+        .controls-table thead th:nth-child(2) { width: 4.5%; min-width: 40px; }
+        .controls-table thead th:nth-child(3) { width: 5.0%; min-width: 40px; }
+        .controls-table thead th:nth-child(4) { width: 2.5%; min-width: 30px; }
+        .controls-table thead th:nth-child(5) { width: 3.0%; min-width: 30px; }
+        .controls-table thead th:nth-child(6) { width: 5.0%; min-width: 40px; }
+        .controls-table thead th:nth-child(7) { width: 3.5%; min-width: 30px; }
+        .controls-table thead th:nth-child(8) { width: 5.0%; min-width: 40px; }
+        .controls-table thead th:nth-child(9) { width: 5.0%; min-width: 40px; }
+        .controls-table thead th:nth-child(10) { width: 4.5%; min-width: 40px; }
+        .controls-table thead th:nth-child(11) { width: 3.0%; min-width: 30px; }
+        .controls-table thead th:nth-child(12) { width: 3.0%; min-width: 30px; }
+        .controls-table thead th:nth-child(13) { width: 20.0%; min-width: 160px; }
+        .controls-table thead th:nth-child(14) { width: 3.0%; min-width: 40px; }
+        .controls-table thead th:nth-child(15) { width: 16.0%; min-width: 120px; }
+        .controls-table thead th:nth-child(16) { width: 5.5%; min-width: 40px; }
 
-        /* ------------------------------------------------ */
-        /* 命令行样式 */
-        /* ------------------------------------------------ */
         .command-row td {
             text-align: left !important;
             padding-left: 5px !important;
@@ -227,18 +206,14 @@
             line-height: 1.5;
         }
 
-        /* 代码高亮规则 */
         .code-ffmpeg {
-            color: #FFFF00; /* 黄色 */
+            color: #FFFF00;
             font-weight: bold;
         }
         .code-param {
-            color: #AEAAAA; /* 浅灰色 */
+            color: #AEAAAA;
         }
 
-        /* ------------------------------------------------ */
-        /* 手机适配样式 (小于 768px 时激活) */
-        /* ------------------------------------------------ */
         @media (max-width: 768px) {
             #homeButton {
                 top: 10px; 
@@ -262,7 +237,7 @@
     <p>FFmpeg版本 N-120856-g9893d66add-20250831。</p>
     <p>本实验在测完x265、SVT-AV1和VVenC后才进行VP9的测试，在预实验中发现VPX-VP9编码器的速度与VVenC几乎处于同一水平，而质量却显著低于x265，故不做测试。SVT-VP9编码器理论上能提供快于x265的速度，但发行版FFmpeg并没有原生支持该编码器，故也不进行测试。</p>
     <p>预设的选择：由于硬件编码和x264软件编码速度较快，故使用最慢的Preset并尽可能使用两次编码。而x265、 AV1、VVC的软件编码速度很慢，故采用质量尽可能接近最慢档时较快的Preset，x265使用slower而不是veryslow，AV1使用3而不是0，VVC使用slow而不是slower。</p>
-    <p>所有视频均由使用Prores 422 HQ压缩的3840x2160 60fps HDR 10bit 422原片压制而来，故全部使用了 -pix_fmt yuv420p10le指令将其转为10bit 420 HDR。</p>
+    <p>所有视频均由使用Prores 422 HQ压缩的3840x2160 60fps HDR 10bit 422原片压制而来，故全部使用了 -pix_fmt yuv420p10le/p010le指令将其转为10bit 420 HDR。</p>
     <p>由于CPU算力不足，软件解码ProRes速度小于编码器编码速度，第九代QSV编码器在Ultra 5 125H上和HEVC_AMF_4.0在Ryzen 7 7840H上的测得速率相比其极限速率偏小。如果使用拥有同代编码器却具有更强大CPU的配置，则能获得更大的速率。怀疑由于CPU瓶颈导致编码速率偏低的数据，在表中使用*标注。</p>
     <p>由于使用核显编码时更容易遇到3D瓶颈，核显编码速度可能比搭载同代编码器的独立显卡更慢。</p>
     <p>测试视频为DJI 悟3与索尼FX3、FX6拍摄的的ProRes 422 HQ素材，包含大量复杂运动，细节极多，压缩难度较大，得到的VMAF分数相较于普通视频和电影的结果偏低。曲线主要反映不同编码器的相对质量，并不能作为视频压制码率选择的绝对参考。</p>
@@ -343,7 +318,7 @@
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> h264_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-tune</span> hq <span class="code-param">-level</span> 5.2 <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> h264_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-tune</span> hq <span class="code-param">-level</span> 5.2 <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
                 
@@ -391,7 +366,7 @@
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> hevc_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-tier</span> high <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-tier</span> high <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -415,7 +390,7 @@
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> hevc_qsv <span class="code-param">-bitrate_limit</span> 0 <span class="code-param">-look_ahead_depth</span> 100 <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-profile:v</span> main10 <span class="code-param">-tier</span> high <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_qsv <span class="code-param">-bitrate_limit</span> 0 <span class="code-param">-look_ahead_depth</span> 100 <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-profile:v</span> main10 <span class="code-param">-tier</span> high <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -439,7 +414,7 @@
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> hevc_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-profile_tier</span> high <span class="code-param">-preset</span> quality <span class="code-param">-preencode</span> true <span class="code-param">-pa_lookahead_buffer_depth</span> 41 <span class="code-param">-b:v</span> 7000k <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-profile_tier</span> high <span class="code-param">-preset</span> quality <span class="code-param">-preencode</span> true <span class="code-param">-pa_lookahead_buffer_depth</span> 41 <span class="code-param">-b:v</span> 7000k <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -487,7 +462,7 @@
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> vp9_qsv <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-profile:v</span> profile2 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> vp9_qsv <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-profile:v</span> profile2 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -535,7 +510,7 @@
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> av1_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-level</span> 5.1 <span class="code-param">-tier</span> 1 <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> av1_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-level</span> 5.1 <span class="code-param">-tier</span> 1 <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -559,7 +534,7 @@
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> av1_qsv <span class="code-param">-bitrate_limit</span> 0 <span class="code-param">-look_ahead_depth</span> 100 <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频你)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> av1_qsv <span class="code-param">-bitrate_limit</span> 0 <span class="code-param">-look_ahead_depth</span> 100 <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频你)</code>
                     </td>
                 </tr>
 
@@ -583,7 +558,7 @@
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-I</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> av1_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-level</span> 5.1 <span class="code-param">-quality</span> high_quality <span class="code-param">-preset</span> high_quality <span class="code-param">-preencode</span> true <span class="code-param">-pa_lookahead_buffer_depth</span> 41 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-I</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> av1_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-level</span> 5.1 <span class="code-param">-quality</span> high_quality <span class="code-param">-preset</span> high_quality <span class="code-param">-preencode</span> true <span class="code-param">-pa_lookahead_buffer_depth</span> 41 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -627,11 +602,11 @@
                     <td>Tune=无损; RC前向预测=50; AQ强度=12</td>
                     <td>VBR</td>
                     <td>GeForce RTX 5090</td>
-                    <td>0.777 (9th)</td>
+                    <td>0.777x (9th)</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> hevc_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-profile:v</span> main10 <span class="code-param">-tune</span> lossless <span class="code-param">-level</span> 6.2 <span class="code-param">-tier</span> high <span class="code-param">-rc</span> vbr <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-profile:v</span> main10 <span class="code-param">-tune</span> lossless <span class="code-param">-level</span> 6.2 <span class="code-param">-tier</span> high <span class="code-param">-rc</span> vbr <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
             </tbody>

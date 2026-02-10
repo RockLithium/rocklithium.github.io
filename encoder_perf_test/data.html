@@ -6,33 +6,29 @@
     <title>编码器性能数据</title>
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* ------------------------------------------------ */
-        /* 核心全局和表格样式 (纯灰色暗黑主题) */
-        /* ------------------------------------------------ */
         body { 
             font-family: 'Ubuntu', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             margin: 20px auto; 
-            background-color: #222222; /* 主背景 */
-            color: #E0E0E0;            /* 浅色文本 */
+            background-color: #222222;
+            color: #E0E0E0;
         }
 
-         /* 返回主页按钮样式 */
         #homeButton {
-            position: absolute; /* 绝对定位 */
+            position: absolute;
             top: 20px;
             left: 20px;
             padding: 10px 15px;
             font-size: 0.9em;
-            color: #e0e0e0; /* 保持与主页颜色一致 */
+            color: #e0e0e0;
             background-color: #333333;
             border: 1px solid #778899;
             border-radius: 5px;
             text-decoration: none;
             transition: background-color 0.3s;
-            z-index: 100; /* 确保按钮在最上层 */
+            z-index: 100;
         }
         
         h1 {
@@ -42,19 +38,17 @@
         }
         
         .nav-buttons-container {
-            /* 让按钮居中显示，并在按钮容器上下增加间距 */
             display: flex;
             justify-content: center;
-            gap: 20px; /* 按钮之间的间距 */
+            gap: 20px;
             margin: 10px auto 10px auto; 
             width: 100%;
             max-width: 960px;
         }
 
         .nav-button {
-            /* 链接按钮的基本样式 */
             text-decoration: none;
-            color: #E0E0E0; /* 文本颜色 */
+            color: #E0E0E0;
             background-color: #333333; 
             border: 2px solid #505050;
             padding: 5px 3px;
@@ -76,19 +70,18 @@
 
         .data-table-container { 
             width: 95%; 
-            max-width: 1600px; /* 限制最大宽度 */
+            max-width: 1600px;
             margin-top: 20px; 
             overflow-x: auto; 
         }
         
         .data-table { 
-            width: 1600px; /* 固定总宽度 */
+            width: 1600px;
             min-width: 1600px; 
             border-collapse: collapse; 
-            table-layout: fixed; /* 确保列宽相等 */
+            table-layout: fixed;
         }
         
-        /* 单元格基础样式 (调整边框和填充) */
         .data-table th, .data-table td { 
             width: 75px; 
             border: 1px solid #E0E0E0; 
@@ -98,7 +91,6 @@
             white-space: nowrap; 
         }
         
-        /* 编码器名称行 (Header Row 1) */
         .data-table thead tr:first-child th[colspan] {
             background-color: #444444; 
             height: 25px;
@@ -107,14 +99,12 @@
             font-size: 16px;
         }
 
-        /* VMAF */
         .data-table thead tr:nth-child(2) th, 
         .data-table thead tr:nth-child(2) td {
             background-color: #444444;
             height:20px;
         }
         
-        /* 指标名称行 (Header Row 2 & 3) */
         .data-table thead th:not([colspan]), .data-table thead td { 
             background-color: #444444; 
             height: 15px;
@@ -130,14 +120,12 @@
             padding-bottom: 4px;
         }
 
-        /* QSV 设定码率缩小字体 */
         .small-rate {
-            font-size: 12px; /* 缩小一号字 */
+            font-size: 12px;
             line-height: 1.2;
-            white-space: normal; /* 允许换行 */
+            white-space: normal;
         }
 
-        /* 数据行颜色 */
         .data-table tbody { 
             background-color: #222222; 
         }
@@ -145,7 +133,6 @@
             background-color: #2a2a2a; 
         }
         
-        /* 突出显示 VMAF Mean/HM */
         .data-table td:nth-child(5), .data-table td:nth-child(6),
         .data-table td:nth-child(11), .data-table td:nth-child(12),
         .data-table td:nth-child(17), .data-table td:nth-child(18),
@@ -155,24 +142,17 @@
             color: #D9D9D9; 
         }
 
-        /* 无损（Lossless）数据样式 */
         .lossless-data {
             background-color: #2a2a2a; 
             font-weight: bold;
         }
         
-        /* 填充空白区域的背景色 */
         .gap-cell {
             background-color: #222222 !important;
-            /* 移除右侧边框，让相邻的无损单元格左侧边框能完整显示 */
             border-right: none !important; 
-            /* 将其他边框颜色设为主背景色，保持不可见 */
             border-color: #222222 !important; 
         }
 
-        /* ------------------------------------------------ */
-        /* 手机适配样式 (小于 768px 时激活) */
-        /* ------------------------------------------------ */
         @media (max-width: 768px) {
             
             #homeButton {
