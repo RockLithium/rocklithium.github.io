@@ -323,8 +323,8 @@
             const MIN_EXPONENT = 1; 
             const MAX_EXPONENT = 31;
             const DEFAULT_EXPONENT = 24; 
-            const BATCH_MULTIPLIER = 97; 
-            const MAX_LIMIT_BIGINT = 1n << 64n;
+            const BATCH_MULTIPLIER = 1024; 
+            const MAX_LIMIT_BIGINT = 1n << 31n;
             
             const CHUNK_LIMIT_EXPONENT = 28;
             const CHUNK_LIMIT_BIGINT = 1n << BigInt(CHUNK_LIMIT_EXPONENT); 
@@ -418,7 +418,7 @@
                         return false; 
                     }
 
-                    const bases = [2n, 3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n, 37n];
+                    const bases = [2n, 7n, 61n];
 
                     function isBigIntPrime(n) {
                         if (n <= 1n) return false;
