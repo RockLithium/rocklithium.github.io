@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=850, user-scalable=yes">
+    <title>Audio Frequency Shifter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Condensed&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Unispace Bd';
+            src: url('./fonts/Unispace Bd.otf') format('opentype');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Dempster';
+            src: url('./fonts/Dempster.otf') format('opentype');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+            size-adjust: 120%;
+        }
+
+        body {
+            background-color: #121212;
+            color: #E0E0E0;
+            margin: 0;
+            padding: 0;
+            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            letter-spacing: 0.3px;
+        }
+
+        #homeButton {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 16px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px) saturate(120%);
+            -webkit-backdrop-filter: blur(20px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        #homeButton:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.04);
+        }
+
+        #langSelectorContainer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .lang-select {
+            padding: 10px 16px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px) saturate(120%);
+            -webkit-backdrop-filter: blur(20px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            outline: none;
+            cursor: pointer;
+            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .lang-select option {
+            background-color: #1a1a1a;
+            color: #E0E0E0;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 90%;
+            padding: 10px 0 40px 0;
+            margin-top: 70px;
+            margin-left: auto;
+            margin-right: auto;
+            background: rgba(30, 30, 30, 0.6);
+            backdrop-filter: blur(15px);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            position: relative;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            margin: 0 auto 25px auto;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+        }
+
+        .nav-link {
+            flex: 1;
+            max-width: 150px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 8px 0;
+            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
+            font-size: 18px;
+            margin-top: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-radius: 20px;
+            border: 1px solid transparent; 
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .nav-link:hover {
+            color: #E0E0E0;
+            background: rgba(255, 255, 255, 0.05);
+            background-origin: border-box;
+        }
+
+        .nav-link.active {
+            color: #121212;
+            background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(255, 126, 0, 0.3);
+            background-origin: border-box;
+            background-clip: border-box;
+        }
+
+        h1 {
+            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
+            font-size: 48px;
+            background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #888;
+            margin-bottom: 40px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+        }
+
+        .input-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .input-title {
+            font-family: 'Ubuntu Condensed', sans-serif;
+            font-size: 18px;
+            color: #E0E0E0;
+            text-align: left;
+            margin-bottom: 5px;
+        }
+
+        .file-upload-wrapper {
+            position: relative;
+            width: 100%;
+            height: 60px;
+            background-color: rgba(42, 42, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+            border: 2px solid transparent;
+        }
+
+        .file-upload-wrapper.drag-active {
+            border-color: #FF7E00;
+            box-shadow: 0 0 15px rgba(255, 126, 0, 0.3);
+            background-color: rgba(50, 50, 50, 1);
+            border-style: dashed;
+            z-index: 50;
+        }
+
+        .file-upload-wrapper.drag-active .file-upload-text {
+            color: #FF7E00;
+        }
+
+        .file-upload-wrapper:hover {
+            border-color: #FF7E00;
+            border-style: dashed;
+        }
+
+        .file-upload-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 100; 
+        }
+
+        .file-upload-text {
+            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+            font-weight: bold;
+            font-size: 18px;
+            color: #888;
+            pointer-events: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 20px;
+            transition: color 0.3s;
+        }
+
+        .options-grid {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .param-box {
+            background-color: rgba(42, 42, 42, 0.5);
+            height: 50px;
+            flex: 1; 
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            border: 1px solid rgba(88, 88, 88, 0.3);
+            transition: border-color 0.2s;
+            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+        }
+
+        .param-box:focus-within {
+            border-color: #FF7E00;
+        }
+
+        .param-label {
+            color: #888;
+            font-size: 14px;
+            font-weight: bold;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .param-input {
+            background: transparent;
+            border: none;
+            color: #E0E0E0;
+            font-family: 'Unispace Bd', monospace;
+            font-size: 16px;
+            text-align: right;
+            width: 100%; 
+            outline: none;
+            font-weight: bold;
+        }
+
+        .param-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            color: #666;
+        }
+
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; margin: 0; 
+        }
+        input[type=number] { -moz-appearance: textfield; }
+
+        .process-btn-container {
+            max-width: 600px;
+            margin: 0 auto 20px auto;
+        }
+
+        .main-btn {
+            width: 100%;
+            padding: 10px 40px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #E0E0E0;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Ubuntu Condensed', sans-serif;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            font-weight: bold;
+            text-shadow: none; 
+            box-shadow: none;
+        }
+
+        .process-button {
+            background: linear-gradient(45deg, #2E8B57 0%, #3CB371 100%);
+        }
+
+        .process-button:hover:not(:disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .process-button:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .process-button.is-processing {
+            background: linear-gradient(45deg, #8B0000 0%, #B22222 100%);
+            animation: pulse 2s infinite;
+        }
+
+        .process-button.is-complete {
+            background: linear-gradient(45deg, #1E90FF 0%, #00BFFF 100%);
+            cursor: default;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(178, 34, 34, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(178, 34, 34, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(178, 34, 34, 0); }
+        }
+
+        .download-button {
+            background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .download-button:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+            display: none; 
+        }
+
+        .download-button:active {
+            transform: scale(0.98);
+        }
+
+        .preview-box {
+            background-color: rgba(42, 42, 42, 0.5);
+            border: 1px dashed #505050;
+            border-radius: 10px;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-placeholder {
+            color: #555;
+            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .status-text {
+            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #888;
+            min-height: 20px;
+        }
+
+        .visualizer-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            background: #000;
+            touch-action: manipulation;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .vis-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .vis-controls {
+            pointer-events: auto;
+            background: rgba(20, 20, 20, 0.9);
+            padding: 5px 15px;
+            border-radius: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            border: 1px solid #555;
+            width: 80%;
+            max-width: 500px;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .vis-controls.hide-ui {
+            transform: translateY(150%);
+            opacity: 0;
+        }
+
+        .visualizer-container.hide-cursor {
+            cursor: none;
+        }
+
+        .vis-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+            flex-shrink: 0;
+            padding: 0;
+        }
+
+        .vis-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            display: block;
+        }
+
+        .vis-btn:hover { color: #FF7E00; background: rgba(255,255,255,0.1); }
+
+        .vis-pitch-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 20;
+            background: rgba(42, 42, 42, 0.8);
+            border: 1px solid #555;
+            color: #888;
+            padding: 4px 10px;
+            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .vis-pitch-btn:hover {
+            border-color: #888;
+            color: #aaa;
+        }
+
+        .vis-pitch-btn.active {
+            background: #222;
+            border-color: #FF7E00;
+            color: #FF7E00;
+            box-shadow: 0 0 5px rgba(255, 126, 0, 0.3);
+        }
+
+        .vis-progress-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus { outline: none; }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #FF7E00;
+            cursor: pointer;
+            margin-top: -5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #444;
+            border-radius: 2px;
+        }
+
+        input[type=range]::-moz-range-thumb {
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #FF7E00;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #444;
+            border-radius: 2px;
+        }
+
+        .vis-hint {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: rgba(255,255,255,0.3);
+            font-family: 'Unispace Bd', 'Dempster', "PingFang SC", sans-serif;
+            font-size: 10px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="./tools" id="homeButton">← Go Back</a>
+
+    <div id="langSelectorContainer">
+        <select class="lang-select" onchange="changeLanguage(this.value)">
+            <option value="en-US" selected>English</option>
+            <option value="zh-Hans">简体中文</option>
+            <option value="fr-FR">Français</option>
+            <option value="ru-RU">Русский</option>
+        </select>
+    </div>
+
+    <div class="container">
+        <div class="nav-tabs">
+            <a href="./freqanalyzer" class="nav-link" id="tab-analyzer">Analyzer</a>
+            <a href="./pitchshifter" class="nav-link" id="tab-pitch">Pitch Shift</a>
+            <a href="./freqshifter" class="nav-link active" id="tab-freq">Freq Shift</a>
+        </div>
+        <h1 id="main-title">Audio Frequency Shifter</h1>
+        <div class="subtitle" id="main-subtitle">Shift all frequencies linearly. Negative frequencies are phase-inverted.</div>
+        
+        <div class="input-group" id="fileInputGroup">
+            <div class="input-title" id="label-select-file">SELECT MEDIA FILE</div>
+            <div class="file-upload-wrapper" id="dropZone">
+                <span class="file-upload-text" id="fileNameDisplay">Click or drop file here...</span>
+                <input type="file" id="fileInput" accept=".wav, .mp3, .flac, .aac, .m4a, .ogg, .wma, .mp4, .mov, .mkv, .webm, .avi">
+            </div>
+            <div class="status-text" id="statusText">Waiting for input...</div>
+        </div>
+        
+        <div class="input-group" style="margin-bottom: 10px;">
+            <div class="input-title" id="label-parameters">PARAMETERS</div>
+            
+            <div class="options-grid" style="margin-bottom: 10px;" id="optionsRow1">
+                <div class="param-box" id="boxShift">
+                    <span class="param-label" id="label-shift">Frequency Shift (Hz)</span>
+                    <input type="number" id="inputShift" value="0" min="-24000" max="24000" step="1" class="param-input">
+                </div>
+            </div>
+        </div>
+
+        <div class="process-btn-container" id="processBtnContainer">
+            <button id="processBtn" class="main-btn process-button" disabled>Start Processing</button>
+        </div>
+        
+        <div class="input-group">
+            <div class="input-title-row">
+                <div class="input-title"><span id="previewTitle">PREVIEW</span></div>
+            </div>
+            <div class="preview-box" id="previewArea">
+                <span class="preview-placeholder" id="placeholder-text">No media loaded</span>
+            </div>
+        </div>
+        <div class="input-group" style="text-align: center;" id="downloadGroup">
+            <button id="downloadBtn" class="main-btn download-button" disabled>DOWNLOAD WAV</button>
+        </div>
+    </div>
+    <script>
+        const translations = {
+            'en-US': {
+                goBack: "← Go Back",
+                tabAnalyzer: "SPECTRUM",
+                tabPitch: "PITCH SHIFT",
+                tabFreq: "FREQ SHIFT",
+                title: "Audio Frequency Shifter",
+                subtitle: "Shift all frequencies linearly. Negative frequencies will be phase-inverted.",
+                selectFile: "SELECT MEDIA FILE",
+                dropText: "Click or drop file here...",
+                parameters: "PARAMETERS",
+                shift: "Frequency Shift (Hz)",
+                startProc: "Start Processing",
+                stopProc: "Stop Processing",
+                procComp: "Processing Complete",
+                preview: "PREVIEW",
+                noMedia: "No media loaded",
+                dlWav: "DOWNLOAD WAV",
+                waitInput: "Waiting for input...",
+                selected: "Selected: ",
+                loading: "Loading media data...",
+                decoding: "Decoding audio track...",
+                processing: "Processing: ",
+                complete: "Processing complete.",
+                error: "Error: ",
+                freqPitch: "FREQ / PITCH",
+                fsHint: "Double-Click/F: Fullscreen",
+                playPauseHint: "Space: Play/Pause",
+                optionsChanged: "Options changed. Please re-process."
+            },
+            'zh-Hans': {
+                goBack: "← 返回",
+                tabAnalyzer: "频谱分析",
+                tabPitch: "变调器",
+                tabFreq: "移频器",
+                title: "音频频率偏移器",
+                subtitle: "线性偏移所有频率。负频率将被反相。",
+                selectFile: "选择媒体文件",
+                dropText: "点击选择或拖拽文件至此...",
+                parameters: "参数设置",
+                shift: "频率偏移 (Hz)",
+                startProc: "开始处理",
+                stopProc: "停止处理",
+                procComp: "处理完成",
+                preview: "预览",
+                noMedia: "未加载媒体",
+                dlWav: "下载 WAV",
+                waitInput: "等待输入文件...",
+                selected: "已选择：",
+                loading: "正在加载媒体数据...",
+                decoding: "正在解码音轨...",
+                processing: "处理中：",
+                complete: "处理完成。",
+                error: "错误：",
+                freqPitch: "频率 / 音高",
+                fsHint: "双击/F：全屏",
+                playPauseHint: "空格：播放/暂停",
+                optionsChanged: "选项已更改。请重新处理。"
+            },
+            'fr-FR': {
+                goBack: "← Retour",
+                tabAnalyzer: "SPECTRE",
+                tabPitch: "HAUTEUR",
+                tabFreq: "FRÉQUENCE",
+                title: "Décaleur de fréquence",
+                subtitle: "Décalez les fréquences linéairement. Les fréquences négatives seront inversées.",
+                selectFile: "CHOISIR UN FICHIER",
+                dropText: "Cliquez ou glissez-déposez ici...",
+                parameters: "PARAMÈTRES",
+                shift: "Décalage (Hz)",
+                startProc: "Lancer le traitement",
+                stopProc: "Arrêter le traitement",
+                procComp: "Traitement terminé",
+                preview: "APERÇU",
+                noMedia: "Aucun média",
+                dlWav: "TÉLÉCHARGER WAV",
+                waitInput: "En attente...",
+                selected: "Sélectionné : ",
+                loading: "Chargement des données...",
+                decoding: "Décodage de l'audio...",
+                processing: "Traitement : ",
+                complete: "Traitement terminé.",
+                error: "Erreur : ",
+                freqPitch: "FREQ / TON",
+                fsHint: "Double-clic/F : Plein écran",
+                playPauseHint: "Espace : Lire/Pause",
+                optionsChanged: "Options modifiées. Relancer?"
+            },
+            'ru-RU': {
+                goBack: "← Назад",
+                tabAnalyzer: "СПЕКТР",
+                tabPitch: "ТОН",
+                tabFreq: "СДВИГ",
+                title: "Частотный сдвигатель",
+                subtitle: "Линейный сдвиг частот. Отрицательные частоты инвертируются по фазе.",
+                selectFile: "ВЫБРАТЬ ФАЙЛ",
+                dropText: "Нажмите или перетащите файл...",
+                parameters: "ПАРАМЕТРЫ",
+                shift: "Сдвиг (Hz)",
+                startProc: "Начать обработку",
+                stopProc: "Остановить",
+                procComp: "Обработка завершена",
+                preview: "ПРЕДПРОСМОТР",
+                noMedia: "Медиа не загружено",
+                dlWav: "СКАЧАТЬ WAV",
+                waitInput: "Ожидание...",
+                selected: "Выбрано: ",
+                loading: "Загрузка данных...",
+                decoding: "Декодирование...",
+                processing: "Обработка: ",
+                complete: "Готово.",
+                error: "Ошибка: ",
+                freqPitch: "ЧАСТОТА / ВЫСОТА",
+                fsHint: "Двойной клик/F: Полный экран",
+                playPauseHint: "Пробел: Старт/Пауза",
+                optionsChanged: "Настройки изменены."
+            }
+        };
+
+        let currentLang = 'en-US';
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+            
+            document.getElementById('homeButton').textContent = t.goBack;
+            document.getElementById('tab-analyzer').textContent = t.tabAnalyzer;
+            document.getElementById('tab-pitch').textContent = t.tabPitch;
+            document.getElementById('tab-freq').textContent = t.tabFreq;
+            document.getElementById('main-title').textContent = t.title;
+            document.getElementById('main-subtitle').textContent = t.subtitle;
+            document.getElementById('label-select-file').textContent = t.selectFile;
+            document.getElementById('label-parameters').textContent = t.parameters;
+            document.getElementById('label-shift').textContent = t.shift;
+            
+            if (isProcessing) {
+                processBtn.textContent = t.stopProc;
+            } else if (processBtn.classList.contains('is-complete')) {
+                processBtn.textContent = t.procComp;
+            } else {
+                processBtn.textContent = t.startProc;
+            }
+
+            document.getElementById('previewTitle').textContent = t.preview;
+            document.getElementById('downloadBtn').textContent = t.dlWav;
+            
+            const placeholder = document.getElementById('placeholder-text');
+            if (placeholder) placeholder.textContent = t.noMedia;
+
+            if (!selectedFile) {
+                statusText.textContent = t.waitInput;
+                fileNameDisplay.textContent = t.dropText;
+            } else {
+                switch (currentProcessingState.type) {
+                    case 'loading': statusText.textContent = t.loading; break;
+                    case 'decoding': statusText.textContent = t.decoding; break;
+                    case 'processing': 
+                        statusText.textContent = t.processing + Math.round(currentProcessingState.progress * 100) + "%"; 
+                        break;
+                    case 'complete': statusText.textContent = t.complete; break;
+                    default:
+                        if (processBtn.classList.contains('is-complete') === false && !isProcessing) {
+                             statusText.textContent = t.optionsChanged;
+                        } else if (!isProcessing && !processBtn.classList.contains('is-complete')) {
+                             const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
+                             statusText.textContent = `${t.selected}${selectedFile.name} (${sizeMB} MB)`;
+                        }
+                }
+            }
+
+            const visPitchBtn = document.getElementById('visPitchBtn');
+            if (visPitchBtn) visPitchBtn.textContent = t.freqPitch;
+
+            const visHint = document.querySelector('.vis-hint');
+            if (visHint) {
+                visHint.textContent = `${t.fsHint} | ${t.playPauseHint}`;
+            }
+        }
+
+        function transform(real, imag) {
+            const n = real.length;
+            if (n <= 1) return;
+            let i = 0, j = 0;
+            for (i = 0; i < n; i++) {
+                if (i < j) { [real[i], real[j]] = [real[j], real[i]]; [imag[i], imag[j]] = [imag[j], imag[i]]; }
+                let m = n >> 1; while (m >= 1 && j >= m) { j -= m; m >>= 1; } j += m;
+            }
+            for (let m = 2; m <= n; m <<= 1) {
+                const mh = m >> 1; const phi = (2 * Math.PI) / m; 
+                const w_real_m = Math.cos(phi); const w_imag_m = -Math.sin(phi);
+                for (let k = 0; k < n; k += m) {
+                    let w_real = 1; let w_imag = 0;
+                    for (let r = 0; r < mh; r++) {
+                        const t_index = k + r + mh; const u_index = k + r;
+                        const t_real = w_real * real[t_index] - w_imag * imag[t_index];
+                        const t_imag = w_real * imag[t_index] + w_imag * real[t_index];
+                        const u_real = real[u_index]; const u_imag = imag[u_index];
+                        real[u_index] = u_real + t_real; imag[u_index] = u_imag + t_imag;
+                        real[t_index] = u_real - t_real; imag[t_index] = u_imag - t_imag;
+                        const w_temp = w_real; w_real = w_real * w_real_m - w_imag * w_imag_m; w_imag = w_temp * w_imag_m + w_imag * w_real_m;
+                    }
+                }
+            }
+        }
+
+        const workerScript = `
+            self.onmessage = function(e) {
+                const { channelDataList, sampleRate, shiftHz } = e.data;
+                const channelCount = channelDataList.length;
+                const length = channelDataList[0].length;
+                
+                const winSize = 4096;
+                const hopSize = 1024; 
+                const scaleFactor = 2.0 / 3.0; 
+
+                const window = new Float32Array(winSize);
+                for(let i=0; i<winSize; i++) {
+                    window[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / winSize));
+                }
+
+                const fftSize = winSize; 
+                const binWidth = sampleRate / fftSize;
+                const shiftBins = Math.round(shiftHz / binWidth);
+                const halfSize = fftSize / 2;
+                
+                const phaseIncrementPerHop = 2 * Math.PI * shiftBins * hopSize / fftSize;
+
+                const processedChannels = [];
+
+                for (let c = 0; c < channelCount; c++) {
+                    const channelData = channelDataList[c];
+                    const output = new Float32Array(length);
+                    
+                    let currentPhaseShift = 0;
+
+                    const tempReal = new Float32Array(fftSize);
+                    const tempImag = new Float32Array(fftSize);
+                    const newReal = new Float32Array(fftSize);
+                    const newImag = new Float32Array(fftSize);
+
+                    let processedSamples = 0;
+
+                    for (let i = 0; i < length - winSize; i += hopSize) {
+                        if (c === 0 && processedSamples % 100 === 0) {
+                            self.postMessage({ type: 'progress', progress: i / length });
+                        }
+                        processedSamples++;
+
+                        for(let j=0; j<winSize; j++) {
+                            tempReal[j] = channelData[i+j] * window[j];
+                            tempImag[j] = 0;
+                        }
+                        performFFT(tempReal, tempImag);
+
+                        newReal.fill(0);
+                        newImag.fill(0);
+
+                        const cosVal = Math.cos(currentPhaseShift);
+                        const sinVal = Math.sin(currentPhaseShift);
+
+                        for (let k = 1; k < halfSize; k++) { 
+                            const r = tempReal[k];
+                            const im = tempImag[k];
+                            let targetK = k + shiftBins;
+
+                            let rotatedR = r * cosVal - im * sinVal;
+                            let rotatedI = r * sinVal + im * cosVal;
+
+                            if (targetK < 0) {
+                                targetK = -targetK;
+                                rotatedI = -rotatedI;
+                                rotatedR = -rotatedR;
+                                rotatedI = -rotatedI;
+                            }
+
+                            if (targetK > 0 && targetK < halfSize) {
+                                newReal[targetK] += rotatedR;
+                                newImag[targetK] += rotatedI;
+                            }
+                        }
+
+                        for (let k = 1; k < halfSize; k++) {
+                            newReal[fftSize - k] = newReal[k];
+                            newImag[fftSize - k] = -newImag[k];
+                        }
+                        newReal[0] = 0; newImag[0] = 0;
+                        newReal[halfSize] = 0; newImag[halfSize] = 0;
+
+                        performIFFT(newReal, newImag);
+
+                        for(let j=0; j<winSize; j++) {
+                            if (i + j < length) {
+                                output[i+j] += newReal[j] * window[j] * scaleFactor;
+                            }
+                        }
+
+                        currentPhaseShift += phaseIncrementPerHop;
+                        while (currentPhaseShift > Math.PI) currentPhaseShift -= 2 * Math.PI;
+                        while (currentPhaseShift < -Math.PI) currentPhaseShift += 2 * Math.PI;
+                    }
+                    
+                    processedChannels.push(output);
+                }
+
+                self.postMessage({ type: 'done', result: processedChannels });
+            };
+
+                function performFFT(real, imag) {
+                const n = real.length;
+                let i = 0, j = 0;
+                for (i = 0; i < n; i++) {
+                    if (i < j) { 
+                        let tr = real[i]; real[i] = real[j]; real[j] = tr;
+                        let ti = imag[i]; imag[i] = imag[j]; imag[j] = ti;
+                    }
+                    let m = n >> 1; while (m >= 1 && j >= m) { j -= m; m >>= 1; } j += m;
+                }
+                for (let m = 2; m <= n; m <<= 1) {
+                    const mh = m >> 1;
+                    const phi = (2 * Math.PI) / m;
+                    const w_real_m = Math.cos(phi);
+                    const w_imag_m = -Math.sin(phi);
+                    for (let k = 0; k < n; k += m) {
+                        let w_real = 1; let w_imag = 0;
+                        for (let r = 0; r < mh; r++) {
+                            const t_index = k + r + mh; const u_index = k + r;
+                            const t_real = w_real * real[t_index] - w_imag * imag[t_index];
+                            const t_imag = w_real * imag[t_index] + w_imag * real[t_index];
+                            const u_real = real[u_index]; const u_imag = imag[u_index];
+                            real[u_index] = u_real + t_real; imag[u_index] = u_imag + t_imag;
+                            real[t_index] = u_real - t_real; imag[t_index] = u_imag - t_imag;
+                            const w_temp = w_real; w_real = w_real * w_real_m - w_imag * w_imag_m; w_imag = w_temp * w_imag_m + w_imag * w_real_m;
+                        }
+                    }
+                }
+            }
+
+            function performIFFT(real, imag) {
+                const n = real.length;
+                let i = 0, j = 0;
+                for (i = 0; i < n; i++) {
+                    if (i < j) { 
+                        let tr = real[i]; real[i] = real[j]; real[j] = tr;
+                        let ti = imag[i]; imag[i] = imag[j]; imag[j] = ti;
+                    }
+                    let m = n >> 1; while (m >= 1 && j >= m) { j -= m; m >>= 1; } j += m;
+                }
+                for (let m = 2; m <= n; m <<= 1) {
+                    const mh = m >> 1;
+                    const phi = (2 * Math.PI) / m;
+                    const w_real_m = Math.cos(phi);
+                    const w_imag_m = Math.sin(phi); 
+                    for (let k = 0; k < n; k += m) {
+                        let w_real = 1; let w_imag = 0;
+                        for (let r = 0; r < mh; r++) {
+                            const t_index = k + r + mh; const u_index = k + r;
+                            const t_real = w_real * real[t_index] - w_imag * imag[t_index];
+                            const t_imag = w_real * imag[t_index] + w_imag * real[t_index];
+                            const u_real = real[u_index]; const u_imag = imag[u_index];
+                            real[u_index] = u_real + t_real; imag[u_index] = u_imag + t_imag;
+                            real[t_index] = u_real - t_real; imag[t_index] = u_imag - t_imag;
+                            const w_temp = w_real; w_real = w_real * w_real_m - w_imag * w_imag_m; w_imag = w_temp * w_imag_m + w_imag * w_real_m;
+                        }
+                    }
+                }
+                for(let k=0; k<n; k++) { real[k] /= n; imag[k] /= n; }
+            }
+        `;
+
+        
+
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const statusText = document.getElementById('statusText');
+        const previewArea = document.getElementById('previewArea');
+        const processBtn = document.getElementById('processBtn');
+        const previewTitle = document.getElementById('previewTitle');
+        const inputShift = document.getElementById('inputShift');
+        const fileInputGroup = document.getElementById('fileInputGroup');
+        const processBtnContainer = document.getElementById('processBtnContainer');
+        const downloadGroup = document.getElementById('downloadGroup');
+        
+        let selectedFile = null;
+        let isProcessing = false;
+        let currentObjectUrl = null;
+        let processedBlob = null;
+        let audioCtx = null;
+        let activeWorkers = [];
+        
+        let visualizerCtx = null;
+        let visSource = null;
+        let visAnalyser = null;
+        let visAnimationId = null;
+        let visSpaceListener = null;
+        let isPitchMode = false;
+        let processedAudioBuffer = null;
+
+        let currentProcessingState = {
+            type: 'idle',
+            progress: 0
+        };
+
+        function resetUIOnOptionChange() {
+            const t = translations[currentLang];
+            const wasComplete = processBtn.classList.contains('is-complete');
+
+            if (processedBlob || isProcessing || processBtn.classList.contains('is-complete')) {
+                processedBlob = null;
+                processedAudioBuffer = null;
+                isProcessing = false;
+                currentProcessingState.type = 'idle'; 
+                currentProcessingState.progress = 0;
+
+                downloadBtn.disabled = true;
+                processBtn.textContent = t.startProc;
+                processBtn.className = "main-btn process-button";
+                processBtn.disabled = false;
+                
+                if (wasComplete) {
+                    statusText.textContent = t.optionsChanged;
+                } else {
+                    statusText.textContent = t.waitInput;
+                }
+                
+                inputShift.disabled = false;
+                stopVisualizer();
+                if (selectedFile) {
+                    previewArea.innerHTML = '';
+                    const audio = document.createElement('audio'); 
+                    audio.src = currentObjectUrl; 
+                    audio.controls = true; 
+                    audio.style.width = "90%"; 
+                    audio.style.height = "50px"; 
+                    audio.style.marginTop = "10px";
+                    
+                    const wrapper = document.createElement('div');
+                    wrapper.style.textAlign = "center";
+                    wrapper.style.width = "100%"; 
+                    wrapper.innerHTML = `<div style="font-size:48px; margin-bottom:5px;">🎵</div>`;
+                    wrapper.appendChild(audio);
+                    previewArea.appendChild(wrapper);
+                } else {
+                    previewArea.innerHTML = `<span class="preview-placeholder" id="placeholder-text">${t.noMedia}</span>`;
+                }
+            }
+        }
+
+        inputShift.addEventListener('input', resetUIOnOptionChange);
+
+        let dragCounter = 0; 
+        dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation(); dragCounter++; dropZone.classList.add('drag-active'); }, false);
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); if (!dropZone.classList.contains('drag-active')) dropZone.classList.add('drag-active'); }, false);
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); dragCounter--; if (dragCounter <= 0) { dropZone.classList.remove('drag-active'); dragCounter = 0; } }, false);
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); e.stopPropagation(); dragCounter = 0; dropZone.classList.remove('drag-active');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        }, false);
+
+        fileInput.addEventListener('change', function(e) {
+            const t = translations[currentLang];
+            const file = e.target.files[0];
+            if (!file) return;
+
+            selectedFile = file;
+            fileNameDisplay.textContent = file.name;
+            fileNameDisplay.style.color = "#E0E0E0";
+            const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+            statusText.textContent = `${t.selected}${file.name} (${sizeMB} MB).`;
+            
+            resetProcessButton();
+            processBtn.disabled = false;
+            downloadBtn.disabled = true;
+            processedBlob = null;
+            processedAudioBuffer = null;
+
+            if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+            currentObjectUrl = URL.createObjectURL(file);
+            
+            stopVisualizer();
+            previewArea.innerHTML = '';
+            
+            const audio = document.createElement('audio'); 
+            audio.src = currentObjectUrl; 
+            audio.controls = true; 
+            audio.style.width = "90%"; 
+            audio.style.height = "50px"; 
+            audio.style.marginTop = "10px";
+            
+            const wrapper = document.createElement('div');
+            wrapper.style.textAlign = "center";
+            wrapper.style.width = "100%"; 
+            wrapper.innerHTML = `<div style="font-size:48px; margin-bottom:5px;">🎵</div>`;
+            wrapper.appendChild(audio);
+            previewArea.appendChild(wrapper);
+        });
+
+        processBtn.addEventListener('click', async function() {
+            const t = translations[currentLang];
+            if (isProcessing) {
+                activeWorkers.forEach(w => w.terminate());
+                activeWorkers = [];
+                stopProcessingState();
+                statusText.textContent = t.waitInput;
+            } else if (selectedFile) {
+                startProcessing();
+            }
+        });
+
+        function resetProcessButton() {
+            const t = translations[currentLang];
+            isProcessing = false; 
+            processBtn.textContent = t.startProc; 
+            processBtn.className = "main-btn process-button"; 
+            processBtn.disabled = true;
+        }
+
+        function stopProcessingState() {
+            const t = translations[currentLang];
+            isProcessing = false;
+            processBtn.textContent = t.startProc;
+            processBtn.className = "main-btn process-button";
+            processBtn.disabled = false;
+            inputShift.disabled = false;
+        }
+
+        async function startProcessing() {
+            if (!selectedFile) return;
+            const t = translations[currentLang];
+            
+            let shiftVal = parseFloat(inputShift.value);
+            if (isNaN(shiftVal)) { shiftVal = 0; }
+            if (shiftVal < -24000) shiftVal = -24000;
+            if (shiftVal > 24000) shiftVal = 24000;
+
+            isProcessing = true;
+            currentProcessingState.type = 'loading';
+            processBtn.textContent = t.stopProc;
+            processBtn.className = "main-btn process-button is-processing";
+            statusText.textContent = translations[currentLang].loading;
+            downloadBtn.disabled = true;
+            inputShift.disabled = true;
+            
+            try {
+                const arrayBuffer = await readFileAsArrayBuffer(selectedFile);
+                if (!isProcessing) return; 
+
+                const TARGET_RATE = 48000;
+                const tempCtx = new OfflineAudioContext(1, 1, TARGET_RATE);
+                
+                currentProcessingState.type = 'decoding';
+                statusText.textContent = t.decoding;
+                
+                const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
+                if (!isProcessing) return; 
+
+                currentProcessingState.type = 'processing';
+                statusText.textContent = t.processing + "0%";
+
+                const channelCount = audioBuffer.numberOfChannels;
+                const channelDataList = [];
+                for(let c=0; c<channelCount; c++) {
+                    channelDataList.push(audioBuffer.getChannelData(c));
+                }
+                
+                const processedChannels = await runWorkerProcessing(channelDataList, TARGET_RATE, shiftVal);
+                if (!isProcessing) return;
+
+                processedAudioBuffer = tempCtx.createBuffer(channelCount, processedChannels[0].length, TARGET_RATE);
+                for(let c=0; c<channelCount; c++) {
+                    processedAudioBuffer.copyToChannel(processedChannels[c], c);
+                }
+
+                processedBlob = encodeWAV(processedChannels, TARGET_RATE);
+
+                const vizMonoBuffer = downmixBuffer(processedAudioBuffer);
+                
+                isProcessing = false;
+                currentProcessingState.type = 'complete';
+                statusText.textContent = t.complete;
+                processBtn.textContent = t.procComp;
+                processBtn.className = "main-btn process-button is-complete";
+                
+                inputShift.disabled = false;
+                downloadBtn.disabled = false;
+
+                downloadBtn.onclick = () => {
+                    const url = URL.createObjectURL(processedBlob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "shifted_" + selectedFile.name.replace(/\.[^/.]+$/, "") + ".wav";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                };
+
+                initVisualizer(processedBlob, vizMonoBuffer);
+
+            } catch (err) {
+                console.error(err);
+                statusText.textContent = t.error + err.message;
+                stopProcessingState();
+            }
+        }
+
+        function runWorkerProcessing(channelDataList, sampleRate, shiftHz) {
+            return new Promise((resolve, reject) => {
+                const blob = new Blob([workerScript], {type: 'application/javascript'});
+                const workerUrl = URL.createObjectURL(blob);
+                const worker = new Worker(workerUrl);
+                activeWorkers.push(worker);
+
+                worker.postMessage({
+                    channelDataList: channelDataList,
+                    sampleRate: sampleRate,
+                    shiftHz: shiftHz
+                });
+
+                worker.onmessage = function(e) {
+                    if (e.data.type === 'progress') {
+                        currentProcessingState.progress = e.data.progress;
+                        statusText.textContent = translations[currentLang].processing + `${Math.round(e.data.progress * 100)}%`;
+                    } else if (e.data.type === 'done') {
+                        URL.revokeObjectURL(workerUrl);
+                        activeWorkers = [];
+                        resolve(e.data.result);
+                    }
+                };
+                worker.onerror = function(e) { URL.revokeObjectURL(workerUrl); reject(new Error("Worker error")); };
+            });
+        }
+
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error);
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function downmixBuffer(buffer) {
+            const channels = buffer.numberOfChannels;
+            if (channels === 1) return buffer;
+
+            const length = buffer.length;
+            const sampleRate = buffer.sampleRate;
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const monoBuffer = ctx.createBuffer(1, length, sampleRate);
+            const monoData = monoBuffer.getChannelData(0);
+            
+            const channelDatas = [];
+            for (let c = 0; c < channels; c++) {
+                channelDatas.push(buffer.getChannelData(c));
+            }
+
+            for (let i = 0; i < length; i++) {
+                let sumSq = 0;
+                for (let c = 0; c < channels; c++) {
+                    sumSq += channelDatas[c][i] * channelDatas[c][i];
+                }
+                monoData[i] = Math.sqrt(sumSq / channels);
+            }
+            return monoBuffer;
+        }
+
+        function encodeWAV(channelDataList, sampleRate) {
+            const numChannels = channelDataList.length;
+            const numSamples = channelDataList[0].length;
+            
+            const bytesPerSample = 2;
+            const blockAlign = numChannels * bytesPerSample;
+            const byteRate = sampleRate * blockAlign;
+            const dataSize = numSamples * blockAlign;
+            const bufferSize = 44 + dataSize;
+
+            const buffer = new ArrayBuffer(bufferSize);
+            const view = new DataView(buffer);
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeString(view, 8, 'WAVE');
+            
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, 16, true);
+
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            const pcmData = new Int16Array(buffer, 44, numSamples * numChannels);
+            
+            for (let i = 0; i < numSamples; i++) {
+                for (let ch = 0; ch < numChannels; ch++) {
+                    let s = channelDataList[ch][i];
+                    if (s > 1) s = 1;
+                    if (s < -1) s = -1;
+                    s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                    pcmData[i * numChannels + ch] = s;
+                }
+            }
+
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        function floatTo16BitPCM(output, offset, input) {
+            for (let i = 0; i < input.length; i++, offset += 2) {
+                let s = Math.max(-1, Math.min(1, input[i]));
+                s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                output.setInt16(offset, s, true);
+            }
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        function stopVisualizer() {
+            if (visAnimationId) cancelAnimationFrame(visAnimationId);
+            if (visSource) { visSource.disconnect(); visSource = null; }
+            if (visualizerCtx && visualizerCtx.state !== 'closed') visualizerCtx.close();
+            visualizerCtx = null;
+            if (visSpaceListener) {
+                document.removeEventListener('keydown', visSpaceListener);
+                visSpaceListener = null;
+            }
+        }
+
+        function initVisualizer(blob, decodedBuffer) {
+            const t = translations[currentLang];
+            stopVisualizer();
+
+            const iconPlay = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+            const iconPause = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+
+            previewArea.innerHTML = `
+                <div class="visualizer-container" id="visContainer">
+                    <button class="vis-pitch-btn \${isPitchMode ? 'active' : ''}" id="visPitchBtn">FREQ / PITCH</button>
+                    <canvas id="visCanvas"></canvas>
+                    <div class="vis-hint">${t.fsHint} | ${t.playPauseHint}</div>
+                    <div class="vis-overlay">
+                        <div class="vis-controls" id="visControls">
+                            <button class="vis-btn" id="visToggle">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </button>
+                            <div class="vis-progress-container">
+                                <input type="range" id="visProgress" min="0" max="100" value="0" step="0.1">
+                            </div>
+                            <button class="vis-btn" id="visFS" style="margin-left:10px;">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <audio id="visAudio" style="display:none;"></audio>
+            `;
+
+            document.getElementById('visPitchBtn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                isPitchMode = !isPitchMode;
+                if (isPitchMode) this.classList.add('active');
+                else this.classList.remove('active');
+            });
+
+            const canvas = document.getElementById('visCanvas');
+            const ctx = canvas.getContext('2d');
+            const visAudio = document.getElementById('visAudio');
+            const visContainer = document.getElementById('visContainer');
+            const visControls = document.getElementById('visControls');
+            const toggleBtn = document.getElementById('visToggle');
+            const progressBar = document.getElementById('visProgress');
+            const fsBtn = document.getElementById('visFS');
+
+            visAudio.src = URL.createObjectURL(blob);
+            visAudio.loop = false;
+
+            let isDragging = false;
+            let dataArray;
+            let idleTimer = null;
+
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    visContainer.requestFullscreen().catch(err => console.log(err));
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+
+            fsBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleFullscreen();
+            };
+
+            function showUI() {
+                visControls.classList.remove('hide-ui');
+                visContainer.classList.remove('hide-cursor');
+            }
+
+            function hideUI() {
+                visControls.classList.add('hide-ui');
+                visContainer.classList.add('hide-cursor');
+            }
+
+            function resetIdleTimer() {
+                showUI();
+                if (idleTimer) clearTimeout(idleTimer);
+                idleTimer = setTimeout(hideUI, 4000);
+            }
+
+            const handleFullscreenChange = () => {
+                if (visControls.classList.contains('hide-ui')) return;
+                if (!document.fullscreenElement) {
+                    showUI();
+                    if (idleTimer) clearTimeout(idleTimer);
+                } else {
+                    resetIdleTimer();
+                }
+            };
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+            visContainer.addEventListener('click', (e) => {
+                if (e.target.closest('.vis-controls') || e.target.classList.contains('vis-pitch-btn')) {
+                    resetIdleTimer();
+                    return;
+                }
+                if (visControls.classList.contains('hide-ui')) {
+                    resetIdleTimer();
+                } else {
+                    hideUI();
+                }
+            });
+
+            function updateScrub(time) {
+                if (!decodedBuffer) return;
+                const sr = decodedBuffer.sampleRate;
+                const fftSize = 8192;
+                const sampleIndex = Math.floor(time * sr);
+                const channelData = decodedBuffer.getChannelData(0);
+                if (sampleIndex + fftSize >= channelData.length) return;
+
+                const rawChunk = channelData.slice(sampleIndex, sampleIndex + fftSize);
+                const windowed = new Float32Array(fftSize);
+                for (let i = 0; i < fftSize; i++) {
+                    const alpha = 0.42 - 0.5 * Math.cos(2 * Math.PI * i / (fftSize - 1)) + 0.08 * Math.cos(4 * Math.PI * i / (fftSize - 1));
+                    windowed[i] = rawChunk[i] * alpha;
+                }
+
+                const real = new Float32Array(fftSize);
+                const imag = new Float32Array(fftSize);
+                real.set(windowed);
+                transform(real, imag);
+
+                if (!dataArray) dataArray = new Float32Array(fftSize / 2);
+                const normalizationFactor = fftSize * 0.42 / 2;
+
+                for (let i = 0; i < dataArray.length; i++) {
+                    const mag = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
+                    let val = mag / normalizationFactor;
+                    let db = 20 * Math.log10(val + 1e-9);
+                    dataArray[i] = db;
+                }
+                const smoothed = new Float32Array(dataArray.length);
+                for (let i = 1; i < dataArray.length - 1; i++) {
+                    smoothed[i] = (dataArray[i - 1] + dataArray[i] + dataArray[i + 1]) / 3;
+                }
+                dataArray.set(smoothed);
+            }
+
+            function togglePlay() {
+                if (visAudio.paused) {
+                    if (!visualizerCtx) setupAudioContext();
+                    else if (visualizerCtx.state === 'suspended') visualizerCtx.resume();
+                    visAudio.play();
+                    toggleBtn.innerHTML = iconPause;
+                    resetIdleTimer();
+                } else {
+                    visAudio.pause();
+                    toggleBtn.innerHTML = iconPlay;
+                    showUI();
+                }
+            }
+
+            toggleBtn.onclick = (e) => {
+                e.stopPropagation();
+                togglePlay();
+            };
+
+            visAudio.onended = () => {
+                toggleBtn.innerHTML = iconPlay;
+                progressBar.value = 100;
+                showUI();
+            };
+
+            progressBar.addEventListener('mousedown', () => isDragging = true);
+            progressBar.addEventListener('mouseup', () => {
+                isDragging = false;
+                const seekTime = (progressBar.value / 100) * visAudio.duration;
+                visAudio.currentTime = seekTime;
+            });
+            progressBar.addEventListener('input', () => {
+                const seekTime = (progressBar.value / 100) * visAudio.duration;
+                visAudio.currentTime = seekTime;
+                resetIdleTimer();
+                if (visAudio.paused) {
+                    if (!visualizerCtx) setupAudioContext();
+                    updateScrub(seekTime);
+                }
+            });
+
+            visContainer.addEventListener('dblclick', (e) => {
+                if (e.target.closest('.vis-controls') || e.target.classList.contains('vis-pitch-btn')) return;
+                toggleFullscreen();
+            });
+
+            visContainer.addEventListener('mousemove', (e) => {
+                if (e.movementX === 0 && e.movementY === 0) return;
+                resetIdleTimer();
+            });
+
+            visSpaceListener = (e) => {
+                const tag = document.activeElement.tagName;
+                if (e.code === 'KeyF' || e.key.toLowerCase() === 'f') {
+                    if (tag === 'INPUT' && document.activeElement.type !== 'range') return;
+                    e.preventDefault();
+                    toggleFullscreen();
+                    return;
+                }
+                if (e.code === 'Space') {
+                    if (tag === 'INPUT' && document.activeElement.type === 'range') {
+                        e.preventDefault();
+                        togglePlay();
+                        return;
+                    }
+                    if (tag === 'BUTTON' || tag === 'INPUT') return;
+                    e.preventDefault();
+                    togglePlay();
+                }
+            };
+            document.addEventListener('keydown', visSpaceListener);
+
+            function resize() {
+                const dpr = window.devicePixelRatio || 1;
+                const superSample = 2;
+                canvas.width = visContainer.clientWidth * dpr * superSample;
+                canvas.height = visContainer.clientHeight * dpr * superSample;
+                ctx.scale(dpr * superSample, dpr * superSample);
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            function setupAudioContext() {
+                visualizerCtx = new (window.AudioContext || window.webkitAudioContext)();
+                visSource = visualizerCtx.createMediaElementSource(visAudio);
+                visAnalyser = visualizerCtx.createAnalyser();
+                visAnalyser.fftSize = 8192;
+                visAnalyser.smoothingTimeConstant = 0.3;
+                visSource.connect(visAnalyser);
+                visAnalyser.connect(visualizerCtx.destination);
+                dataArray = new Float32Array(visAnalyser.frequencyBinCount);
+                draw(performance.now());
+            }
+
+            const fpsInterval = 1000 / 60;
+            let lastDrawTime = performance.now();
+
+            function draw(timestamp) {
+                visAnimationId = requestAnimationFrame(draw);
+
+                const elapsed = timestamp - lastDrawTime;
+                if (elapsed < fpsInterval) return;
+                lastDrawTime = timestamp - (elapsed % fpsInterval);
+
+                if (!isDragging && visAudio.duration) {
+                    const progress = (visAudio.currentTime / visAudio.duration) * 100;
+                    progressBar.value = progress;
+                }
+
+                if (visAnalyser && !visAudio.paused) {
+                    visAnalyser.getFloatFrequencyData(dataArray);
+                } else if (!dataArray && visAnalyser) {
+                    visAnalyser.getFloatFrequencyData(dataArray);
+                }
+
+                if (!dataArray) return;
+
+                const width = visContainer.clientWidth;
+                const height = visContainer.clientHeight;
+
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, width, height);
+
+                const minFreq = 10;
+                const sampleRate = visualizerCtx ? visualizerCtx.sampleRate : 48000;
+                const maxFreq = sampleRate / 2;
+                const logMin = Math.log10(minFreq);
+                const logMax = Math.log10(maxFreq);
+                const scale = width / (logMax - logMin);
+
+                function getX(f) {
+                    if (f < minFreq) return 0;
+                    return (Math.log10(f) - logMin) * scale;
+                }
+
+                function getY(db) {
+                    const minDb = -100;
+                    const maxDb = 0;
+                    let norm = (db - minDb) / (maxDb - minDb);
+                    if (norm < 0) norm = 0;
+                    if (norm > 1) norm = 1;
+                    return height - (norm * height);
+                }
+
+                ctx.font = "16px 'Unispace Bd', monospace";
+                ctx.textAlign = "center";
+
+                if (!isPitchMode) {
+                    const powers = [10, 100, 1000, 10000];
+                    const multipliers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+                    powers.forEach(p => {
+                        multipliers.forEach(m => {
+                            const freq = p * m;
+                            if (freq > maxFreq) return;
+                            const rawX = getX(freq);
+                            const x = Math.floor(rawX) + 0.5;
+                            const isMajor = (m === 1 && freq !== 10);
+                            ctx.beginPath();
+                            ctx.moveTo(x, 0);
+                            ctx.lineTo(x, height);
+                            if (isMajor) {
+                                ctx.lineWidth = 1.5;
+                                ctx.strokeStyle = '#888888';
+                                ctx.stroke();
+                                ctx.fillStyle = '#E0E0E0';
+                                let label = freq >= 1000 ? (freq / 1000) + "k" : freq;
+                                ctx.fillText(label, x + 2, height - 5);
+                            } else {
+                                ctx.lineWidth = 1;
+                                ctx.strokeStyle = 'rgba(136, 136, 136, 0.5)';
+                                ctx.stroke();
+                            }
+                        });
+                    });
+                } else {
+                    for (let m = 0; m <= 200; m++) {
+                        const freq = 440 * Math.pow(2, (m - 69) / 12);
+                        if (freq < minFreq) continue;
+                        if (freq > maxFreq) break;
+
+                        const rawX = getX(freq);
+                        const x = Math.floor(rawX) + 0.5;
+                        const noteIndex = m % 12;
+                        const octave = Math.floor(m / 12) - 1;
+
+                        ctx.beginPath();
+                        ctx.moveTo(x, 0);
+                        ctx.lineTo(x, height);
+
+                        if (noteIndex === 0) {
+                            ctx.lineWidth = 1.5;
+                            ctx.strokeStyle = '#888888';
+                            ctx.stroke();
+                            ctx.fillStyle = '#E0E0E0';
+                            ctx.fillText("C" + octave, x + 2, height - 5);
+                        } else {
+                            const isNatural = [0, 2, 4, 5, 7, 9, 11].includes(noteIndex);
+                            if (isNatural) {
+                                ctx.lineWidth = 1;
+                                ctx.strokeStyle = 'rgba(136, 136, 136, 0.5)';
+                                ctx.stroke();
+                            } else {
+                                ctx.lineWidth = 1;
+                                ctx.strokeStyle = 'rgba(136, 136, 136, 0.25)';
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
+
+                ctx.textAlign = "left";
+                for (let db = -100; db <= 0; db += 4) {
+                    const rawY = getY(db);
+                    const y = Math.floor(rawY) + 0.5;
+                    const isMajor = (db % 20 === 0 && db !== 0 && db !== -100);
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    if (isMajor) {
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeStyle = '#888888';
+                        ctx.stroke();
+                        ctx.fillStyle = '#E0E0E0';
+                        ctx.fillText(db, 5, y - 3);
+                    } else {
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = 'rgba(136, 136, 136, 0.5)';
+                        ctx.stroke();
+                    }
+                }
+
+                const bufferLength = dataArray.length;
+                const gradient = ctx.createLinearGradient(0, 0, width, 0);
+                gradient.addColorStop(0, '#A52A2A');
+                gradient.addColorStop(0.5, '#FF7E00');
+                gradient.addColorStop(1, '#DAA520');
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                let hasStarted = false;
+                for (let i = 0; i < bufferLength; i++) {
+                    const freq = i * sampleRate / (2 * bufferLength);
+                    if (freq < minFreq) continue;
+                    if (freq > maxFreq) break;
+                    const x = getX(freq);
+                    const y = getY(dataArray[i]);
+                    if (!hasStarted) {
+                        ctx.moveTo(x, y);
+                        hasStarted = true;
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+                
+                const peaks = [];
+                const noiseFloor = -80;
+                
+                for (let i = 2; i < bufferLength - 2; i++) {
+                    const freq = i * sampleRate / (bufferLength * 2);
+                    if (freq < minFreq) continue;
+                    const val = dataArray[i];
+                    
+                    if (val > noiseFloor) {
+                        if (val > dataArray[i - 1] && val > dataArray[i - 2] && val > dataArray[i + 1] && val > dataArray[i + 2]) {
+                            peaks.push({ freq, db: val });
+                        }
+                    }
+                }
+                
+                let frameMaxDB = -Infinity;
+                peaks.forEach(p => frameMaxDB = Math.max(frameMaxDB, p.db));
+                
+                const dbThresholdVal = 20; 
+                const cutoffDB = frameMaxDB - dbThresholdVal;
+                
+                const validPeaks = peaks.filter(p => p.db >= cutoffDB);
+                validPeaks.sort((a, b) => a.freq - b.freq);
+                const lowPeak = validPeaks.length > 0 ? validPeaks[0] : null;
+
+                peaks.sort((a, b) => b.db - a.db);
+                let displayPeaks = peaks.slice(0, 10);
+
+                if (lowPeak) {
+                    const exists = displayPeaks.find(p => Math.abs(p.freq - lowPeak.freq) < 1);
+                    if (!exists) displayPeaks.push(lowPeak);
+                }
+
+                ctx.textAlign = "center";
+                ctx.font = "14px 'Unispace Bd', monospace";
+
+                displayPeaks.forEach(p => {
+                    const x = getX(p.freq);
+                    const y = getY(p.db);
+                    
+                    ctx.fillStyle = (p === lowPeak) ? '#FF7E00' : '#FFF';
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    const text = Math.round(p.freq) + "Hz";
+                    const tw = ctx.measureText(text).width;
+                    
+                    ctx.fillStyle = "rgba(0,0,0,0.7)";
+                    ctx.fillRect(x - tw / 2 - 2, y - 20, tw + 4, 16);
+                    
+                    ctx.fillStyle = (p === lowPeak) ? '#FF7E00' : '#FFF';
+                    ctx.fillText(text, x, y - 8);
+                });
+            }
+        }
+
+        changeLanguage('en-US');
+    </script>
+</body>
+</html>
