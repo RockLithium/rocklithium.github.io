@@ -347,8 +347,13 @@
                 const title = button.innerText.trim();
                 const desc = button.getAttribute('data-desc');
 
-                if (e.shiftKey || e.ctrlKey || e.metaKey) {
-                    if (url) window.location.href = url;
+                if (e.ctrlKey || e.metaKey) {
+                    if (url) window.open(url, '_blank');
+                    return;
+                }
+
+                if (e.shiftKey) {
+                    if (url) window.open(url, '_blank', 'popup=yes,width=1024,height=768');
                     return;
                 }
 
