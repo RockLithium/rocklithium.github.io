@@ -1250,7 +1250,8 @@
                         noiseSuppression: false,
                         autoGainControl: false,
                         mozAutoGainControl: false,
-                        googAutoGainControl: false
+                        googAutoGainControl: false,
+                        googHighpassFilter: false
                     }
                 };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -1709,7 +1710,14 @@
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                a.download = `Record_${new Date().getTime()}.wav`;
+                const now = new Date();
+                const timeStr = now.getFullYear() + 
+                                String(now.getMonth() + 1).padStart(2, '0') + 
+                                String(now.getDate()).padStart(2, '0') + "_" + 
+                                String(now.getHours()).padStart(2, '0') + 
+                                String(now.getMinutes()).padStart(2, '0') + 
+                                String(now.getSeconds()).padStart(2, '0');
+                a.download = `Record_${timeStr}.wav`;
                 document.body.appendChild(a);
                 a.click();
                 setTimeout(() => {
