@@ -685,6 +685,22 @@
         <div class="process-btn-container" id="processBtnContainer">
             <button id="processBtn" class="main-btn process-button" disabled>Start Analysis</button>
         </div>
+
+        <div class="input-group hidden" id="recordGroup">
+            <div class="input-title" id="label-recording">RECORDING</div>
+            
+            <div class="process-btn-container" style="margin-bottom: 10px;">
+                <button id="recordBtn" class="main-btn process-button">Start Recording</button>
+            </div>
+            
+            <div class="options-grid" style="max-width: 600px; margin: 0 auto;">
+                <div class="param-box" style="flex: 1;">
+                    <span class="param-label" id="label-gain">Mic Gain</span>
+                    <input type="range" id="inputGain" min="-50" max="20" step="1" value="0" style="flex-grow: 1; margin: 0 15px;">
+                    <span id="gainValueDisplay" style="color: #E0E0E0; font-family: 'Unispace Bd'; font-size: 16px; min-width: 70px; text-align: right;">0 dB</span>
+                </div>
+            </div>
+        </div>
         
         <div class="input-group">
             <div class="input-title-row">
@@ -696,6 +712,7 @@
         </div>
         <div class="input-group" style="text-align: center;" id="downloadGroup">
             <button id="downloadBtn" class="main-btn download-button" disabled>DOWNLOAD SRT</button>
+            <button id="downloadWavBtn" class="main-btn download-button hidden" disabled>DOWNLOAD WAV</button>
         </div>
     </div>
     <script>
@@ -734,7 +751,13 @@
                 freqPitch: "FREQ / PITCH",
                 fsHint: "Double-Click/F: Fullscreen",
                 playPauseHint: "Space: Play/Pause",
-                optionsChanged: "Options changed. Please re-process."
+                optionsChanged: "Options changed. Please re-process.",
+                recording: "RECORDING",
+                startRec: "Start Recording",
+                stopRec: "Stop Recording",
+                micGain: "Mic Gain",
+                dlWAV: "DOWNLOAD WAV",
+                recComp: "Recording Complete"
             },
             'zh-Hans': {
                 goBack: "← 返回",
@@ -770,7 +793,13 @@
                 freqPitch: "频率 / 音高",
                 fsHint: "双击/F：全屏",
                 playPauseHint: "空格：播放/暂停",
-                optionsChanged: "选项已更改。请重新处理。"
+                optionsChanged: "选项已更改。请重新处理。",
+                recording: "实时录制",
+                startRec: "开始录制",
+                stopRec: "停止录制",
+                micGain: "麦克风增益",
+                dlWAV: "下载 WAV",
+                recComp: "录制完成"
             },
             'fr-FR': {
                 goBack: "← Retour",
@@ -806,14 +835,19 @@
                 freqPitch: "FREQ / TON",
                 fsHint: "Double-clic/F : Plein écran",
                 playPauseHint: "Espace : Lire/Pause",
-                optionsChanged: "Options modifiées. Relancer?"
+                optionsChanged: "Options modifiées. Relancer?",
+                recording: "ENREGISTREMENT",
+                startRec: "Démarrer l'enregistrement",
+                stopRec: "Arrêter l'enregistrement",
+                micGain: "Gain Micro",
+                dlWAV: "TÉLÉCHARGER LE WAV",
+                recComp: "Enregistrement terminé"
             },
             'ru-RU': {
                 goBack: "← Назад",
                 tabAnalyzer: "СПЕКТР",
                 tabPitch: "ТОН",
                 tabFreq: "СДВИГ",
-                goBack: "← Назад",
                 title: "Анализатор спектра",
                 subtitle: "Визуализация аудиоспектра, поиск пиков и экспорт в SRT.",
                 realTime: "Режим реального времени",
@@ -843,7 +877,13 @@
                 freqPitch: "ЧАСТОТА / ВЫСОТА",
                 fsHint: "Двойной клик/F: Полный экран",
                 playPauseHint: "Пробел: Воспроизведение/Пауза",
-                optionsChanged: "Настройки изменены."
+                optionsChanged: "Настройки изменены.",
+                recording: "ЗАПИСЬ",
+                startRec: "Начать запись",
+                stopRec: "Остановить запись",
+                micGain: "Усиление",
+                dlWAV: "СКАЧАТЬ WAV",
+                recComp: "Запись завершена"
             }
         };
 
@@ -876,6 +916,18 @@
             } else {
                 processBtn.textContent = t.startProc;
             }
+
+            document.getElementById('label-recording').textContent = t.recording;
+            const recordBtn = document.getElementById('recordBtn');
+            if (isRecording) {
+                recordBtn.textContent = t.stopRec;
+            } else if (recordBtn.classList.contains('is-complete')) {
+                recordBtn.textContent = t.recComp;
+            } else {
+                recordBtn.textContent = t.startRec;
+            }
+            document.getElementById('label-gain').textContent = t.micGain;
+            document.getElementById('downloadWavBtn').textContent = t.dlWAV;
 
             document.getElementById('previewTitle').textContent = optRealTime.classList.contains('active') ? t.spectrum : t.preview;
             document.getElementById('downloadBtn').textContent = t.dlSRT;
@@ -1053,19 +1105,37 @@
             }
         `;
 
+        const recorderWorkletCode = `
+            class RecorderProcessor extends AudioWorkletProcessor {
+                process(inputs, outputs, parameters) {
+                    const input = inputs[0];
+                    if (input && input.length > 0) {
+                        const channelData = input.map(channel => new Float32Array(channel));
+                        this.port.postMessage(channelData);
+                    }
+                    return true;
+                }
+            }
+            registerProcessor('recorder-worklet', RecorderProcessor);
+        `;
+
         const fileInput = document.getElementById('fileInput');
         const dropZone = document.getElementById('dropZone');
         const fileNameDisplay = document.getElementById('fileNameDisplay');
         const downloadBtn = document.getElementById('downloadBtn');
+        const downloadWavBtn = document.getElementById('downloadWavBtn');
         const statusText = document.getElementById('statusText');
         const previewArea = document.getElementById('previewArea');
         const processBtn = document.getElementById('processBtn');
+        const recordBtn = document.getElementById('recordBtn');
         const previewTitle = document.getElementById('previewTitle');
         
         const inputHighPass = document.getElementById('inputHighPass');
         const inputRate = document.getElementById('inputRate');
         const inputDB = document.getElementById('inputDB');
         const inputWindow = document.getElementById('inputWindow');
+        const inputGain = document.getElementById('inputGain');
+        const gainValueDisplay = document.getElementById('gainValueDisplay');
         
         const optSpectrum = document.getElementById('optSpectrum');
         const optSRT = document.getElementById('optSRT');
@@ -1074,6 +1144,7 @@
         const fileInputGroup = document.getElementById('fileInputGroup');
         const genSpectrumBtnGroup = document.getElementById('genSpectrumBtnGroup');
         const processBtnContainer = document.getElementById('processBtnContainer');
+        const recordGroup = document.getElementById('recordGroup');
         const downloadGroup = document.getElementById('downloadGroup');
         
         const optionsRow1 = document.getElementById('optionsRow1');
@@ -1103,12 +1174,33 @@
         let rtAnimationId = null;
         let savedParams = {};
 
+        let isRecording = false;
+        let recordedBuffers = [];
+        let processorNode = null;
+        let silentNodeRec = null;
+        let recContext = null;
+        let recSource = null;
+        let recGainNode = null;
+        let visGainNode = null;
+        let recordedWavBlob = null;
+
         let isPitchMode = false;
 
         let currentProcessingState = {
             type: 'idle',
             progress: 0
         };
+
+        inputGain.addEventListener('input', (e) => {
+            gainValueDisplay.textContent = e.target.value + ' dB';
+            const gainVal = Math.pow(10, parseFloat(e.target.value) / 20);
+            if (visGainNode) {
+                visGainNode.gain.value = gainVal;
+            }
+            if (recGainNode) {
+                recGainNode.gain.value = gainVal;
+            }
+        });
 
         optRealTime.addEventListener('click', () => {
             const isActive = optRealTime.classList.toggle('active');
@@ -1136,7 +1228,11 @@
             fileInputGroup.classList.add('hidden');
             genSpectrumBtnGroup.classList.add('hidden');
             processBtnContainer.classList.add('hidden');
-            downloadGroup.classList.add('hidden');
+            
+            recordGroup.classList.remove('hidden');
+            downloadBtn.classList.add('hidden');
+            downloadWavBtn.classList.remove('hidden');
+            
             boxRate.classList.add('hidden');
             boxHighPass.classList.add('hidden');
             optionsRow2.classList.add('hidden');
@@ -1173,6 +1269,10 @@
             previewTitle.textContent = t.preview;
             stopRealTimeVisualizer();
 
+            if (isRecording) {
+                recordBtn.click(); 
+            }
+
             if (rtStream) {
                 rtStream.getTracks().forEach(track => track.stop());
                 rtStream = null;
@@ -1181,7 +1281,10 @@
             fileInputGroup.classList.remove('hidden');
             genSpectrumBtnGroup.classList.remove('hidden');
             processBtnContainer.classList.remove('hidden');
-            downloadGroup.classList.remove('hidden');
+            
+            recordGroup.classList.add('hidden');
+            downloadBtn.classList.remove('hidden');
+            downloadWavBtn.classList.add('hidden');
             
             optionsRow2.insertBefore(boxWindow, boxHighPass);
             optionsRow2.classList.remove('hidden');
@@ -1192,6 +1295,10 @@
             currentProcessingState.progress = 0;
             processBtn.classList.remove('is-complete', 'is-processing');
             processBtn.textContent = t.startProc;
+
+            recordBtn.textContent = t.startRec;
+            recordBtn.classList.remove('is-processing', 'is-complete');
+            downloadWavBtn.disabled = true;
 
             if (savedParams.rate) inputRate.value = savedParams.rate;
             if (savedParams.db) inputDB.value = savedParams.db;
@@ -1226,17 +1333,26 @@
 
         function stopRealTimeVisualizer() {
             if (rtAnimationId) cancelAnimationFrame(rtAnimationId);
-            if (rtSource) { 
-                try { rtSource.disconnect(); } catch(e) {} 
-                rtSource = null; 
-            }
+            
+            if (processorNode) { processorNode.disconnect(); processorNode = null; }
+            if (silentNodeRec) { silentNodeRec.disconnect(); silentNodeRec = null; }
+            if (recGainNode) { recGainNode.disconnect(); recGainNode = null; }
+            if (visGainNode) { visGainNode.disconnect(); visGainNode = null; }
+
+            if (rtSource) { try { rtSource.disconnect(); } catch(e) {} rtSource = null; }
+            if (recSource) { try { recSource.disconnect(); } catch(e) {} recSource = null; }
+            
             if (rtContext && rtContext.state !== 'closed') rtContext.close();
             rtContext = null;
+            if (recContext && recContext.state !== 'closed') recContext.close();
+            recContext = null;
+
             if (visSpaceListener) {
                 document.removeEventListener('keydown', visSpaceListener);
                 visSpaceListener = null;
             }
         }
+
         function startRealTimeVisualizer(stream) {
             const t = translations[currentLang];
             stopRealTimeVisualizer();
@@ -1263,6 +1379,11 @@
 
             rtContext = new (window.AudioContext || window.webkitAudioContext)();
             rtSource = rtContext.createMediaStreamSource(stream);
+            
+            visGainNode = rtContext.createGain();
+            visGainNode.gain.value = Math.pow(10, parseFloat(inputGain.value) / 20);
+            rtSource.connect(visGainNode);
+
             rtAnalyser = rtContext.createAnalyser();
 
             const winMs = parseFloat(inputWindow.value) || 33;
@@ -1271,7 +1392,22 @@
             while (n_fft < targetSamples * 4) n_fft *= 2; 
             rtAnalyser.fftSize = Math.min(n_fft, 32768);
             rtAnalyser.minDecibels = -140;
-            rtSource.connect(rtAnalyser);
+            visGainNode.connect(rtAnalyser);
+
+            try {
+                recContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+                recSource = recContext.createMediaStreamSource(stream);
+                
+                recGainNode = recContext.createGain();
+                recGainNode.gain.value = Math.pow(10, parseFloat(inputGain.value) / 20);
+                recSource.connect(recGainNode);
+                
+                const blob = new Blob([recorderWorkletCode], { type: 'application/javascript' });
+                const workletUrl = URL.createObjectURL(blob);
+                recContext.audioWorklet.addModule(workletUrl).catch(e => console.error(e));
+            } catch (e) {
+                console.error("Failed to initialize recording context:", e);
+            }
 
             const dataArray = new Float32Array(rtAnalyser.frequencyBinCount);
 
@@ -1488,6 +1624,133 @@
                 });
             }
             draw();
+        }
+
+        recordBtn.addEventListener('click', () => {
+            const t = translations[currentLang];
+            
+            if (!isRecording) {
+                isRecording = true;
+                recordedBuffers = [];
+                recordedWavBlob = null;
+                downloadWavBtn.disabled = true;
+                
+                recordBtn.textContent = t.stopRec;
+                recordBtn.classList.add('is-processing');
+                recordBtn.classList.remove('is-complete');
+                
+                try {
+                    if (!recContext) throw new Error("Recording context not initialized");
+                    processorNode = new AudioWorkletNode(recContext, 'recorder-worklet');
+                    processorNode.port.onmessage = (e) => {
+                        recordedBuffers.push(e.data);
+                    };
+                    
+                    silentNodeRec = recContext.createGain();
+                    silentNodeRec.gain.value = 0;
+                    
+                    recGainNode.connect(processorNode);
+                    processorNode.connect(silentNodeRec);
+                    silentNodeRec.connect(recContext.destination);
+                } catch (err) {
+                    console.error("Failed to start recording node:", err);
+                    isRecording = false;
+                    recordBtn.textContent = t.startRec;
+                    recordBtn.classList.remove('is-processing');
+                }
+            } else {
+                isRecording = false;
+                recordBtn.textContent = t.recComp;
+                recordBtn.classList.remove('is-processing');
+                recordBtn.classList.add('is-complete');
+                
+                if (processorNode && recGainNode) {
+                    recGainNode.disconnect(processorNode);
+                    processorNode.disconnect();
+                    processorNode = null;
+                }
+                if (silentNodeRec) {
+                    silentNodeRec.disconnect();
+                    silentNodeRec = null;
+                }
+                
+                exportWAV();
+            }
+        });
+
+        function exportWAV() {
+            if (recordedBuffers.length === 0) return;
+
+            const numChannels = recordedBuffers[0].length;
+            const sampleRate = 48000;
+            
+            let totalSamples = 0;
+            for (let i = 0; i < recordedBuffers.length; i++) {
+                totalSamples += recordedBuffers[i][0].length;
+            }
+
+            const interleavedData = new Float32Array(totalSamples * numChannels);
+            let offset = 0;
+            for (let i = 0; i < recordedBuffers.length; i++) {
+                const block = recordedBuffers[i];
+                const blockLength = block[0].length;
+                for (let j = 0; j < blockLength; j++) {
+                    for (let c = 0; c < numChannels; c++) {
+                        interleavedData[offset++] = block[c] ? block[c][j] : 0;
+                    }
+                }
+            }
+
+            recordedWavBlob = encodeWAV(interleavedData, numChannels, sampleRate);
+            
+            downloadWavBtn.disabled = false;
+            downloadWavBtn.onclick = () => {
+                const url = URL.createObjectURL(recordedWavBlob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `Record_${new Date().getTime()}.wav`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+            };
+        }
+
+        function encodeWAV(samples, numChannels, sampleRate) {
+            const buffer = new ArrayBuffer(44 + samples.length * 4);
+            const view = new DataView(buffer);
+
+            const writeString = (view, offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + samples.length * 4, true);
+            writeString(view, 8, 'WAVE');
+            
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 3, true); 
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * numChannels * 4, true);
+            view.setUint16(32, numChannels * 4, true);
+            view.setUint16(34, 32, true);
+            
+            writeString(view, 36, 'data');
+            view.setUint32(40, samples.length * 4, true);
+
+            let offset = 44;
+            for (let i = 0; i < samples.length; i++, offset += 4) {
+                view.setFloat32(offset, samples[i], true);
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
         }
 
         function resetUIOnOptionChange() {
