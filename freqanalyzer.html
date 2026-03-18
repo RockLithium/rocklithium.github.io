@@ -693,6 +693,10 @@
                 <button id="recordBtn" class="main-btn process-button">Start Recording</button>
             </div>
             
+            <div class="options-grid" style="max-width: 600px; margin: 0 auto 10px auto;">
+                <div class="option-btn active" id="optAutoSave">Auto-Save WAV</div>
+            </div>
+
             <div class="options-grid" style="max-width: 600px; margin: 0 auto;">
                 <div class="param-box" style="flex: 1;">
                     <span class="param-label" id="label-gain">Mic Gain</span>
@@ -712,6 +716,7 @@
         </div>
         <div class="input-group" style="text-align: center;" id="downloadGroup">
             <button id="downloadBtn" class="main-btn download-button" disabled>DOWNLOAD SRT</button>
+            <button id="downloadWavBtn" class="main-btn download-button hidden" disabled>DOWNLOAD WAV</button>
         </div>
     </div>
     <script>
@@ -754,7 +759,10 @@
                 recording: "RECORDING",
                 startRec: "Start Recording",
                 stopRec: "Stop Recording",
-                micGain: "Mic Gain"
+                micGain: "Mic Gain",
+                dlWAV: "DOWNLOAD WAV",
+                recComp: "Recording Complete",
+                autoSave: "Auto-Save WAV"
             },
             'zh-Hans': {
                 goBack: "← 返回",
@@ -794,7 +802,10 @@
                 recording: "实时录制",
                 startRec: "开始录制",
                 stopRec: "停止录制",
-                micGain: "麦克风增益"
+                micGain: "麦克风增益",
+                dlWAV: "下载 WAV",
+                recComp: "录制完成",
+                autoSave: "自动保存 WAV"
             },
             'fr-FR': {
                 goBack: "← Retour",
@@ -834,7 +845,10 @@
                 recording: "ENREGISTREMENT",
                 startRec: "Démarrer l'enregistrement",
                 stopRec: "Arrêter l'enregistrement",
-                micGain: "Gain Micro"
+                micGain: "Gain Micro",
+                dlWAV: "TÉLÉCHARGER LE WAV",
+                recComp: "Enregistrement terminé",
+                autoSave: "Sauvegarde auto WAV"
             },
             'ru-RU': {
                 goBack: "← Назад",
@@ -874,7 +888,10 @@
                 recording: "ЗАПИСЬ",
                 startRec: "Начать запись",
                 stopRec: "Остановить запись",
-                micGain: "Усиление"
+                micGain: "Усиление",
+                dlWAV: "СКАЧАТЬ WAV",
+                recComp: "Запись завершена",
+                autoSave: "Авто-сохранение WAV"
             }
         };
 
@@ -912,10 +929,18 @@
             const recordBtn = document.getElementById('recordBtn');
             if (isRecording) {
                 recordBtn.textContent = t.stopRec;
+            } else if (recordBtn.classList.contains('is-complete')) {
+                recordBtn.textContent = t.recComp;
             } else {
                 recordBtn.textContent = t.startRec;
             }
             document.getElementById('label-gain').textContent = t.micGain;
+            
+            const downloadWavBtn = document.getElementById('downloadWavBtn');
+            if(downloadWavBtn) downloadWavBtn.textContent = t.dlWAV;
+            
+            const optAutoSave = document.getElementById('optAutoSave');
+            if(optAutoSave) optAutoSave.textContent = t.autoSave;
 
             document.getElementById('previewTitle').textContent = optRealTime.classList.contains('active') ? t.spectrum : t.preview;
             document.getElementById('downloadBtn').textContent = t.dlSRT;
@@ -1111,6 +1136,7 @@
         const dropZone = document.getElementById('dropZone');
         const fileNameDisplay = document.getElementById('fileNameDisplay');
         const downloadBtn = document.getElementById('downloadBtn');
+        const downloadWavBtn = document.getElementById('downloadWavBtn');
         const statusText = document.getElementById('statusText');
         const previewArea = document.getElementById('previewArea');
         const processBtn = document.getElementById('processBtn');
@@ -1126,6 +1152,7 @@
         
         const optSpectrum = document.getElementById('optSpectrum');
         const optSRT = document.getElementById('optSRT');
+        const optAutoSave = document.getElementById('optAutoSave');
         
         const optRealTime = document.getElementById('optRealTime');
         const fileInputGroup = document.getElementById('fileInputGroup');
@@ -1178,6 +1205,10 @@
             progress: 0
         };
 
+        optAutoSave.addEventListener('click', () => {
+            optAutoSave.classList.toggle('active');
+        });
+
         inputGain.addEventListener('input', (e) => {
             gainValueDisplay.textContent = e.target.value + ' dB';
             const gainVal = Math.pow(10, parseFloat(e.target.value) / 20);
@@ -1218,6 +1249,7 @@
             
             recordGroup.classList.remove('hidden');
             downloadBtn.classList.add('hidden');
+            downloadWavBtn.classList.remove('hidden');
             
             boxRate.classList.add('hidden');
             boxHighPass.classList.add('hidden');
@@ -1271,6 +1303,7 @@
             
             recordGroup.classList.add('hidden');
             downloadBtn.classList.remove('hidden');
+            downloadWavBtn.classList.add('hidden');
             
             optionsRow2.insertBefore(boxWindow, boxHighPass);
             optionsRow2.classList.remove('hidden');
@@ -1284,6 +1317,7 @@
 
             recordBtn.textContent = t.startRec;
             recordBtn.classList.remove('is-processing', 'is-complete');
+            downloadWavBtn.disabled = true;
 
             if (savedParams.rate) inputRate.value = savedParams.rate;
             if (savedParams.db) inputDB.value = savedParams.db;
@@ -1618,6 +1652,7 @@
                 isRecording = true;
                 recordedBuffers = [];
                 recordedWavBlob = null;
+                downloadWavBtn.disabled = true;
                 
                 recordBtn.textContent = t.stopRec;
                 recordBtn.classList.add('is-processing');
@@ -1645,8 +1680,13 @@
             } else {
                 isRecording = false;
                 recordBtn.classList.remove('is-processing');
-                const t = translations[currentLang];
-                recordBtn.textContent = t.startRec;
+                
+                if (optAutoSave.classList.contains('active')) {
+                    recordBtn.textContent = t.startRec;
+                } else {
+                    recordBtn.textContent = t.recComp;
+                    recordBtn.classList.add('is-complete');
+                }
                 
                 if (processorNode && recGainNode) {
                     recGainNode.disconnect(processorNode);
@@ -1686,28 +1726,49 @@
             }
 
             recordedWavBlob = encodeWAV(interleavedData, numChannels, sampleRate);
-
-            const url = URL.createObjectURL(recordedWavBlob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-
-            const now = new Date();
-            const timeStr = now.getFullYear() + 
-                            String(now.getMonth() + 1).padStart(2, '0') + 
-                            String(now.getDate()).padStart(2, '0') + "_" + 
-                            String(now.getHours()).padStart(2, '0') + 
-                            String(now.getMinutes()).padStart(2, '0') + 
-                            String(now.getSeconds()).padStart(2, '0');
-            a.download = `Record_${timeStr}.wav`;
-
-            document.body.appendChild(a);
-            a.click();
-
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 100);
+            
+            if (optAutoSave.classList.contains('active')) {
+                const url = URL.createObjectURL(recordedWavBlob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                const now = new Date();
+                const timeStr = now.getFullYear() + 
+                                String(now.getMonth() + 1).padStart(2, '0') + 
+                                String(now.getDate()).padStart(2, '0') + "_" + 
+                                String(now.getHours()).padStart(2, '0') + 
+                                String(now.getMinutes()).padStart(2, '0') + 
+                                String(now.getSeconds()).padStart(2, '0');
+                a.download = `Record_${timeStr}.wav`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+            } else {
+                downloadWavBtn.disabled = false;
+                downloadWavBtn.onclick = () => {
+                    const url = URL.createObjectURL(recordedWavBlob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    const now = new Date();
+                    const timeStr = now.getFullYear() + 
+                                    String(now.getMonth() + 1).padStart(2, '0') + 
+                                    String(now.getDate()).padStart(2, '0') + "_" + 
+                                    String(now.getHours()).padStart(2, '0') + 
+                                    String(now.getMinutes()).padStart(2, '0') + 
+                                    String(now.getSeconds()).padStart(2, '0');
+                    a.download = `Record_${timeStr}.wav`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 100);
+                };
+            }
         }
 
         function encodeWAV(samples, numChannels, sampleRate) {
