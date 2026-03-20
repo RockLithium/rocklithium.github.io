@@ -722,11 +722,6 @@
             const workers = [];
             let finishedWorkers = 0;
             let isRendering = false;
-            let isRunning = true;
-            const channel = new MessageChannel();
-            channel.port2.onmessage = () => {
-                if (isRunning && !isRendering) frame();
-            };
             
             console.log(`Spawning ${workerCount} render workers...`);
 
@@ -752,7 +747,7 @@
                 if (finishedWorkers === workerCount) {
                     ctx.putImageData(imageData, 0, 0);
                     isRendering = false;
-                    channel.port1.postMessage(null);
+                    requestAnimationFrame(frame); 
                 }
             }
 
@@ -1083,12 +1078,16 @@
                 
                 if(finishedWorkers === workerCount) {
                     isRendering = false;
-                    channel.port1.postMessage(null);
+                    requestAnimationFrame(frame);
                 }
             };
 
-            isRunning = true;
-            channel.port1.postMessage(null);
+            const checkRender = () => {
+                if(!isRendering) frame();
+                else requestAnimationFrame(checkRender);
+            }
+
+            requestAnimationFrame(frame);
         }
         
         const msg = "⚠️THIS DEMO IS EXTREMELY CPU-INTENSIVE. You may experience performance drops or stuttering.\nClick OK to start.";

@@ -1048,6 +1048,8 @@
                 if (!adapter) return;
                 const device = await adapter.requestDevice();
                 const context = gpuCanvas.getContext('webgpu');
+
+                let animId;
                 
                 const updateResolution = () => {
                     const dpr = window.devicePixelRatio || 1;
@@ -1109,8 +1111,7 @@
                             format: flags.hdr ? 'rgba16float' : 'rgba8unorm',
                             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
                             alphaMode: 'premultiplied',
-                            colorSpace: flags.hdr ? 'display-p3' : 'srgb',
-                            presentMode: 'immediate'
+                            colorSpace: flags.hdr ? 'display-p3' : 'srgb'
                         };
                         if (flags.hdr && 'toneMapping' in GPUCanvasContext.prototype) {
                             // @ts-ignore
@@ -1124,8 +1125,7 @@
                             format: 'rgba8unorm', 
                             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
                             alphaMode: 'premultiplied',
-                            colorSpace: 'srgb',
-                            presentMode: 'immediate'
+                            colorSpace: 'srgb'
                         });
                     }
 
@@ -1173,8 +1173,6 @@
                 window.onresize = () => onConfigChange(false);
 
                 let frames = 0, lastTime = performance.now(), lastDt = performance.now();
-                let isRunning = true;
-                const channel = new MessageChannel();
                 const frame = () => {
                     const now = performance.now();
                     const dt = (now - lastDt) * 0.001;
@@ -1234,19 +1232,12 @@
                     pass.end();
                     enc.copyTextureToTexture({texture:outputTexture}, {texture:context.getCurrentTexture()}, [canvasSize.width, canvasSize.height]);
                     device.queue.submit([enc.finish()]);
+
+                    animId = requestAnimationFrame(frame);
                 };
-
-                channel.port2.onmessage = async () => {
-                    if (!isRunning) return;
-                    frame();
-                    await device.queue.onSubmittedWorkDone();
-                    if (isRunning) channel.port1.postMessage(null);
-                };
-
-                channel.port1.postMessage(null);
-
+                animId = requestAnimationFrame(frame);
                 activeCleanup = () => {
-                    isRunning = false;
+                    cancelAnimationFrame(animId);
                     window.onresize = null;
                 };
             };
@@ -1257,8 +1248,10 @@
                 const gpuCanvas = resetCanvas();
                 sharedCanvasEvents(gpuCanvas);
 
-                const gl = gpuCanvas.getContext('webgl2', { powerPreference: "high-performance", desynchronized: true });
+                const gl = gpuCanvas.getContext('webgl2', { powerPreference: "high-performance" });
                 if (!gl) { alert("WebGL 2.0 Not Supported"); return; }
+                
+                let animId;
 
                 const quadBuffer = gl.createBuffer();
                 gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
@@ -1377,9 +1370,6 @@
                 window.onresize = () => onConfigChange(false);
 
                 let frames = 0, lastTime = performance.now(), lastDt = performance.now();
-                let isRunning = true;
-                let sync = null;
-                const channel = new MessageChannel();
                 const frame = () => {
                     const now = performance.now();
                     const dt = (now - lastDt) * 0.001;
@@ -1434,31 +1424,12 @@
 
                     gl.useProgram(program);
                     gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+                    animId = requestAnimationFrame(frame);
                 };
-
-                const loop = () => {
-                    if (!isRunning) return;
-                    if (sync) {
-                        const res = gl.clientWaitSync(sync, 0, 0);
-                        if (res === gl.TIMEOUT_EXPIRED || res === gl.WAIT_FAILED) {
-                            channel.port1.postMessage(null);
-                            return;
-                        }
-                        gl.deleteSync(sync);
-                        sync = null;
-                    }
-                    frame();
-                    sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
-                    gl.flush();
-                    channel.port1.postMessage(null);
-                };
-
-                channel.port2.onmessage = loop;
-                channel.port1.postMessage(null);
-
+                animId = requestAnimationFrame(frame);
                 activeCleanup = () => {
-                    isRunning = false;
-                    if (sync) gl.deleteSync(sync);
+                    cancelAnimationFrame(animId);
                     window.onresize = null;
                 };
             };
