@@ -1378,8 +1378,11 @@
 
                 let frames = 0, lastTime = performance.now(), lastDt = performance.now();
                 let isRunning = true;
-                let sync = null;
+                
+                let syncs = [];
+                const MAX_IN_FLIGHT = 2; 
                 const channel = new MessageChannel();
+
                 const frame = () => {
                     const now = performance.now();
                     const dt = (now - lastDt) * 0.001;
@@ -1439,18 +1442,23 @@
                 const loop = () => {
                     if (!isRunning) return;
                     
-                    if (sync) {
-                        const res = gl.clientWaitSync(sync, 0, 0);
+                    while (syncs.length > 0) {
+                        const res = gl.clientWaitSync(syncs[0], 0, 0);
                         if (res === gl.TIMEOUT_EXPIRED || res === gl.WAIT_FAILED) {
-                            setTimeout(loop, 0); 
-                            return;
+                            break;
                         }
-                        gl.deleteSync(sync);
-                        sync = null;
+                        gl.deleteSync(syncs.shift());
                     }
-                    frame();
-                    sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+
+                    if (syncs.length >= MAX_IN_FLIGHT) {
+                        setTimeout(loop, 1);
+                        return;
+                    }
+
+                    frame(); 
+                    syncs.push(gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0));
                     gl.flush();
+
                     channel.port1.postMessage(null);
                 };
 
@@ -1459,7 +1467,7 @@
 
                 activeCleanup = () => {
                     isRunning = false;
-                    if (sync) gl.deleteSync(sync);
+                    syncs.forEach(s => gl.deleteSync(s));
                     window.onresize = null;
                 };
             };
