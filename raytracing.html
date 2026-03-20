@@ -1441,7 +1441,7 @@
                     if (sync) {
                         const res = gl.clientWaitSync(sync, 0, 0);
                         if (res === gl.TIMEOUT_EXPIRED || res === gl.WAIT_FAILED) {
-                            setTimeout(loop, 1);
+                            setTimeout(loop, 10);
                             return;
                         }
                         gl.deleteSync(sync);
