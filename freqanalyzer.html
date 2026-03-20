@@ -1453,10 +1453,23 @@
 
             function resize() {
                 const dpr = window.devicePixelRatio || 1;
+                const innerW = window.innerWidth;
+                const innerH = window.innerHeight;
+                const screenW = window.screen.width;
+                const screenH = window.screen.height;
+                const minInner = Math.min(innerW, innerH);
+                const minScreen = Math.min(screenW, screenH);
+                
+                let zoomRatio = minInner / minScreen;
+                if (zoomRatio < 1.0) zoomRatio = 1.0; 
+                
+                const effectiveDPR = dpr / zoomRatio;
                 const superSample = 2;
-                canvas.width = visContainer.clientWidth * dpr * superSample;
-                canvas.height = visContainer.clientHeight * dpr * superSample;
-                ctx.scale(dpr * superSample, dpr * superSample);
+                const scale = effectiveDPR * superSample; 
+
+                canvas.width = visContainer.clientWidth * scale;
+                canvas.height = visContainer.clientHeight * scale;
+                ctx.scale(scale, scale);
             }
             window.addEventListener('resize', resize);
             resize();
@@ -2392,10 +2405,23 @@
 
             function resize() {
                 const dpr = window.devicePixelRatio || 1;
+                const innerW = window.innerWidth;
+                const innerH = window.innerHeight;
+                const screenW = window.screen.width;
+                const screenH = window.screen.height;
+                const minInner = Math.min(innerW, innerH);
+                const minScreen = Math.min(screenW, screenH);
+                
+                let zoomRatio = minInner / minScreen;
+                if (zoomRatio < 1.0) zoomRatio = 1.0; 
+                
+                const effectiveDPR = dpr / zoomRatio;
                 const superSample = 2;
-                canvas.width = visContainer.clientWidth * dpr * superSample;
-                canvas.height = visContainer.clientHeight * dpr * superSample;
-                ctx.scale(dpr * superSample, dpr * superSample);
+                const scale = effectiveDPR * superSample; 
+
+                canvas.width = visContainer.clientWidth * scale;
+                canvas.height = visContainer.clientHeight * scale;
+                ctx.scale(scale, scale);
             }
             window.addEventListener('resize', resize);
             resize();
