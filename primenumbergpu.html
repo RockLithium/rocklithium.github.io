@@ -319,8 +319,8 @@
 
     <script>
         const MIN_EXPONENT = 1; 
-        const MAX_EXPONENT = 31;
-        const MAX_VALUE_NUM = 2147483648n;
+        const MAX_EXPONENT = 32;
+        const MAX_VALUE_NUM = 4294967295n;
         const GPU_BATCH_SIZE = 1 << 21;
         const SAVE_CHUNK_SIZE = 1 << 28; 
 
@@ -341,15 +341,21 @@
         const workerCode = `
             self.onmessage = function(e) {
                 const { data, index } = e.data;
-                let str = "";
-                let count = 0;
+                let arr = [];
                 for(let i = 0; i < data.length; i++) {
                     if(data[i] !== 0) {
-                        str += data[i] + " ";
-                        count++;
+                        arr.push(data[i]);
                     }
                 }
-                self.postMessage({str, count, index});
+                
+                let str = "";
+                if (arr.length > 0) {
+                    str = arr.join(" ") + " ";
+                }
+                
+                const blob = new Blob([str], { type: 'text/plain' });
+                
+                self.postMessage({blob: blob, count: arr.length, index: index});
             };
         `;
 
@@ -395,7 +401,12 @@
                 if (isNaN(exp)) exp = currentExponent;
                 let clampedExp = Math.min(MAX_EXPONENT, Math.max(MIN_EXPONENT, exp));
                 if (exp !== clampedExp) exponentInput.value = clampedExp;
-                limit = (1n << BigInt(clampedExp));
+                
+                if (clampedExp === 32) {
+                    limit = 4294967295n; 
+                } else {
+                    limit = (1n << BigInt(clampedExp));
+                }
                 currentExponent = clampedExp;
             } else {
                 try {
@@ -465,7 +476,10 @@
 
             let current = 3n;
             const max = STAGE_MAX_NUMBER;
-            if (max >= 2n) { accumulatedParts.push("2 "); totalPrimeCount++; }
+            if (max >= 2n) { 
+                accumulatedParts.push(new Blob(["2 "], { type: 'text/plain' })); 
+                totalPrimeCount++; 
+            }
 
             const outputBuf = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
             const readBuf = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
@@ -540,7 +554,7 @@
                     const workerIndex = i;
                     
                     w.onmessage = (e) => {
-                        tempResults[workerIndex] = e.data.str;
+                        tempResults[workerIndex] = e.data.blob;
                         tempCounts[workerIndex] = e.data.count;
                         w.terminate();
                         resolve();
@@ -560,7 +574,7 @@
             await Promise.all(promises);
             
             for (let i = 0; i < tempResults.length; i++) {
-                if (tempResults[i]) {
+                if (tempResults[i] && tempCounts[i] > 0) {
                     accumulatedParts.push(tempResults[i]);
                     totalPrimeCount += tempCounts[i];
                 }
@@ -571,9 +585,25 @@
         }
 
         function updateUIProgress(cur, max) {
-            let displayCur = cur > max ? max : cur;
-            const percent = Number((displayCur * 10000n) / max) / 100;
-            currentProgress.textContent = `${Number(displayCur).toLocaleString()} / ${Number(max).toLocaleString()}`;
+            let displayCur = Number(cur > max ? max : cur);
+            let numMax = Number(max);
+
+            function getEffort(x) {
+                if (x <= 2) return 0;
+                return x * Math.log(x) - x;
+            }
+
+            const currentEffort = getEffort(displayCur);
+            const totalEffort = getEffort(numMax);
+
+            let percent = 0;
+            if (totalEffort > 0) {
+                percent = (currentEffort / totalEffort) * 100;
+            } else {
+                percent = 100;
+            }
+
+            currentProgress.textContent = `${displayCur.toLocaleString()} / ${numMax.toLocaleString()}`;
             progressFill.style.width = percent.toFixed(2) + "%";
             progressFill.textContent = percent.toFixed(2) + "%";
         }
@@ -601,13 +631,21 @@
         }
 
         window.downloadPrimes = function() {
-            const blob = new Blob(accumulatedParts, { type: 'text/plain' });
+            if (!accumulatedParts || accumulatedParts.length === 0) {
+                alert('没有质数可以下载。');
+                return;
+            }
+
+            const blob = new Blob(accumulatedParts, { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
+            a.style.display = 'none';
             a.href = url;
-            a.download = `primes_up_to_${Number(STAGE_MAX_NUMBER)}.txt`;
+            a.download = `primes_up_to_${Number(STAGE_MAX_NUMBER).toLocaleString('en-US')}.txt`;
+            document.body.appendChild(a);
             a.click();
-            URL.revokeObjectURL(url);
+            window.URL.revokeObjectURL(url);
+            a.remove();
         }
     </script>
 </body>

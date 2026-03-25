@@ -321,10 +321,10 @@
     <script>
         (function() {
             const MIN_EXPONENT = 1; 
-            const MAX_EXPONENT = 31;
+            const MAX_EXPONENT = 35;
             const DEFAULT_EXPONENT = 24; 
             const BATCH_MULTIPLIER = 1024; 
-            const MAX_LIMIT_BIGINT = 1n << 31n;
+            const MAX_LIMIT_BIGINT = 1n << 35n;
             
             const CHUNK_LIMIT_EXPONENT = 28;
             const CHUNK_LIMIT_BIGINT = 1n << BigInt(CHUNK_LIMIT_EXPONENT); 
@@ -352,7 +352,7 @@
             let checksCompleted = 0n; 
             
             let chunkPrimes = new Set(); 
-            let accumulatedPrimesStrings = []; 
+            let accumulatedPrimesBlobs = []; 
             
             let coreStatuses = []; 
             
@@ -361,7 +361,9 @@
             
             let searchStageStartTime = 0; 
             let totalSearchTime = 0;      
-            let totalSortTime = 0;        
+            let totalSortTime = 0;
+            let totalPrimeCount = 0;
+            const getEffort = (x) => (x <= 2 ? 0 : x * Math.log(x) - x);
             
             window.finalPrimesContentParts = []; 
 
@@ -417,11 +419,21 @@
                         return false; 
                     }
 
-                    const bases = [2n, 7n, 61n];
+                    const bases_small = [2n, 7n, 61n];
+                    const bases_large = [2n, 3n, 5n, 7n, 11n];
+                    const THRESHOLD_32 = 4294967296n;
 
                     function isBigIntPrime(n) {
                         if (n <= 1n) return false;
-                        for (const a of bases) {
+                        if (n % 3n === 0n) return n === 3n;
+                        if (n % 5n === 0n) return n === 5n;
+                        if (n % 7n === 0n) return n === 7n;
+                        if (n % 11n === 0n) return n === 11n;
+                        
+                        const bases = n <= THRESHOLD_32 ? bases_small : bases_large;
+                        
+                        for (let i = 0; i < bases.length; i++) {
+                            const a = bases[i];
                             if (n === a) return true;
                             if (!millerRabin(n, a)) return false;
                         }
@@ -721,37 +733,33 @@
             
             function updateOverallProgress() {
                 let progressPercentage = 0;
-                let currentCountStr = checksCompleted.toLocaleString();
-                let totalCountStr = totalChecks.toLocaleString();
-
-                let numCur = Number(checksCompleted * 2n + 1n); 
                 let numMax = Number(STAGE_MAX_NUMBER);
+                let numCur = Number(checksCompleted * 2n);
 
-                function getEffort(x) {
-                    if (x <= 2) return 0;
-                    return x * Math.log(x) - x;
+                const totalEffort = getEffort(numMax);
+
+                if (currentStageIndex === 1 || currentStageIndex === 1.1) {
+                    if (totalEffort > 0) {
+                        progressPercentage = (getEffort(Math.min(numCur, numMax)) / totalEffort) * 100;
+                    } else {
+                        progressPercentage = 100;
+                    }
+                } else if (currentStageIndex === 2) {
+                    progressPercentage = 100;
                 }
+
+                const currentCountStr = checksCompleted.toLocaleString();
+                const totalCountStr = totalChecks.toLocaleString();
 
                 if (currentStageIndex === 1) {
                     currentStageDisplay.textContent = '并行查找 (Miller-Rabin)'; 
-                    
-                    if (numMax > 2) {
-                        const currentEffort = getEffort(numCur);
-                        const totalEffort = getEffort(numMax);
-                        progressPercentage = Math.min(100, (currentEffort / totalEffort) * 100);
-                    } else {
-                         progressPercentage = 100;
-                    }
-
                     progressLabel.textContent = `已检查数字量 (总 ${totalCountStr}):`; 
                 } else if (currentStageIndex === 1.1) {
                     currentStageDisplay.textContent = '同步快速排序 & 结果处理'; 
-                    progressPercentage = Math.min(100, (Number(checksCompleted * 10000n / totalChecks) / 100)); 
                     progressLabel.textContent = `查找阶段已完成 (总 ${totalCountStr}):`;
                 } else if (currentStageIndex === 2) {
                     currentStageDisplay.textContent = '已完成';
                     progressLabel.textContent = `查找阶段已完成 (总 ${totalCountStr}):`;
-                    progressPercentage = 100;
                 } else {
                     currentStageDisplay.textContent = '等待配置';
                     progressLabel.textContent = `总进度:`;
@@ -821,9 +829,10 @@
                 const primesArray = Array.from(chunkPrimes);
                 primesArray.sort((a, b) => (a < b ? -1 : (a > b ? 1 : 0))); 
                 
-                const chunkContent = primesArray.map(p => p.toString()).join(' ');
-                if (chunkContent.length > 0) {
-                    accumulatedPrimesStrings.push(chunkContent);
+                if (primesArray.length > 0) {
+                    const chunkContent = primesArray.map(p => p.toString()).join(' ') + ' ';
+                    accumulatedPrimesBlobs.push(new Blob([chunkContent], { type: 'text/plain' }));
+                    totalPrimeCount += primesArray.length;
                 }
                 
                 chunkPrimes.clear();
@@ -888,9 +897,10 @@
                 totalSearchTime = 0;
                 totalSortTime = 0; 
                 checksCompleted = 0n;
+                totalPrimeCount = 0;
                 
                 chunkPrimes = new Set(); 
-                accumulatedPrimesStrings = [];
+                accumulatedPrimesBlobs = [];
                 window.finalPrimesContentParts = [];
                 nextSearchStart = 3n;
                 
@@ -990,63 +1000,44 @@
             }
             
             function finishFinalStage() {
-                
                 isRunning = false;
                 currentStageIndex = 2; 
-                
-                let finalDownloadParts = [];
-                let totalPrimes = 0; 
-                
-                if (STAGE_MAX_NUMBER >= 2n) {
-                    finalDownloadParts.push('2');
-                    totalPrimes = 1; 
-                }
                 
                 if (chunkPrimes.size > 0) {
                     const primesArray = Array.from(chunkPrimes);
                     primesArray.sort((a, b) => (a < b ? -1 : (a > b ? 1 : 0))); 
-                    const chunkContent = primesArray.map(p => p.toString()).join(' ');
-                    
-                    if (chunkContent.length > 0) {
-                        accumulatedPrimesStrings.push(chunkContent);
+                    if (primesArray.length > 0) {
+                        const chunkContent = primesArray.map(p => p.toString()).join(' ') + ' ';
+                        accumulatedPrimesBlobs.push(new Blob([chunkContent], { type: 'text/plain' }));
+                        totalPrimeCount += primesArray.length;
                     }
                     chunkPrimes.clear(); 
                 }
 
-                for (let i = 0; i < accumulatedPrimesStrings.length; i++) {
-                    const chunkContent = accumulatedPrimesStrings[i];
-                    if (chunkContent.length > 0) {
-                        if (finalDownloadParts.length > 0 && finalDownloadParts[finalDownloadParts.length - 1] !== ' ') {
-                            finalDownloadParts.push(' ');
-                        }
-                        
-                        finalDownloadParts.push(chunkContent);
-                        
-                        totalPrimes += chunkContent.split(' ').length;
-                    }
+                if (STAGE_MAX_NUMBER >= 2n) {
+                    accumulatedPrimesBlobs.unshift(new Blob(['2 '], { type: 'text/plain' }));
+                    totalPrimeCount += 1; 
                 }
                 
                 updateElapsedTime(true); 
                 stopTimer(); 
                 const finalTime = totalTimeElapsed; 
-                
                 totalSortTime = finalTime - totalSearchTime; 
                 
                 const totalTimeFormatted = (finalTime / 1000).toFixed(3);
                 const searchTimeFormatted = (totalSearchTime / 1000).toFixed(3);
                 const sortTimeFormatted = (totalSortTime / 1000).toFixed(3);
 
-                resultSummary.textContent = `共发现 ${totalPrimes.toLocaleString()} 个质数，总耗时 ${totalTimeFormatted} 秒。`
+                resultSummary.textContent = `共发现 ${totalPrimeCount.toLocaleString()} 个质数，总耗时 ${totalTimeFormatted} 秒。`
                                           + `查找累计耗时 ${searchTimeFormatted} 秒，`
                                           + `排序和整理累计耗时 ${sortTimeFormatted} 秒。`; 
 
                 resultArea.style.display = 'block';
-
                 stageMessage.textContent = `✅ 计算任务已完成！结果已准备好下载。`;
                 updateOverallProgress(); 
                 updateButtonUI(); 
                 
-                window.finalPrimesContentParts = finalDownloadParts; 
+                window.finalPrimesContentParts = accumulatedPrimesBlobs; 
             }
 
             function stopStressTest() {
