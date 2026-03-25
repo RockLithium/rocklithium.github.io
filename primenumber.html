@@ -383,7 +383,9 @@
                             runMillerRabinStep(
                                 BigInt(e.data.start_num), 
                                 BigInt(e.data.max_num), 
-                                BigInt(e.data.step)
+                                BigInt(e.data.worker_idx),
+                                BigInt(e.data.total_workers),
+                                BigInt(e.data.block_size_odds)
                             );
                         }
                     };
@@ -402,13 +404,10 @@
                     function millerRabin(n, a) {
                         if (n === a) return true;
                         if (n % a === 0n) return false;
-
                         let d = n - 1n;
                         while (d % 2n === 0n) d /= 2n;
-
                         let x = power(a, d, n);
                         if (x === 1n || x === n - 1n) return true;
-
                         while (d !== n - 1n) {
                             x = (x * x) % n;
                             d *= 2n;
@@ -422,7 +421,6 @@
 
                     function isBigIntPrime(n) {
                         if (n <= 1n) return false;
-                        
                         for (const a of bases) {
                             if (n === a) return true;
                             if (!millerRabin(n, a)) return false;
@@ -430,31 +428,36 @@
                         return true;
                     }
 
-                    function runMillerRabinStep(startNum, maxNum, step) {
+                    function runMillerRabinStep(startNum, maxNum, workerIdx, totalWorkers, blockSizeOdds) {
                         let primes = [];
                         let checksInBatch = 0n; 
                         
-                        // 循环条件：n <= maxNum 且 Worker 未停止
-                        for (let n = startNum; n <= maxNum && isWorkerRunning; n += step) {
+                        let blockIdx = workerIdx;
+                        while (isWorkerRunning) {
+                            let blockStart = startNum + blockIdx * blockSizeOdds * 2n;
+                            if (blockStart > maxNum) break;
                             
-                            checksInBatch += 1n; 
-
-                            if (isBigIntPrime(n)) {
-                                primes.push(n.toString());
+                            let blockEnd = blockStart + (blockSizeOdds - 1n) * 2n;
+                            if (blockEnd > maxNum) blockEnd = maxNum;
+                            
+                            for (let n = blockStart; n <= blockEnd && isWorkerRunning; n += 2n) {
+                                checksInBatch += 1n; 
+                                if (isBigIntPrime(n)) {
+                                    primes.push(n.toString());
+                                }
+                                if (checksInBatch >= BATCH_SIZE_N) {
+                                    self.postMessage({ 
+                                        command: 'progress_miller_rabin', 
+                                        workerId: workerId,
+                                        current_num: n.toString(),
+                                        checks_done: checksInBatch.toString() 
+                                    });
+                                    checksInBatch = 0n; 
+                                }
                             }
-
-                            if (checksInBatch >= BATCH_SIZE_N) {
-                                self.postMessage({ 
-                                    command: 'progress_miller_rabin', 
-                                    workerId: workerId,
-                                    current_num: n.toString(),
-                                    checks_done: checksInBatch.toString() 
-                                });
-                                checksInBatch = 0n; 
-                            }
+                            blockIdx += totalWorkers;
                         }
                         
-                        // 无论循环是否因 maxNum 结束，只要 Worker 未被主动停止，都发送 finished_step
                         if (isWorkerRunning) {
                             self.postMessage({
                                 command: 'finished_step',
@@ -463,22 +466,10 @@
                                 primes: primes
                             });
                         }
-                        
-                        // 最终完成信号
                         self.postMessage({ command: 'task_complete', workerId: workerId });
                     }
                 `;
             }
-
-
-            function shuffleArray(array) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-            }
-
-
             
             window.toggleMode = function() {
                 const currentLimitBigInt = parseLimitInput(exponentInput.value); 
@@ -733,11 +724,21 @@
                 let currentCountStr = checksCompleted.toLocaleString();
                 let totalCountStr = totalChecks.toLocaleString();
 
+                let numCur = Number(checksCompleted * 2n + 1n); 
+                let numMax = Number(STAGE_MAX_NUMBER);
+
+                function getEffort(x) {
+                    if (x <= 2) return 0;
+                    return x * Math.log(x) - x;
+                }
+
                 if (currentStageIndex === 1) {
                     currentStageDisplay.textContent = '并行查找 (Miller-Rabin)'; 
                     
-                    if (totalChecks > 0n) {
-                        progressPercentage = Math.min(100, (Number(checksCompleted * 10000n / totalChecks) / 100)); 
+                    if (numMax > 2) {
+                        const currentEffort = getEffort(numCur);
+                        const totalEffort = getEffort(numMax);
+                        progressPercentage = Math.min(100, (currentEffort / totalEffort) * 100);
                     } else {
                          progressPercentage = 100;
                     }
@@ -945,28 +946,20 @@
 
                 const maxNum = currentSearchLimit;
                 const startNum = nextSearchStart; 
-                const step = BigInt(WORKER_COUNT) * 2n; 
                 const BATCH_SIZE_N = BigInt(SYSTEM_CORE_COUNT) * BigInt(BATCH_MULTIPLIER);
                 
-                const startingOddNumbers = [];
-                for (let i = 0; i < WORKER_COUNT; i++) {
-                    let workerStart = startNum + BigInt(i) * 2n;
-                    if (workerStart <= maxNum) {
-                         startingOddNumbers.push(workerStart);
-                    }
-                }
-                
-                shuffleArray(startingOddNumbers);
+                const totalOdds = (maxNum - startNum) / 2n + 1n;
+                let blockSizeOdds = totalOdds / (BigInt(WORKER_COUNT) * 10n);
+                if (blockSizeOdds < 1n) blockSizeOdds = 1n;
+                if (blockSizeOdds > 262144n) blockSizeOdds = 262144n;
 
-                workers.forEach(w => {try{w.terminate()}catch(e){/*ignore*/}});
+                workers.forEach(w => {try{w.terminate()}catch(e){}});
                 workers = [];
                 initializeCoreStatusContainers(WORKER_COUNT);
 
                 for (let i = 0; i < WORKER_COUNT; i++) {
-                    let workerStart = startingOddNumbers[i]; 
-
-                    if (!workerStart) {
-                        coreStatuses[i].currentP = `Queue Empty`;
+                    if (totalOdds <= BigInt(i) && blockSizeOdds === 1n) {
+                        coreStatuses[i].currentP = "Queue Empty";
                         coreStatuses[i].isFinished = true;
                         updateCoreStatusUI(i);
                         continue;
@@ -976,21 +969,24 @@
                     worker.onmessage = handleWorkerMessage;
                     workers.push(worker);
                     
-                    coreStatuses[i].currentP = workerStart.toLocaleString(); 
+                    let firstNum = startNum + BigInt(i) * blockSizeOdds * 2n;
+                    coreStatuses[i].currentP = firstNum <= maxNum ? firstNum.toLocaleString() : "N/A";
                     coreStatuses[i].isFinished = false;
                     updateCoreStatusUI(i);
 
                     workers[i].postMessage({
                         command: 'start_miller_rabin_step',
                         workerId: i,
-                        start_num: workerStart.toString(),
+                        start_num: startNum.toString(),
                         max_num: maxNum.toString(),
-                        step: step.toString(),
+                        worker_idx: i.toString(),
+                        total_workers: WORKER_COUNT.toString(),
+                        block_size_odds: blockSizeOdds.toString(),
                         batch_size: BATCH_SIZE_N.toString()
                     });
                 }
                 
-                checkAllWorkersFinished(); 
+                checkAllWorkersFinished();
             }
             
             function finishFinalStage() {
@@ -1089,8 +1085,7 @@
             
             window.downloadPrimes = function() {
                 const contentParts = window.finalPrimesContentParts;
-
-                if (!contentParts || contentParts.length === 0 || contentParts.join('').trim() === '') {
+                if (!contentParts || contentParts.length === 0) {
                     alert('没有质数可以下载。');
                     return;
                 }
