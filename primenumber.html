@@ -764,18 +764,34 @@
                     progressPercentage = 100;
                 }
 
-                const currentCountStr = checksCompleted.toLocaleString();
-                const totalCountStr = totalChecks.toLocaleString();
+                let maxCurrentNum = 0n;
+                for (let s of coreStatuses) {
+                    let pStr = s.currentP;
+                    if (pStr !== 'N/A' && !pStr.startsWith('Finished') && !pStr.startsWith('Queue')) {
+                        let num = BigInt(pStr.replace(/,/g, ''));
+                        if (num > maxCurrentNum) maxCurrentNum = num;
+                    } else if (pStr.startsWith('Finished')) {
+                         maxCurrentNum = currentSearchLimit; 
+                    }
+                }
+                
+                let displayCurrentNum = maxCurrentNum > STAGE_MAX_NUMBER ? STAGE_MAX_NUMBER : maxCurrentNum;
+                if (displayCurrentNum === 0n && currentStageIndex === 1) {
+                     displayCurrentNum = nextSearchStart;
+                }
+                
+                const currentCountStr = displayCurrentNum.toLocaleString();
+                const totalCountStr = STAGE_MAX_NUMBER.toLocaleString();
 
                 if (currentStageIndex === 1) {
                     currentStageDisplay.textContent = '并行查找 (Miller-Rabin)'; 
-                    progressLabel.textContent = `已检查数字量 (总 ${totalCountStr}):`; 
+                    progressLabel.textContent = `总进度:`; 
                 } else if (currentStageIndex === 1.1) {
                     currentStageDisplay.textContent = '同步快速排序 & 结果处理'; 
-                    progressLabel.textContent = `当前排查进度 (总 ${totalCountStr}):`;
+                    progressLabel.textContent = `总进度:`;
                 } else if (currentStageIndex === 2) {
                     currentStageDisplay.textContent = '已完成';
-                    progressLabel.textContent = `查找阶段已完成 (总 ${totalCountStr}):`;
+                    progressLabel.textContent = `总进度:`;
                 } else {
                     currentStageDisplay.textContent = '等待配置';
                     progressLabel.textContent = `总进度:`;

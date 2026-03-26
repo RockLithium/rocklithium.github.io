@@ -233,7 +233,7 @@
         </div>
     </div>
 
-    <script id="webgpu-shader" type="text/plain">
+    <script id="webgpu-shader-32" type="text/plain">
         struct Params {
             start_num: u32,
             limit: u32,
@@ -241,46 +241,60 @@
         @group(0) @binding(0) var<uniform> params: Params;
         @group(0) @binding(1) var<storage, read_write> output_data: array<u32>;
 
-        fn mul_mod(a: u32, b: u32, m: u32) -> u32 {
-            var res: u32 = 0;
-            var a_m = a % m;
-            var b_m = b;
-            
-            while (b_m > 0) {
-                if ((b_m & 1u) == 1u) {
-                    if (res >= m - a_m) {
-                        res = res + a_m - m;
-                    } else {
-                        res = res + a_m;
-                    }
-                }
-                if (a_m >= m - a_m) {
-                    a_m = a_m * 2u - m;
-                } else {
-                    a_m = a_m * 2u;
-                }
-                b_m >>= 1u;
-            }
-            return res;
+        struct U64 { lo: u32, hi: u32 };
+
+        fn mul32x32_64(a: u32, b: u32) -> U64 {
+            let a_lo = a & 0xFFFFu; let a_hi = a >> 16u;
+            let b_lo = b & 0xFFFFu; let b_hi = b >> 16u;
+            let p0 = a_lo * b_lo;
+            let p1 = a_hi * b_lo;
+            let p2 = a_lo * b_hi;
+            let p3 = a_hi * b_hi;
+            let mid1 = p1 + (p0 >> 16u);
+            let mid2 = p2 + (mid1 & 0xFFFFu);
+            let lo = (mid2 << 16u) | (p0 & 0xFFFFu);
+            let hi = p3 + (mid1 >> 16u) + (mid2 >> 16u);
+            return U64(lo, hi);
         }
 
-        fn pow_mod(base: u32, exp: u32, m: u32) -> u32 {
-            var res: u32 = 1u;
-            var b = base % m;
-            var e = exp;
-            while (e > 0u) {
-                if ((e & 1u) == 1u) { res = mul_mod(res, b, m); }
-                b = mul_mod(b, b, m);
-                e >>= 1u;
+        fn modInverse32(n: u32) -> u32 {
+            var x = n;
+            x = x * (2u - n * x);
+            x = x * (2u - n * x);
+            x = x * (2u - n * x);
+            x = x * (2u - n * x);
+            return x;
+        }
+
+        fn mont_mul_32(a: u32, b: u32, n: u32, n_prime: u32) -> u32 {
+            let T = mul32x32_64(a, b);
+            let m = T.lo * n_prime;
+            let m_n = mul32x32_64(m, n);
+            let carry = select(0u, 1u, T.lo + m_n.lo < T.lo);
+            var t = T.hi + m_n.hi + carry;
+            let overflow = select(0u, 1u, t < T.hi || (t == T.hi && carry == 1u));
+            if (overflow == 1u || t >= n) { t -= n; }
+            return t;
+        }
+
+        fn shift_mod_32(a: u32, shift: u32, n: u32) -> u32 {
+            var res = a;
+            for (var i = 0u; i < shift; i++) {
+                let carry = select(0u, 1u, res >= 0x80000000u);
+                res = res << 1u;
+                if (carry == 1u || res >= n) {
+                    res -= n;
+                }
             }
             return res;
         }
 
         fn is_prime(n: u32) -> bool {
             if (n < 2u) { return false; }
-            if (n == 2u || n == 3u) { return true; }
-            if ((n & 1u) == 0u) { return false; }
-            
+            if (n == 7u || n == 11u) { return true; }
+            if (n * 0xB6DB6DB7u <= 0x24924924u) { return false; }
+            if (n * 0xBA2E8BA3u <= 0x1745D174u) { return false; }
+
             var d = n - 1u;
             var s = 0u;
             while ((d & 1u) == 0u) { 
@@ -288,15 +302,32 @@
                 s += 1u; 
             }
             
+            let n_prime = ~modInverse32(n) + 1u;
+            let one_mont = shift_mod_32(1u, 32u, n);
             let bases = array<u32, 3>(2u, 7u, 61u);
+            
             for (var i = 0; i < 3; i++) {
                 let a = bases[i];
                 if (n <= a) { break; }
-                var x = pow_mod(a, d, n);
+                
+                let a_mont = shift_mod_32(a, 32u, n);
+                var x_mont = one_mont;
+                var b = a_mont;
+                var e = d;
+                
+                while (e > 0u) {
+                    if ((e & 1u) == 1u) { x_mont = mont_mul_32(x_mont, b, n, n_prime); }
+                    b = mont_mul_32(b, b, n, n_prime);
+                    e >>= 1u;
+                }
+                
+                var x = mont_mul_32(x_mont, 1u, n, n_prime);
                 if (x == 1u || x == n - 1u) { continue; }
+                
                 var composite = true;
                 for (var r = 1u; r < s; r++) {
-                    x = mul_mod(x, x, n);
+                    x_mont = mont_mul_32(x_mont, x_mont, n, n_prime);
+                    x = mont_mul_32(x_mont, 1u, n, n_prime);
                     if (x == n - 1u) {
                         composite = false;
                         break;
@@ -310,17 +341,241 @@
         @compute @workgroup_size(64)
         fn main(@builtin(global_invocation_id) id: vec3<u32>) {
             let index = id.x;
-            let n = params.start_num + (index * 2u);
-            if (n > params.limit) { return; }
+            let offsets = array<u32, 8>(1u, 7u, 11u, 13u, 17u, 19u, 23u, 29u);
             
+            let offset_val = (index / 8u) * 30u + offsets[index % 8u];
+            let n = params.start_num + offset_val;
+            
+            if (n < params.start_num || n > params.limit) { 
+                output_data[index] = 0u;
+                return; 
+            }
             output_data[index] = select(0u, n, is_prime(n));
+        }
+    </script>
+
+    <script id="webgpu-shader-64" type="text/plain">
+        struct Params64 {
+            start_num_lo: u32,
+            start_num_hi: u32,
+            limit_lo: u32,
+            limit_hi: u32,
+        };
+        @group(0) @binding(0) var<uniform> params: Params64;
+        @group(0) @binding(1) var<storage, read_write> output_data: array<vec2<u32>>;
+
+        struct U64 { lo: u32, hi: u32 };
+        struct U128 { d0: u32, d1: u32, d2: u32, d3: u32 };
+
+        fn cmp(a: U64, b: U64) -> i32 {
+            if (a.hi > b.hi) { return 1; }
+            if (a.hi < b.hi) { return -1; }
+            if (a.lo > b.lo) { return 1; }
+            if (a.lo < b.lo) { return -1; }
+            return 0;
+        }
+
+        fn add64(a: U64, b: U64) -> U64 {
+            let lo = a.lo + b.lo;
+            let carry = select(0u, 1u, lo < a.lo);
+            return U64(lo, a.hi + b.hi + carry);
+        }
+
+        fn sub64(a: U64, b: U64) -> U64 {
+            let lo = a.lo - b.lo;
+            let borrow = select(0u, 1u, a.lo < b.lo);
+            return U64(lo, a.hi - b.hi - borrow);
+        }
+
+        fn shr1(a: U64) -> U64 {
+            return U64((a.lo >> 1u) | ((a.hi & 1u) << 31u), a.hi >> 1u);
+        }
+
+        fn mul32x32_64(a: u32, b: u32) -> U64 {
+            let a_lo = a & 0xFFFFu; let a_hi = a >> 16u;
+            let b_lo = b & 0xFFFFu; let b_hi = b >> 16u;
+            let p0 = a_lo * b_lo;
+            let p1 = a_hi * b_lo;
+            let p2 = a_lo * b_hi;
+            let p3 = a_hi * b_hi;
+            let mid1 = p1 + (p0 >> 16u);
+            let mid2 = p2 + (mid1 & 0xFFFFu);
+            let lo = (mid2 << 16u) | (p0 & 0xFFFFu);
+            let hi = p3 + (mid1 >> 16u) + (mid2 >> 16u);
+            return U64(lo, hi);
+        }
+
+        fn mul64(a: U64, b: U64) -> U64 {
+            let p0 = mul32x32_64(a.lo, b.lo);
+            let hi = p0.hi + a.lo * b.hi + a.hi * b.lo;
+            return U64(p0.lo, hi);
+        }
+
+        fn mul64_wide(a: U64, b: U64) -> U128 {
+            let p0 = mul32x32_64(a.lo, b.lo);
+            let p1 = mul32x32_64(a.lo, b.hi);
+            let p2 = mul32x32_64(a.hi, b.lo);
+            let p3 = mul32x32_64(a.hi, b.hi);
+
+            var d0 = p0.lo;
+            var d1 = p0.hi;
+            let add1 = d1 + p1.lo;
+            let c1_1 = select(0u, 1u, add1 < d1);
+            let add2 = add1 + p2.lo;
+            let c1_2 = select(0u, 1u, add2 < add1);
+            d1 = add2;
+            let c1 = c1_1 + c1_2;
+
+            var d2 = p1.hi;
+            let add3 = d2 + p2.hi;
+            let c2_1 = select(0u, 1u, add3 < d2);
+            let add4 = add3 + c1;
+            let c2_2 = select(0u, 1u, add4 < add3);
+            let add5 = add4 + p3.lo;
+            let c2_3 = select(0u, 1u, add5 < add4);
+            d2 = add5;
+            let c2 = c2_1 + c2_2 + c2_3;
+
+            var d3 = p3.hi + c2;
+            return U128(d0, d1, d2, d3);
+        }
+
+        fn add128(a: U128, b: U128) -> U128 {
+            var d0 = a.d0 + b.d0;
+            let c0 = select(0u, 1u, d0 < a.d0);
+            var d1 = a.d1 + b.d1 + c0;
+            let c1 = select(0u, 1u, d1 < a.d1 || (d1 == a.d1 && c0 == 1u));
+            var d2 = a.d2 + b.d2 + c1;
+            let c2 = select(0u, 1u, d2 < a.d2 || (d2 == a.d2 && c1 == 1u));
+            var d3 = a.d3 + b.d3 + c2;
+            return U128(d0, d1, d2, d3);
+        }
+
+        fn modInverse32(n: u32) -> u32 {
+            var x = n;
+            x = x * (2u - n * x);
+            x = x * (2u - n * x);
+            x = x * (2u - n * x);
+            x = x * (2u - n * x);
+            return x;
+        }
+
+        fn modInverse64(n: U64) -> U64 {
+            let inv32 = modInverse32(n.lo);
+            var inv = U64(inv32, 0u);
+            let two = U64(2u, 0u);
+            let nx = mul64(n, inv);
+            let diff = sub64(two, nx);
+            inv = mul64(inv, diff);
+            return sub64(U64(0u, 0u), inv);
+        }
+
+        fn mont_mul(a: U64, b: U64, n: U64, n_prime: U64) -> U64 {
+            let T = mul64_wide(a, b);
+            let m = mul64(U64(T.d0, T.d1), n_prime);
+            let m_n = mul64_wide(m, n);
+            let sum = add128(T, m_n);
+            var t = U64(sum.d2, sum.d3);
+            if (cmp(t, n) >= 0) {
+                t = sub64(t, n);
+            }
+            return t;
+        }
+
+        fn shift_mod(a: U64, shift: u32, n: U64) -> U64 {
+            var res = a;
+            for (var i = 0u; i < shift; i++) {
+                res = add64(res, res);
+                if (cmp(res, n) >= 0) {
+                    res = sub64(res, n);
+                }
+            }
+            return res;
+        }
+
+        fn is_prime_64(n: U64) -> bool {
+            if (n.hi == 0u && n.lo < 2u) { return false; }
+
+            let r_hi7 = n.hi % 7u;
+            let r_lo7 = n.lo % 7u;
+            if ((r_hi7 * 4u + r_lo7) % 7u == 0u) { return false; }
+
+            let r_hi11 = n.hi % 11u;
+            let r_lo11 = n.lo % 11u;
+            if ((r_hi11 * 4u + r_lo11) % 11u == 0u) { return false; }
+            
+            var d = sub64(n, U64(1u, 0u));
+            var s = 0u;
+            while ((d.lo & 1u) == 0u) { 
+                d = shr1(d); 
+                s += 1u; 
+            }
+            
+            let bases = array<u32, 4>(2u, 13u, 23u, 1662803u);
+            let n_minus_1 = sub64(n, U64(1u, 0u));
+            let n_prime = modInverse64(n);
+            let one_mont = shift_mod(U64(1u, 0u), 64u, n);
+            
+            for (var i = 0; i < 4; i++) {
+                let a = U64(bases[i], 0u);
+                if (cmp(a, n) >= 0) { break; }
+                
+                let a_mont = shift_mod(a, 64u, n);
+                var x_mont = one_mont;
+                var b = a_mont;
+                var e = d;
+                while (e.lo > 0u || e.hi > 0u) {
+                    if ((e.lo & 1u) == 1u) { x_mont = mont_mul(x_mont, b, n, n_prime); }
+                    b = mont_mul(b, b, n, n_prime);
+                    e = shr1(e);
+                }
+                
+                var x = mont_mul(x_mont, U64(1u, 0u), n, n_prime);
+                
+                if ((x.lo == 1u && x.hi == 0u) || cmp(x, n_minus_1) == 0) { continue; }
+                
+                var composite = true;
+                for (var r = 1u; r < s; r++) {
+                    x_mont = mont_mul(x_mont, x_mont, n, n_prime);
+                    x = mont_mul(x_mont, U64(1u, 0u), n, n_prime);
+                    if (cmp(x, n_minus_1) == 0) {
+                        composite = false;
+                        break;
+                    }
+                }
+                if (composite) { return false; }
+            }
+            return true;
+        }
+
+        @compute @workgroup_size(64)
+        fn main(@builtin(global_invocation_id) id: vec3<u32>) {
+            let index = id.x;
+            let offsets = array<u32, 8>(1u, 7u, 11u, 13u, 17u, 19u, 23u, 29u);
+            let offset_val = (index / 8u) * 30u + offsets[index % 8u];
+            let offset = U64(offset_val, 0u);
+            
+            let start_n = U64(params.start_num_lo, params.start_num_hi);
+            let n = add64(start_n, offset);
+            let limit_n = U64(params.limit_lo, params.limit_hi);
+            
+            if (cmp(n, limit_n) > 0) { 
+                output_data[index] = vec2<u32>(0u, 0u);
+                return; 
+            }
+            
+            if (is_prime_64(n)) {
+                output_data[index] = vec2<u32>(n.lo, n.hi);
+            } else {
+                output_data[index] = vec2<u32>(0u, 0u);
+            }
         }
     </script>
 
     <script>
         const MIN_EXPONENT = 1; 
-        const MAX_EXPONENT = 32;
-        const MAX_VALUE_NUM = 4294967295n;
+        const MAX_EXPONENT = 40;
+        const MAX_VALUE_NUM = 1099511627776n;
         const GPU_BATCH_SIZE = 1 << 21;
         const SAVE_CHUNK_SIZE = 1 << 28; 
 
@@ -340,11 +595,22 @@
 
         const workerCode = `
             self.onmessage = function(e) {
-                const { data, index } = e.data;
+                const { batches, index } = e.data;
                 let arr = [];
-                for(let i = 0; i < data.length; i++) {
-                    if(data[i] !== 0) {
-                        arr.push(data[i]);
+                for (let b of batches) {
+                    if (b.type === '32') {
+                        for(let i = 0; i < b.data.length; i++) {
+                            if(b.data[i] !== 0) arr.push(b.data[i]);
+                        }
+                    } else {
+                        for(let i = 0; i < b.data.length; i+=2) {
+                            const lo = b.data[i];
+                            const hi = b.data[i+1];
+                            if(lo !== 0 || hi !== 0) {
+                                const primeBigInt = BigInt(hi) * 4294967296n + BigInt(lo);
+                                arr.push(primeBigInt.toString());
+                            }
+                        }
                     }
                 }
                 
@@ -402,11 +668,7 @@
                 let clampedExp = Math.min(MAX_EXPONENT, Math.max(MIN_EXPONENT, exp));
                 if (exp !== clampedExp) exponentInput.value = clampedExp;
                 
-                if (clampedExp === 32) {
-                    limit = 4294967295n; 
-                } else {
-                    limit = (1n << BigInt(clampedExp));
-                }
+                limit = (1n << BigInt(clampedExp));
                 currentExponent = clampedExp;
             } else {
                 try {
@@ -471,50 +733,93 @@
 
             const adapter = await navigator.gpu.requestAdapter();
             const device = await adapter.requestDevice();
-            const shader = device.createShaderModule({ code: document.getElementById('webgpu-shader').textContent });
-            const pipeline = device.createComputePipeline({ layout: 'auto', compute: { module: shader, entryPoint: 'main' } });
+            
+            const shader32 = device.createShaderModule({ code: document.getElementById('webgpu-shader-32').textContent });
+            const pipeline32 = device.createComputePipeline({ layout: 'auto', compute: { module: shader32, entryPoint: 'main' } });
 
-            let current = 3n;
+            const shader64 = device.createShaderModule({ code: document.getElementById('webgpu-shader-64').textContent });
+            const pipeline64 = device.createComputePipeline({ layout: 'auto', compute: { module: shader64, entryPoint: 'main' } });
+
+            let current = 0n;
             const max = STAGE_MAX_NUMBER;
-            if (max >= 2n) { 
-                accumulatedParts.push(new Blob(["2 "], { type: 'text/plain' })); 
-                totalPrimeCount++; 
-            }
+            if (max >= 2n) { accumulatedParts.push(new Blob(["2 "], { type: 'text/plain' })); totalPrimeCount++; }
+            if (max >= 3n) { accumulatedParts.push(new Blob(["3 "], { type: 'text/plain' })); totalPrimeCount++; }
+            if (max >= 5n) { accumulatedParts.push(new Blob(["5 "], { type: 'text/plain' })); totalPrimeCount++; }
 
-            const outputBuf = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
-            const readBuf = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
-            const uniformBuf = device.createBuffer({ size: 8, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+            const outputBuf32 = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
+            const readBuf32 = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+            const uniformBuf32 = device.createBuffer({ size: 8, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+
+            const outputBuf64 = device.createBuffer({ size: GPU_BATCH_SIZE * 8, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
+            const readBuf64 = device.createBuffer({ size: GPU_BATCH_SIZE * 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+            const uniformBuf64 = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+
+            const bindGroup32 = device.createBindGroup({
+                layout: pipeline32.getBindGroupLayout(0),
+                entries: [{ binding: 0, resource: { buffer: uniformBuf32 } }, { binding: 1, resource: { buffer: outputBuf32 } }]
+            });
+            const bindGroup64 = device.createBindGroup({
+                layout: pipeline64.getBindGroupLayout(0),
+                entries: [{ binding: 0, resource: { buffer: uniformBuf64 } }, { binding: 1, resource: { buffer: outputBuf64 } }]
+            });
 
             let processedInRange = 0n;
 
             while (current <= max && isRunning) {
                 const searchStepStart = performance.now();
                 
-                const processNow = Math.min(Number((max - current) / 2n) + 1, GPU_BATCH_SIZE);
-                device.queue.writeBuffer(uniformBuf, 0, new Uint32Array([Number(current), Number(max)]));
-
-                const bindGroup = device.createBindGroup({
-                    layout: pipeline.getBindGroupLayout(0),
-                    entries: [{ binding: 0, resource: { buffer: uniformBuf } }, { binding: 1, resource: { buffer: outputBuf } }]
-                });
-
-                const encoder = device.createCommandEncoder();
-                const pass = encoder.beginComputePass();
-                pass.setPipeline(pipeline);
-                pass.setBindGroup(0, bindGroup);
-                pass.dispatchWorkgroups(Math.ceil(processNow / 64));
-                pass.end();
-                encoder.copyBufferToBuffer(outputBuf, 0, readBuf, 0, processNow * 4);
-                device.queue.submit([encoder.finish()]);
-
-                await readBuf.mapAsync(GPUMapMode.READ);
-                const res = new Uint32Array(readBuf.getMappedRange(0, processNow * 4).slice());
-                readBuf.unmap();
+                const BIT32_SAFE_ZONE = 4294967280n;
+                let is64Bit = current >= BIT32_SAFE_ZONE;
                 
+                let processNow = Math.min(Number((max - current) * 8n / 30n) + 8, GPU_BATCH_SIZE);
+                processNow = Math.ceil(processNow / 8) * 8;
+                
+                if (!is64Bit) {
+                    let maxBlocks = (BIT32_SAFE_ZONE - current) / 30n;
+                    if (BigInt(processNow / 8) > maxBlocks) {
+                        processNow = Number(maxBlocks * 8n);
+                        if (processNow <= 0) { is64Bit = true; }
+                    }
+                }
+
+                if (!is64Bit) {
+                    let shaderLimit = max < 4294967295n ? Number(max) : 4294967295;
+                    device.queue.writeBuffer(uniformBuf32, 0, new Uint32Array([Number(current), shaderLimit]));
+                    const encoder = device.createCommandEncoder();
+                    const pass = encoder.beginComputePass();
+                    pass.setPipeline(pipeline32);
+                    pass.setBindGroup(0, bindGroup32);
+                    pass.dispatchWorkgroups(Math.ceil(processNow / 64));
+                    pass.end();
+                    encoder.copyBufferToBuffer(outputBuf32, 0, readBuf32, 0, processNow * 4);
+                    device.queue.submit([encoder.finish()]);
+                    await readBuf32.mapAsync(GPUMapMode.READ);
+                    const res = new Uint32Array(readBuf32.getMappedRange(0, processNow * 4).slice());
+                    readBuf32.unmap();
+                    currentRawResults.push({ type: '32', data: res });
+                } else {
+                    const startLo = Number(current & 0xFFFFFFFFn);
+                    const startHi = Number(current >> 32n);
+                    const maxLo = Number(max & 0xFFFFFFFFn);
+                    const maxHi = Number(max >> 32n);
+                    device.queue.writeBuffer(uniformBuf64, 0, new Uint32Array([startLo, startHi, maxLo, maxHi]));
+                    const encoder = device.createCommandEncoder();
+                    const pass = encoder.beginComputePass();
+                    pass.setPipeline(pipeline64);
+                    pass.setBindGroup(0, bindGroup64);
+                    pass.dispatchWorkgroups(Math.ceil(processNow / 64));
+                    pass.end();
+                    encoder.copyBufferToBuffer(outputBuf64, 0, readBuf64, 0, processNow * 8);
+                    device.queue.submit([encoder.finish()]);
+                    await readBuf64.mapAsync(GPUMapMode.READ);
+                    const res = new Uint32Array(readBuf64.getMappedRange(0, processNow * 8).slice());
+                    readBuf64.unmap();
+                    currentRawResults.push({ type: '64', data: res });
+                }
+
                 totalSearchTime += (performance.now() - searchStepStart);
                 
-                currentRawResults.push(res);
-                const rangeSize = BigInt(processNow) * 2n;
+                const rangeSize = BigInt(processNow) / 8n * 30n;
                 processedInRange += rangeSize;
                 current += rangeSize;
                 updateUIProgress(current, max);
@@ -560,14 +865,12 @@
                         resolve();
                     };
                     
-                    const totalLen = batch.reduce((acc, arr) => acc + arr.length, 0);
-                    const combined = new Uint32Array(totalLen);
-                    let offset = 0;
-                    for (const arr of batch) {
-                        combined.set(arr, offset);
-                        offset += arr.length;
+                    const transferList = [];
+                    for (const item of batch) {
+                        transferList.push(item.data.buffer);
                     }
-                    w.postMessage({ data: combined, index: workerIndex }, [combined.buffer]);
+                    
+                    w.postMessage({ batches: batch, index: workerIndex }, transferList);
                 }));
             }
 
@@ -590,7 +893,15 @@
 
             function getEffort(x) {
                 if (x <= 2) return 0;
-                return x * Math.log(x) - x;
+                const I = (n) => n * Math.log(n) - n;
+                const T_U64 = 4294967280;
+                const M_BASE = 1.0;
+                const M_PENALTY = 3.0;
+                if (x <= T_U64) {
+                    return M_BASE * I(x);
+                } else {
+                    return M_BASE * I(T_U64) + M_PENALTY * (I(x) - I(T_U64));
+                }
             }
 
             const currentEffort = getEffort(displayCur);
