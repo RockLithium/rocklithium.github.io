@@ -284,6 +284,13 @@
             <span id="limitDisplay"></span>
         </div>
         
+        <div id="realtimeSaveGroup" style="display: none; margin-bottom: 15px; align-items: center; justify-content: center; color: #ffcc00; font-size: 0.95em;">
+            <label style="cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <input type="checkbox" id="realtimeSaveCheckbox" style="margin-right: 8px; width: 16px; height: 16px;">
+                启用实时落盘 (节约内存，适合超大范围)
+            </label>
+        </div>
+
         <button id="stageButton" class="start-btn" onclick="window.handleStageControl()">开始计算</button>
         <p id="stageMessage"></p>
     </div>
@@ -363,6 +370,9 @@
             let totalSearchTime = 0;      
             let totalSortTime = 0;
             let totalPrimeCount = 0;
+
+            let useRealtimeSave = false;
+            let writableStream = null;
 
             const getEffort = (x) => {
                 if (x <= 2) return 0;
@@ -582,6 +592,14 @@
             window.updateLimitDisplay = function() {
                 STAGE_MAX_NUMBER = parseLimitInput(exponentInput.value);
                 
+                const THRESHOLD_32 = 1n << 32n;
+                const realtimeGroup = document.getElementById('realtimeSaveGroup');
+                if (STAGE_MAX_NUMBER >= THRESHOLD_32) {
+                    realtimeGroup.style.display = 'flex';
+                } else {
+                    realtimeGroup.style.display = 'none';
+                }
+
                 if (STAGE_MAX_NUMBER >= 3n) {
                     totalChecks = (STAGE_MAX_NUMBER - 1n) / 2n + 1n; 
                 } else if (STAGE_MAX_NUMBER === 2n) {
@@ -746,7 +764,6 @@
                 }
             }
             
-            
             function updateOverallProgress() {
                 let progressPercentage = 0;
                 let numMax = Number(STAGE_MAX_NUMBER);
@@ -852,7 +869,7 @@
                 }
             }
 
-            function startSortStage() {
+            async function startSortStage() {
                 
                 const formattedStart = nextSearchStart.toLocaleString();
                 const formattedEnd = currentSearchLimit.toLocaleString();
@@ -863,7 +880,11 @@
                 
                 if (primesArray.length > 0) {
                     const chunkContent = primesArray.map(p => p.toString()).join(' ') + ' ';
-                    accumulatedPrimesBlobs.push(new Blob([chunkContent], { type: 'text/plain' }));
+                    if (useRealtimeSave && writableStream) {
+                        await writableStream.write(chunkContent);
+                    } else {
+                        accumulatedPrimesBlobs.push(new Blob([chunkContent], { type: 'text/plain' }));
+                    }
                     totalPrimeCount += primesArray.length;
                 }
                 
@@ -944,7 +965,7 @@
                 updateOverallProgress();
             }
 
-            function startSearch() {
+            async function startSearch() {
                 if (isRunning) return;
                 
                 fullReset(); 
@@ -954,6 +975,10 @@
                 
                 if (STAGE_MAX_NUMBER >= 2n) {
                     checksCompleted += 1n; 
+                    if (useRealtimeSave && writableStream) {
+                        await writableStream.write('2 ');
+                        totalPrimeCount += 1;
+                    }
                 }
                 
                 if (STAGE_MAX_NUMBER < 3n) {
@@ -1031,7 +1056,7 @@
                 checkAllWorkersFinished();
             }
             
-            function finishFinalStage() {
+            async function finishFinalStage() {
                 isRunning = false;
                 currentStageIndex = 2; 
                 
@@ -1040,15 +1065,21 @@
                     primesArray.sort((a, b) => (a < b ? -1 : (a > b ? 1 : 0))); 
                     if (primesArray.length > 0) {
                         const chunkContent = primesArray.map(p => p.toString()).join(' ') + ' ';
-                        accumulatedPrimesBlobs.push(new Blob([chunkContent], { type: 'text/plain' }));
+                        if (useRealtimeSave && writableStream) {
+                            await writableStream.write(chunkContent);
+                        } else {
+                            accumulatedPrimesBlobs.push(new Blob([chunkContent], { type: 'text/plain' }));
+                        }
                         totalPrimeCount += primesArray.length;
                     }
                     chunkPrimes.clear(); 
                 }
 
                 if (STAGE_MAX_NUMBER >= 2n) {
-                    accumulatedPrimesBlobs.unshift(new Blob(['2 '], { type: 'text/plain' }));
-                    totalPrimeCount += 1; 
+                    if (!useRealtimeSave) {
+                        accumulatedPrimesBlobs.unshift(new Blob(['2 '], { type: 'text/plain' }));
+                        totalPrimeCount += 1; 
+                    }
                 }
                 
                 updateElapsedTime(true); 
@@ -1062,17 +1093,26 @@
 
                 resultSummary.textContent = `共发现 ${totalPrimeCount.toLocaleString()} 个质数，总耗时 ${totalTimeFormatted} 秒。`
                                           + `查找累计耗时 ${searchTimeFormatted} 秒，`
-                                          + `排序和整理累计耗时 ${sortTimeFormatted} 秒。`; 
+                                          + `排序和整理累计耗时 ${sortTimeFormatted} 秒。`
+                                          + (useRealtimeSave ? " (已通过实时落盘保存到文件)" : "");
 
                 resultArea.style.display = 'block';
-                stageMessage.textContent = `✅ 计算任务已完成！结果已准备好下载。`;
+                stageMessage.textContent = `✅ 计算任务已完成！结果已准备好。`;
                 updateOverallProgress(); 
                 updateButtonUI(); 
                 
                 window.finalPrimesContentParts = accumulatedPrimesBlobs; 
+
+                if (useRealtimeSave && writableStream) {
+                    try { await writableStream.close(); } catch(e){}
+                    writableStream = null;
+                    document.getElementById('downloadButton').style.display = 'none';
+                } else {
+                    document.getElementById('downloadButton').style.display = 'inline-block';
+                }
             }
 
-            function stopStressTest() {
+            async function stopStressTest() {
                 if (!isRunning) return;
 
                 isRunning = false;
@@ -1095,13 +1135,45 @@
 
                 stageMessage.textContent = '程序已停止。您可以修改配置后再次点击“开始计算”。';
                 updateButtonUI(); 
+
+                if (useRealtimeSave && writableStream) {
+                    try { await writableStream.close(); } catch(e){}
+                    writableStream = null;
+                }
             }
 
-            window.handleStageControl = function() {
+            window.handleStageControl = async function() {
                 if (currentStageIndex === 1 || currentStageIndex === 1.1) {
-                    stopStressTest();
+                    await stopStressTest();
                 } else if (currentStageIndex === 0 || currentStageIndex === 2) {
                     window.updateLimitDisplay(); 
+                    
+                    const THRESHOLD_WARN = 1n << 36n;
+                    const checkbox = document.getElementById('realtimeSaveCheckbox');
+                    useRealtimeSave = checkbox.checked && document.getElementById('realtimeSaveGroup').style.display !== 'none';
+
+                    if (STAGE_MAX_NUMBER > THRESHOLD_WARN && !useRealtimeSave) {
+                        if (!confirm("如果不使用实时落盘，可能由于缓存占用过大而无法存盘或导致页面崩溃。是否确认强制开始？")) {
+                            return;
+                        }
+                    }
+
+                    if (useRealtimeSave) {
+                        try {
+                            const fileHandle = await window.showSaveFilePicker({
+                                suggestedName: `primes_up_to_${STAGE_MAX_NUMBER.toLocaleString('en-US')}.txt`,
+                                types: [{
+                                    description: 'Text Files',
+                                    accept: {'text/plain': ['.txt']},
+                                }],
+                            });
+                            writableStream = await fileHandle.createWritable();
+                        } catch (e) {
+                            console.error("用户取消了文件选择或发生错误:", e);
+                            return;
+                        }
+                    }
+
                     startSearch(); 
                 }
             }

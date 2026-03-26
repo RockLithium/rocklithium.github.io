@@ -203,6 +203,13 @@
             <span id="limitDisplay"></span>
         </div>
         
+        <div id="realtimeSaveGroup" style="display: none; margin-bottom: 15px; align-items: center; justify-content: center; color: #ffcc00; font-size: 0.95em;">
+            <label style="cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <input type="checkbox" id="realtimeSaveCheckbox" style="margin-right: 8px; width: 16px; height: 16px;">
+                启用实时落盘 (节约内存，适合超大范围)
+            </label>
+        </div>
+
         <button id="stageButton" class="start-btn" onclick="window.handleStageControl()">开始计算</button>
         <p id="stageMessage"></p>
     </div>
@@ -441,13 +448,22 @@
         }
 
         fn add128(a: U128, b: U128) -> U128 {
-            var d0 = a.d0 + b.d0;
+            let d0 = a.d0 + b.d0;
             let c0 = select(0u, 1u, d0 < a.d0);
-            var d1 = a.d1 + b.d1 + c0;
-            let c1 = select(0u, 1u, d1 < a.d1 || (d1 == a.d1 && c0 == 1u));
-            var d2 = a.d2 + b.d2 + c1;
-            let c2 = select(0u, 1u, d2 < a.d2 || (d2 == a.d2 && c1 == 1u));
-            var d3 = a.d3 + b.d3 + c2;
+
+            let sum1 = a.d1 + b.d1;
+            let c1_a = select(0u, 1u, sum1 < a.d1);
+            let d1 = sum1 + c0;
+            let c1_b = select(0u, 1u, d1 < sum1);
+            let c1 = c1_a | c1_b;
+
+            let sum2 = a.d2 + b.d2;
+            let c2_a = select(0u, 1u, sum2 < a.d2);
+            let d2 = sum2 + c1;
+            let c2_b = select(0u, 1u, d2 < sum2);
+            let c2 = c2_a | c2_b;
+
+            let d3 = a.d3 + b.d3 + c2;
             return U128(d0, d1, d2, d3);
         }
 
@@ -476,7 +492,8 @@
             let m_n = mul64_wide(m, n);
             let sum = add128(T, m_n);
             var t = U64(sum.d2, sum.d3);
-            if (cmp(t, n) >= 0) {
+            
+            if (t.hi > n.hi || (t.hi == n.hi && t.lo >= n.lo)) {
                 t = sub64(t, n);
             }
             return t;
@@ -518,13 +535,14 @@
             
             for (var i = 0; i < 4; i++) {
                 let a = U64(bases[i], 0u);
-                if (cmp(a, n) >= 0) { break; }
+                if (n.hi < a.hi || (n.hi == a.hi && n.lo <= a.lo)) { break; }
                 
                 let a_mont = shift_mod(a, 64u, n);
                 var x_mont = one_mont;
                 var b = a_mont;
                 var e = d;
-                while (e.lo > 0u || e.hi > 0u) {
+                
+                while ((e.lo | e.hi) != 0u) {
                     if ((e.lo & 1u) == 1u) { x_mont = mont_mul(x_mont, b, n, n_prime); }
                     b = mont_mul(b, b, n, n_prime);
                     e = shr1(e);
@@ -532,13 +550,13 @@
                 
                 var x = mont_mul(x_mont, U64(1u, 0u), n, n_prime);
                 
-                if ((x.lo == 1u && x.hi == 0u) || cmp(x, n_minus_1) == 0) { continue; }
+                if ((x.lo == 1u && x.hi == 0u) || (x.lo == n_minus_1.lo && x.hi == n_minus_1.hi)) { continue; }
                 
                 var composite = true;
                 for (var r = 1u; r < s; r++) {
                     x_mont = mont_mul(x_mont, x_mont, n, n_prime);
                     x = mont_mul(x_mont, U64(1u, 0u), n, n_prime);
-                    if (cmp(x, n_minus_1) == 0) {
+                    if (x.lo == n_minus_1.lo && x.hi == n_minus_1.hi) {
                         composite = false;
                         break;
                     }
@@ -592,6 +610,9 @@
         let totalPrimeCount = 0;
         let accumulatedParts = [];
         let currentRawResults = []; 
+
+        let useRealtimeSave = false;
+        let writableStream = null;
 
         const workerCode = `
             self.onmessage = function(e) {
@@ -688,6 +709,15 @@
 
         window.updateLimitDisplay = function() {
             STAGE_MAX_NUMBER = parseLimitInput(exponentInput.value);
+
+            const THRESHOLD_32 = 1n << 32n;
+            const realtimeGroup = document.getElementById('realtimeSaveGroup');
+            if (STAGE_MAX_NUMBER >= THRESHOLD_32) {
+                realtimeGroup.style.display = 'flex';
+            } else {
+                realtimeGroup.style.display = 'none';
+            }
+
             const formattedLimit = STAGE_MAX_NUMBER.toLocaleString('en-US');
             limitDisplay.innerHTML = `上限 ${isExponentMode ? '(2^' + currentExponent + ')' : '(数值)'}：<span class="value">${formattedLimit}</span>`;
             if (!isRunning) {
@@ -695,11 +725,43 @@
             }
         }
 
-        window.handleStageControl = function() {
-            isRunning ? stopStressTest() : startSearch();
+        window.handleStageControl = async function() {
+            if (isRunning) {
+                await stopStressTest();
+            } else {
+                window.updateLimitDisplay();
+                
+                const THRESHOLD_WARN = 1n << 36n;
+                const checkbox = document.getElementById('realtimeSaveCheckbox');
+                useRealtimeSave = checkbox && checkbox.checked && document.getElementById('realtimeSaveGroup').style.display !== 'none';
+
+                if (STAGE_MAX_NUMBER > THRESHOLD_WARN && !useRealtimeSave) {
+                    if (!confirm("如果不使用实时落盘，可能由于缓存占用过大而无法存盘或导致页面崩溃。是否确认强制开始？")) {
+                        return;
+                    }
+                }
+
+                if (useRealtimeSave) {
+                    try {
+                        const fileHandle = await window.showSaveFilePicker({
+                            suggestedName: `primes_up_to_${STAGE_MAX_NUMBER.toLocaleString('en-US')}.txt`,
+                            types: [{
+                                description: 'Text Files',
+                                accept: {'text/plain': ['.txt']},
+                            }],
+                        });
+                        writableStream = await fileHandle.createWritable();
+                    } catch (e) {
+                        console.error("用户取消了文件选择或发生错误:", e);
+                        return;
+                    }
+                }
+
+                startSearch();
+            }
         }
 
-        function stopStressTest() {
+        async function stopStressTest() {
             isRunning = false;
             clearInterval(timerInterval);
             stageButton.textContent = '开始计算';
@@ -707,6 +769,11 @@
             exponentInput.disabled = false;
             document.getElementById('modeSwitchButton').disabled = false;
             stageMessage.textContent = '程序已停止。您可以修改配置后再次点击“开始计算”。';
+
+            if (useRealtimeSave && writableStream) {
+                try { await writableStream.close(); } catch(e){}
+                writableStream = null;
+            }
         }
 
         async function startSearch() {
@@ -742,9 +809,19 @@
 
             let current = 0n;
             const max = STAGE_MAX_NUMBER;
-            if (max >= 2n) { accumulatedParts.push(new Blob(["2 "], { type: 'text/plain' })); totalPrimeCount++; }
-            if (max >= 3n) { accumulatedParts.push(new Blob(["3 "], { type: 'text/plain' })); totalPrimeCount++; }
-            if (max >= 5n) { accumulatedParts.push(new Blob(["5 "], { type: 'text/plain' })); totalPrimeCount++; }
+
+            let initialPrimes = "";
+            if (max >= 2n) { initialPrimes += "2 "; totalPrimeCount++; }
+            if (max >= 3n) { initialPrimes += "3 "; totalPrimeCount++; }
+            if (max >= 5n) { initialPrimes += "5 "; totalPrimeCount++; }
+
+            if (useRealtimeSave && writableStream && initialPrimes !== "") {
+                await writableStream.write(initialPrimes);
+            } else {
+                if (max >= 2n) accumulatedParts.push(new Blob(["2 "], { type: 'text/plain' }));
+                if (max >= 3n) accumulatedParts.push(new Blob(["3 "], { type: 'text/plain' }));
+                if (max >= 5n) accumulatedParts.push(new Blob(["5 "], { type: 'text/plain' }));
+            }
 
             const outputBuf32 = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
             const readBuf32 = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
@@ -878,7 +955,11 @@
             
             for (let i = 0; i < tempResults.length; i++) {
                 if (tempResults[i] && tempCounts[i] > 0) {
-                    accumulatedParts.push(tempResults[i]);
+                    if (useRealtimeSave && writableStream) {
+                        await writableStream.write(tempResults[i]);
+                    } else {
+                        accumulatedParts.push(tempResults[i]);
+                    }
                     totalPrimeCount += tempCounts[i];
                 }
             }
@@ -919,7 +1000,7 @@
             progressFill.textContent = percent.toFixed(2) + "%";
         }
 
-        function finish() {
+        async function finish() {
             isRunning = false;
             clearInterval(timerInterval);
             
@@ -928,9 +1009,12 @@
             const formatTimeSec = totalFormatTime / 1000;
 
             currentStage.textContent = "已完成";
-            stageMessage.textContent = "✅ 计算任务已完成！结果已准备好下载。";
+            stageMessage.textContent = "✅ 计算任务已完成！结果已准备好。";
             
-            resultSummary.textContent = `共发现 ${totalPrimeCount.toLocaleString()} 个质数，总耗时 ${wallTimeTotal.toFixed(3)} 秒。查找累计耗时 ${searchTimeSec.toFixed(3)} 秒，转换和整理累计耗时 ${formatTimeSec.toFixed(3)} 秒。`;
+            resultSummary.textContent = `共发现 ${totalPrimeCount.toLocaleString()} 个质数，总耗时 ${wallTimeTotal.toFixed(3)} 秒。`
+                                      + `查找累计耗时 ${searchTimeSec.toFixed(3)} 秒，`
+                                      + `转换和整理累计耗时 ${formatTimeSec.toFixed(3)} 秒。`
+                                      + (useRealtimeSave ? " (已通过实时落盘保存到文件)" : "");
             
             resultArea.style.display = 'block';
             stageButton.textContent = '开始计算';
@@ -939,6 +1023,14 @@
             document.getElementById('modeSwitchButton').disabled = false;
             progressFill.style.width = "100%";
             progressFill.textContent = "100.00%";
+
+            if (useRealtimeSave && writableStream) {
+                try { await writableStream.close(); } catch(e){}
+                writableStream = null;
+                document.getElementById('downloadButton').style.display = 'none';
+            } else {
+                document.getElementById('downloadButton').style.display = 'inline-block';
+            }
         }
 
         window.downloadPrimes = function() {
