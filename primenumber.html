@@ -363,7 +363,23 @@
             let totalSearchTime = 0;      
             let totalSortTime = 0;
             let totalPrimeCount = 0;
-            const getEffort = (x) => (x <= 2 ? 0 : x * Math.log(x) - x);
+
+            const getEffort = (x) => {
+                if (x <= 2) return 0;
+                const I = (n) => n * Math.log(n) - n;
+                const T1 = 3037000000;
+                const T2 = 4294967296;
+                const M1 = 1.0;
+                const M2 = 4.2;
+                const M3 = 5.0;
+                if (x <= T1) {
+                    return M1 * I(x);
+                } else if (x <= T2) {
+                    return M1 * I(T1) + M2 * (I(x) - I(T1));
+                } else {
+                    return M1 * I(T1) + M2 * (I(T2) - I(T1)) + M3 * (I(x) - I(T2));
+                }
+            };
             
             window.finalPrimesContentParts = []; 
 
