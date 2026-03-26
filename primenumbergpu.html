@@ -894,13 +894,13 @@
             function getEffort(x) {
                 if (x <= 2) return 0;
                 const I = (n) => n * Math.log(n) - n;
-                const T_U64 = 4294967280;
-                const M_BASE = 1.0;
-                const M_PENALTY = 3.0;
-                if (x <= T_U64) {
-                    return M_BASE * I(x);
+                const T1 = 4294967280;
+                const M1 = 1.0;
+                const M2 = 3.0;
+                if (x <= T1) {
+                    return M1 * I(x);
                 } else {
-                    return M_BASE * I(T_U64) + M_PENALTY * (I(x) - I(T_U64));
+                    return M1 * I(T1) + M2 * (I(x) - I(T1));
                 }
             }
 
