@@ -881,15 +881,14 @@
                 if (primesArray.length > 0) {
                     const chunkContent = primesArray.map(p => p.toString()).join(' ') + ' ';
                     if (useRealtimeSave && writableStream) {
-                        await writableStream.write(chunkContent);
+                        const u8arr = new TextEncoder().encode(chunkContent);
+                        await writableStream.write(u8arr);
                     } else {
                         accumulatedPrimesBlobs.push(new Blob([chunkContent], { type: 'text/plain' }));
                     }
                     totalPrimeCount += primesArray.length;
                 }
-                
                 chunkPrimes.clear();
-                
                 setTimeout(() => continueSearchOrFinish(), 0); 
             }
             
@@ -976,7 +975,8 @@
                 if (STAGE_MAX_NUMBER >= 2n) {
                     checksCompleted += 1n; 
                     if (useRealtimeSave && writableStream) {
-                        await writableStream.write('2 ');
+                        const initialU8 = new TextEncoder().encode('2 ');
+                        await writableStream.write(initialU8);
                         totalPrimeCount += 1;
                     }
                 }
@@ -1066,7 +1066,8 @@
                     if (primesArray.length > 0) {
                         const chunkContent = primesArray.map(p => p.toString()).join(' ') + ' ';
                         if (useRealtimeSave && writableStream) {
-                            await writableStream.write(chunkContent);
+                            const u8arr = new TextEncoder().encode(chunkContent);
+                            await writableStream.write(u8arr);
                         } else {
                             accumulatedPrimesBlobs.push(new Blob([chunkContent], { type: 'text/plain' }));
                         }

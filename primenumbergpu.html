@@ -614,6 +614,8 @@
         let useRealtimeSave = false;
         let writableStream = null;
 
+        // 【硬核优化】Worker 现在直接使用 TextEncoder 生成底层的二进制 ArrayBuffer
+        // 并且通过 Transferable Objects 机制零拷贝传递给主线程，彻底抛弃 Blob 带来的 C 盘中转缓存！
         const workerCode = `
             self.onmessage = function(e) {
                 const { batches, index } = e.data;
@@ -640,9 +642,11 @@
                     str = arr.join(" ") + " ";
                 }
                 
-                const blob = new Blob([str], { type: 'text/plain' });
+                // 将字符串直接编码为底层的 UTF-8 二进制数组
+                const uint8Array = new TextEncoder().encode(str);
                 
-                self.postMessage({blob: blob, count: arr.length, index: index});
+                // 使用 Transferable Objects 将内存块的所有权直接移交，零内存拷贝！
+                self.postMessage({ buffer: uint8Array.buffer, count: arr.length, index: index }, [uint8Array.buffer]);
             };
         `;
 
@@ -810,17 +814,19 @@
             let current = 0n;
             const max = STAGE_MAX_NUMBER;
 
-            let initialPrimes = "";
-            if (max >= 2n) { initialPrimes += "2 "; totalPrimeCount++; }
-            if (max >= 3n) { initialPrimes += "3 "; totalPrimeCount++; }
-            if (max >= 5n) { initialPrimes += "5 "; totalPrimeCount++; }
+            // 初始质数的二进制编码处理
+            let initialPrimesStr = "";
+            if (max >= 2n) { initialPrimesStr += "2 "; totalPrimeCount++; }
+            if (max >= 3n) { initialPrimesStr += "3 "; totalPrimeCount++; }
+            if (max >= 5n) { initialPrimesStr += "5 "; totalPrimeCount++; }
 
-            if (useRealtimeSave && writableStream && initialPrimes !== "") {
-                await writableStream.write(initialPrimes);
-            } else {
-                if (max >= 2n) accumulatedParts.push(new Blob(["2 "], { type: 'text/plain' }));
-                if (max >= 3n) accumulatedParts.push(new Blob(["3 "], { type: 'text/plain' }));
-                if (max >= 5n) accumulatedParts.push(new Blob(["5 "], { type: 'text/plain' }));
+            if (initialPrimesStr !== "") {
+                const initialU8 = new TextEncoder().encode(initialPrimesStr);
+                if (useRealtimeSave && writableStream) {
+                    await writableStream.write(initialU8); // 二进制直写
+                } else {
+                    accumulatedParts.push(new Blob([initialU8], { type: 'text/plain' })); // 保留 Blob 逻辑
+                }
             }
 
             const outputBuf32 = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
@@ -855,7 +861,10 @@
                     let maxBlocks = (BIT32_SAFE_ZONE - current) / 30n;
                     if (BigInt(processNow / 8) > maxBlocks) {
                         processNow = Number(maxBlocks * 8n);
-                        if (processNow <= 0) { is64Bit = true; }
+                        if (processNow <= 0) { 
+                            is64Bit = true; 
+                            processNow = Math.ceil(Math.min(Number((max - current) * 8n / 30n) + 8, GPU_BATCH_SIZE) / 8) * 8; 
+                        }
                     }
                 }
 
@@ -921,7 +930,7 @@
             const blob = new Blob([workerCode], { type: 'application/javascript' });
             const workerUrl = URL.createObjectURL(blob);
 
-            const tempResults = new Array(numWorkers).fill("");
+            const tempResults = new Array(numWorkers).fill(null);
             const tempCounts = new Array(numWorkers).fill(0);
             
             const promises = [];
@@ -936,7 +945,7 @@
                     const workerIndex = i;
                     
                     w.onmessage = (e) => {
-                        tempResults[workerIndex] = e.data.blob;
+                        tempResults[workerIndex] = e.data.buffer; // 接收底层的 ArrayBuffer
                         tempCounts[workerIndex] = e.data.count;
                         w.terminate();
                         resolve();
@@ -955,10 +964,14 @@
             
             for (let i = 0; i < tempResults.length; i++) {
                 if (tempResults[i] && tempCounts[i] > 0) {
+                    const u8arr = new Uint8Array(tempResults[i]); // 重新封装为 Uint8Array
+                    
                     if (useRealtimeSave && writableStream) {
-                        await writableStream.write(tempResults[i]);
+                        // 【突破限制】直接向底层文件流灌入二进制内存块，完美绕过 Blob 系统缓存！
+                        await writableStream.write(u8arr);
                     } else {
-                        accumulatedParts.push(tempResults[i]);
+                        // 如果没有勾选实时落盘，原样保留老的 Blob 打包逻辑以供下载按钮使用
+                        accumulatedParts.push(new Blob([u8arr], { type: 'text/plain' }));
                     }
                     totalPrimeCount += tempCounts[i];
                 }
