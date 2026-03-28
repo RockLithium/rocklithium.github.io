@@ -358,7 +358,7 @@
             let totalChecks = BigInt(0); 
             let checksCompleted = 0n; 
             
-            let chunkPrimes = new Set(); 
+            let currentRawResults = []; 
             let accumulatedPrimesBlobs = []; 
             
             let coreStatuses = []; 
@@ -467,7 +467,9 @@
                     }
 
                     function runMillerRabinStep(startNum, maxNum, workerIdx, totalWorkers, blockSizeOdds) {
-                        let primes = [];
+                        let bufferSize = 100000; 
+                        let primesBuffer = new BigUint64Array(bufferSize);
+                        let primesCount = 0;
                         let checksInBatch = 0n; 
                         
                         let blockIdx = workerIdx;
@@ -481,7 +483,12 @@
                             for (let n = blockStart; n <= blockEnd && isWorkerRunning; n += 2n) {
                                 checksInBatch += 1n; 
                                 if (isBigIntPrime(n)) {
-                                    primes.push(n.toString());
+                                    if (primesCount >= primesBuffer.length) {
+                                        let newBuffer = new BigUint64Array(primesBuffer.length * 2);
+                                        newBuffer.set(primesBuffer);
+                                        primesBuffer = newBuffer;
+                                    }
+                                    primesBuffer[primesCount++] = n;
                                 }
                                 if (checksInBatch >= BATCH_SIZE_N) {
                                     self.postMessage({ 
@@ -497,12 +504,14 @@
                         }
                         
                         if (isWorkerRunning) {
+                            let finalBuffer = primesBuffer.slice(0, primesCount).buffer;
                             self.postMessage({
                                 command: 'finished_step',
                                 workerId: workerId,
                                 checks_done: checksInBatch.toString(), 
-                                primes: primes
-                            });
+                                primesBuffer: finalBuffer,
+                                count: primesCount
+                            }, [finalBuffer]);
                         }
                         self.postMessage({ command: 'task_complete', workerId: workerId });
                     }
@@ -836,11 +845,11 @@
                     if (currentStageIndex !== 1) return;
 
                     checksCompleted += BigInt(data.checks_done);
-                    data.primes.map(p => chunkPrimes.add(BigInt(p)));
+                    currentRawResults.push({ buffer: data.primesBuffer, count: data.count });
                     
                     updateOverallProgress();
 
-                    coreStatuses[workerId].currentP = `Finished (Primes: ${data.primes.length})`;
+                    coreStatuses[workerId].currentP = `Finished (Primes: ${data.count})`;
                     coreStatuses[workerId].isFinished = true;
                     updateCoreStatusUI(workerId);
                     
@@ -869,39 +878,89 @@
                 }
             }
 
+            async function processAndSaveChunk() {
+                if (currentRawResults.length === 0) return;
+
+                const sortWorkerCode = `
+                    self.onmessage = function(e) {
+                        const rawResults = e.data;
+                        
+                        let totalLen = 0;
+                        for (let item of rawResults) totalLen += item.count;
+
+                        let typedArray = new BigUint64Array(totalLen);
+                        let offset = 0;
+                        for (let item of rawResults) {
+                            typedArray.set(new BigUint64Array(item.buffer), offset);
+                            offset += item.count;
+                        }
+
+                        typedArray.sort();
+                        
+                        let strParts = [];
+                        const CHUNK_SIZE = 500000; 
+                        for(let i = 0; i < totalLen; i += CHUNK_SIZE) {
+                            let chunk = [];
+                            let end = Math.min(i + CHUNK_SIZE, totalLen);
+                            for(let j = i; j < end; j++) {
+                                chunk.push(typedArray[j].toString());
+                            }
+                            strParts.push(chunk.join(' '));
+                        }
+                        
+                        let finalStr = strParts.join(' ') + (totalLen > 0 ? ' ' : '');
+                        const uint8Array = new TextEncoder().encode(finalStr);
+                        self.postMessage({ buffer: uint8Array.buffer, count: totalLen }, [uint8Array.buffer]);
+                    };
+                `;
+                const blob = new Blob([sortWorkerCode], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(blob);
+                const sortWorker = new Worker(workerUrl);
+
+                await new Promise((resolve) => {
+                    sortWorker.onmessage = async (e) => {
+                        const { buffer, count } = e.data;
+                        if (count > 0) {
+                            const u8arr = new Uint8Array(buffer);
+                            if (useRealtimeSave && writableStream) {
+                                await writableStream.write(u8arr);
+                            } else {
+                                accumulatedPrimesBlobs.push(new Blob([u8arr], { type: 'text/plain' }));
+                            }
+                            totalPrimeCount += count;
+                        }
+                        sortWorker.terminate();
+                        URL.revokeObjectURL(workerUrl);
+                        resolve();
+                    };
+                    
+                    let transferables = currentRawResults.map(item => item.buffer);
+                    sortWorker.postMessage(currentRawResults, transferables);
+                });
+
+                currentRawResults = []; 
+            }
+
             async function startSortStage() {
-                
                 const formattedStart = nextSearchStart.toLocaleString();
                 const formattedEnd = currentSearchLimit.toLocaleString();
-                stageMessage.textContent = `查找 [${formattedStart} 至 ${formattedEnd}] 完成。正在进行同步快速排序和结果处理...`;
+                stageMessage.textContent = `查找 [${formattedStart} 至 ${formattedEnd}] 完成。正在进行后台快速排序和结果处理...`;
+                const sortStartTime = Date.now();
 
-                const primesArray = Array.from(chunkPrimes);
-                primesArray.sort((a, b) => (a < b ? -1 : (a > b ? 1 : 0))); 
-                
-                if (primesArray.length > 0) {
-                    const chunkContent = primesArray.map(p => p.toString()).join(' ') + ' ';
-                    if (useRealtimeSave && writableStream) {
-                        const u8arr = new TextEncoder().encode(chunkContent);
-                        await writableStream.write(u8arr);
-                    } else {
-                        accumulatedPrimesBlobs.push(new Blob([chunkContent], { type: 'text/plain' }));
-                    }
-                    totalPrimeCount += primesArray.length;
-                }
-                chunkPrimes.clear();
+                await processAndSaveChunk();
+
+                totalSortTime += (Date.now() - sortStartTime);
                 setTimeout(() => continueSearchOrFinish(), 0); 
             }
             
             function continueSearchOrFinish() {
                 const useChunking = STAGE_MAX_NUMBER > CHUNK_LIMIT_BIGINT;
-
                 if (!useChunking) {
                     finishFinalStage();
                     return;
                 }
                 
                 let limit = currentSearchLimit;
-
                 let nextStartCandidate = limit + 1n; 
                 
                 if (nextStartCandidate % 2n === 0n) {
@@ -917,9 +976,7 @@
                 
                 const remainingChecks = totalChecks - checksCompleted;
                 const formattedLimit = STAGE_MAX_NUMBER.toLocaleString('en-US', {useGrouping: true});
-                
                 stageMessage.textContent = `✅ 排序/处理完成。剩余 ${remainingChecks.toLocaleString()} 次检查。即将开始下一个查找周期 [${nextSearchStart.toLocaleString()} 至 ${formattedLimit}]...`;
-                
                 startNextChunkSearch();
             }
 
@@ -951,7 +1008,7 @@
                 checksCompleted = 0n;
                 totalPrimeCount = 0;
                 
-                chunkPrimes = new Set(); 
+                currentRawResults = []; 
                 accumulatedPrimesBlobs = [];
                 window.finalPrimesContentParts = [];
                 nextSearchStart = 3n;
@@ -1060,21 +1117,7 @@
                 isRunning = false;
                 currentStageIndex = 2; 
                 
-                if (chunkPrimes.size > 0) {
-                    const primesArray = Array.from(chunkPrimes);
-                    primesArray.sort((a, b) => (a < b ? -1 : (a > b ? 1 : 0))); 
-                    if (primesArray.length > 0) {
-                        const chunkContent = primesArray.map(p => p.toString()).join(' ') + ' ';
-                        if (useRealtimeSave && writableStream) {
-                            const u8arr = new TextEncoder().encode(chunkContent);
-                            await writableStream.write(u8arr);
-                        } else {
-                            accumulatedPrimesBlobs.push(new Blob([chunkContent], { type: 'text/plain' }));
-                        }
-                        totalPrimeCount += primesArray.length;
-                    }
-                    chunkPrimes.clear(); 
-                }
+                await processAndSaveChunk();
 
                 if (STAGE_MAX_NUMBER >= 2n) {
                     if (!useRealtimeSave) {

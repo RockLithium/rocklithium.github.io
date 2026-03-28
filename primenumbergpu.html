@@ -603,19 +603,18 @@
         let currentExponent = 24;
         
         let startTime = 0;
-        let totalSearchTime = 0; 
-        let totalFormatTime = 0;
+        let totalSearchTime = 0;
         let timerInterval = null;
         
         let totalPrimeCount = 0;
-        let accumulatedParts = [];
+        let accumulatedPrimesBlobs = [];
         let currentRawResults = []; 
 
         let useRealtimeSave = false;
         let writableStream = null;
+        
+        window.finalPrimesContentParts = [];
 
-        // 【硬核优化】Worker 现在直接使用 TextEncoder 生成底层的二进制 ArrayBuffer
-        // 并且通过 Transferable Objects 机制零拷贝传递给主线程，彻底抛弃 Blob 带来的 C 盘中转缓存！
         const workerCode = `
             self.onmessage = function(e) {
                 const { batches, index } = e.data;
@@ -637,15 +636,10 @@
                     }
                 }
                 
-                let str = "";
-                if (arr.length > 0) {
-                    str = arr.join(" ") + " ";
-                }
+                let str = arr.length > 0 ? arr.join(" ") + " " : "";
                 
-                // 将字符串直接编码为底层的 UTF-8 二进制数组
                 const uint8Array = new TextEncoder().encode(str);
                 
-                // 使用 Transferable Objects 将内存块的所有权直接移交，零内存拷贝！
                 self.postMessage({ buffer: uint8Array.buffer, count: arr.length, index: index }, [uint8Array.buffer]);
             };
         `;
@@ -768,6 +762,10 @@
         async function stopStressTest() {
             isRunning = false;
             clearInterval(timerInterval);
+            if (startTime > 0) {
+                const frozenTime = ((Date.now() - startTime) / 1000).toFixed(3);
+                elapsedTimeDisplay.innerHTML = `<span class="monospace-value">${frozenTime}s</span> (已停止)`;
+            }
             stageButton.textContent = '开始计算';
             stageButton.className = 'start-btn';
             exponentInput.disabled = false;
@@ -785,10 +783,10 @@
             
             isRunning = true;
             totalPrimeCount = 0;
-            accumulatedParts = [];
+            accumulatedPrimesBlobs = [];
+            window.finalPrimesContentParts = [];
             currentRawResults = [];
             totalSearchTime = 0;
-            totalFormatTime = 0;
             startTime = Date.now();
             
             resultArea.style.display = 'none';
@@ -814,7 +812,6 @@
             let current = 0n;
             const max = STAGE_MAX_NUMBER;
 
-            // 初始质数的二进制编码处理
             let initialPrimesStr = "";
             if (max >= 2n) { initialPrimesStr += "2 "; totalPrimeCount++; }
             if (max >= 3n) { initialPrimesStr += "3 "; totalPrimeCount++; }
@@ -823,9 +820,9 @@
             if (initialPrimesStr !== "") {
                 const initialU8 = new TextEncoder().encode(initialPrimesStr);
                 if (useRealtimeSave && writableStream) {
-                    await writableStream.write(initialU8); // 二进制直写
+                    await writableStream.write(initialU8);
                 } else {
-                    accumulatedParts.push(new Blob([initialU8], { type: 'text/plain' })); // 保留 Blob 逻辑
+                    accumulatedPrimesBlobs.push(new Blob([initialU8], { type: 'text/plain' }));
                 }
             }
 
@@ -911,10 +908,8 @@
                 updateUIProgress(current, max);
 
                 if (processedInRange >= BigInt(SAVE_CHUNK_SIZE) || current > max) {
-                    const formatStepStart = performance.now();
                     currentStage.textContent = "多线程转换与整理中...";
                     await parallelFormatAndFlush();
-                    totalFormatTime += (performance.now() - formatStepStart);
                     processedInRange = 0n;
                     if (isRunning) currentStage.textContent = "并行查找 (Miller-Rabin)";
                 }
@@ -945,7 +940,7 @@
                     const workerIndex = i;
                     
                     w.onmessage = (e) => {
-                        tempResults[workerIndex] = e.data.buffer; // 接收底层的 ArrayBuffer
+                        tempResults[workerIndex] = e.data.buffer;
                         tempCounts[workerIndex] = e.data.count;
                         w.terminate();
                         resolve();
@@ -964,14 +959,12 @@
             
             for (let i = 0; i < tempResults.length; i++) {
                 if (tempResults[i] && tempCounts[i] > 0) {
-                    const u8arr = new Uint8Array(tempResults[i]); // 重新封装为 Uint8Array
+                    const u8arr = new Uint8Array(tempResults[i]);
                     
                     if (useRealtimeSave && writableStream) {
-                        // 【突破限制】直接向底层文件流灌入二进制内存块，完美绕过 Blob 系统缓存！
                         await writableStream.write(u8arr);
                     } else {
-                        // 如果没有勾选实时落盘，原样保留老的 Blob 打包逻辑以供下载按钮使用
-                        accumulatedParts.push(new Blob([u8arr], { type: 'text/plain' }));
+                        accumulatedPrimesBlobs.push(new Blob([u8arr], { type: 'text/plain' }));
                     }
                     totalPrimeCount += tempCounts[i];
                 }
@@ -1019,14 +1012,18 @@
             
             const wallTimeTotal = (Date.now() - startTime) / 1000;
             const searchTimeSec = totalSearchTime / 1000;
-            const formatTimeSec = totalFormatTime / 1000;
+            const formatTimeSec = wallTimeTotal - searchTimeSec;
+
+            elapsedTimeDisplay.innerHTML = `<span class="monospace-value">${wallTimeTotal.toFixed(3)}s</span>`;
 
             currentStage.textContent = "已完成";
             stageMessage.textContent = "✅ 计算任务已完成！结果已准备好。";
             
+            window.finalPrimesContentParts = accumulatedPrimesBlobs;
+
             resultSummary.textContent = `共发现 ${totalPrimeCount.toLocaleString()} 个质数，总耗时 ${wallTimeTotal.toFixed(3)} 秒。`
                                       + `查找累计耗时 ${searchTimeSec.toFixed(3)} 秒，`
-                                      + `转换和整理累计耗时 ${formatTimeSec.toFixed(3)} 秒。`
+                                      + `排序和整理累计耗时 ${formatTimeSec.toFixed(3)} 秒。`
                                       + (useRealtimeSave ? " (已通过实时落盘保存到文件)" : "");
             
             resultArea.style.display = 'block';
@@ -1047,12 +1044,13 @@
         }
 
         window.downloadPrimes = function() {
-            if (!accumulatedParts || accumulatedParts.length === 0) {
+            const contentParts = window.finalPrimesContentParts;
+            if (!contentParts || contentParts.length === 0) {
                 alert('没有质数可以下载。');
                 return;
             }
 
-            const blob = new Blob(accumulatedParts, { type: 'text/plain;charset=utf-8' });
+            const blob = new Blob(contentParts, { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
