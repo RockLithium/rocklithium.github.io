@@ -380,8 +380,8 @@
                 const T1 = 3037000000;
                 const T2 = 4294967296;
                 const M1 = 1.0;
-                const M2 = 1.6;
-                const M3 = 1.8;
+                const M2 = 2.7;
+                const M3 = 3.1;
                 if (x <= T1) {
                     return M1 * I(x);
                 } else if (x <= T2) {
@@ -790,20 +790,11 @@
                     progressPercentage = 100;
                 }
 
-                let maxCurrentNum = 0n;
-                for (let s of coreStatuses) {
-                    let pStr = s.currentP;
-                    if (pStr !== 'N/A' && !pStr.startsWith('Finished') && !pStr.startsWith('Queue')) {
-                        let num = BigInt(pStr.replace(/,/g, ''));
-                        if (num > maxCurrentNum) maxCurrentNum = num;
-                    } else if (pStr.startsWith('Finished')) {
-                         maxCurrentNum = currentSearchLimit; 
-                    }
-                }
+                let numCurBigInt = checksCompleted * 2n;
+                let displayCurrentNum = numCurBigInt > STAGE_MAX_NUMBER ? STAGE_MAX_NUMBER : numCurBigInt;
                 
-                let displayCurrentNum = maxCurrentNum > STAGE_MAX_NUMBER ? STAGE_MAX_NUMBER : maxCurrentNum;
                 if (displayCurrentNum === 0n && currentStageIndex === 1) {
-                     displayCurrentNum = nextSearchStart;
+                    displayCurrentNum = nextSearchStart;
                 }
                 
                 const currentCountStr = displayCurrentNum.toLocaleString();
@@ -1094,7 +1085,7 @@
                     workers.push(worker);
                     
                     let firstNum = startNum + BigInt(i) * blockSizeOdds * 2n;
-                    coreStatuses[i].currentP = firstNum <= maxNum ? firstNum.toLocaleString() : "N/A";
+                    coreStatuses[i].currentP = firstNum <= maxNum ? firstNum.toString() : "N/A";
                     coreStatuses[i].isFinished = false;
                     updateCoreStatusUI(i);
 
