@@ -221,11 +221,12 @@
         .cell-container {
             display: flex;
             flex-direction: row; 
+            flex-wrap: wrap;
             width: 100%;
             height: 100%; 
             min-height: 44px; 
-            justify-content: stretch;
-            gap: 4px; 
+            align-content: stretch;
+            gap: 2px;
             padding: 2px; 
             box-sizing: border-box; 
         }
@@ -257,13 +258,11 @@
         .control-button {
             flex-grow: 1; 
             flex-shrink: 1;
-            flex-basis: 0; 
-
-            padding: 8px 5px; 
+            padding: 2px 2px;
             background-color: #4A4A4A; 
             color: #E0E0E0;
             border-radius: 4px; 
-            height: 100%; 
+            min-height: 18px;
             box-sizing: border-box; 
         }
         
@@ -479,16 +478,26 @@
                 { x: 60150, y: 97.300 }
             ],
             'HEVC_QSV_V9': [
-                { x: 2023, y: 79.333 }, { x: 4027, y: 86.360 }, { x: 7001, y: 90.200 }, { x: 10106, y: 92.120 },
-                { x: 14997, y: 93.748 }, { x: 19999, y: 94.695 }, { x: 25045, y: 95.377 }, { x: 40099, y: 96.556 },
-                { x: 59933, y: 97.431 }
-            ], 
-            'HEVC_AMF_3.1': [
+                { x: 2071, y: 79.563 }, { x: 4084, y: 86.492 }, { x: 7104, y: 90.281 }, { x: 10226, y: 92.171 },
+                { x: 15127, y: 93.792 }, { x: 20262, y: 94.743 }, { x: 25371, y: 95.422 }, { x: 40246, y: 96.576 },
+                { x: 60316, y: 97.435 }
+            ],
+            'HEVC_QSV_V10': [
+                { x: 2067, y: 79.784 }, { x: 4016, y: 86.361 }, { x: 7016, y: 90.211 }, { x: 10029, y: 92.066 },
+                { x: 15051, y: 93.741 }, { x: 20041, y: 94.697 }, { x: 25084, y: 95.377 }, { x: 40087, y: 96.540 },
+                { x: 60006, y: 97.419 }
+            ],
+            'HEVC_QSV_V11': [
+                { x: 2031, y: 79.520 }, { x: 4028, y: 86.389 }, { x: 7061, y: 90.230 }, { x: 10011, y: 92.034 },
+                { x: 15154, y: 93.760 }, { x: 20217, y: 94.703 }, { x: 25195, y: 95.350 }, { x: 40249, y: 96.550 },
+                { x: 60105, y: 97.437 }
+            ],
+            'HEVC_VCN_3.1': [
                 { x: 2003, y: 72.408 }, { x: 4011, y: 80.491 }, { x: 7010, y: 85.613 }, { x: 10013, y: 88.530 }, 
                 { x: 15026, y: 91.022 }, { x: 20011, y: 92.421 }, { x: 25006, y: 93.341 }, { x: 40001, y: 94.934 }, 
                 { x: 60074, y: 96.125 }
             ],
-            'HEVC_AMF_4.0': [
+            'HEVC_VCN_4.0': [
                 { x: 2010, y: 70.290 }, { x: 4010, y: 79.835 }, { x: 7014, y: 85.465 }, { x: 10019, y: 88.311 }, 
                 { x: 15023, y: 90.811 }, { x: 20041, y: 92.318 }, { x: 25052, y: 93.344 }, { x: 40059, y: 95.026 }, 
                 { x: 60063, y: 96.120 }
@@ -500,8 +509,18 @@
             ],
             'VP9_QSV_V9': [ 
                 { x: 2056, y: 77.599 }, { x: 4014, y: 84.117 }, { x: 7029, y: 88.420 }, { x: 10286, y: 90.757 }, 
-                { x: 15070, y: 92.733 }, { x: 20150, y: 93.950 }, { x: 24999, y: 94.785 }, { x: 40041, y: 96.253 }, 
+                { x: 15070, y: 92.733 }, { x: 20149, y: 93.950 }, { x: 24999, y: 94.785 }, { x: 40041, y: 96.253 }, 
                 { x: 60020, y: 97.239 }
+            ],
+            'VP9_QSV_V10': [
+                { x: 2056, y: 77.230 }, { x: 4016, y: 83.932 }, { x: 7022, y: 88.256 }, { x: 10062, y: 90.485 },
+                { x: 15051, y: 92.616 }, { x: 20022, y: 93.841 }, { x: 25103, y: 94.721 }, { x: 40054, y: 96.209 },
+                { x: 60058, y: 97.214 }
+            ],
+            'VP9_QSV_V11': [
+                { x: 2055, y: 76.934 }, { x: 4017, y: 83.781 }, { x: 7021, y: 88.191 }, { x: 10268, y: 90.552 },
+                { x: 15047, y: 92.595 }, { x: 20115, y: 93.856 }, { x: 25019, y: 94.686 }, { x: 40018, y: 96.222 },
+                { x: 60016, y: 97.224 }
             ],
             'SVT-AV1': [
                 { x: 2024, y: 86.677 }, { x: 4038, y: 91.279 }, { x: 7001, y: 93.714 }, { x: 10161, y: 94.946 }, 
@@ -519,11 +538,21 @@
                 { x: 60086, y: 97.644 }
             ],
             'AV1_QSV_V9': [
-                { x: 2026, y: 78.035 }, { x: 4061, y: 85.069 }, { x: 7061, y: 89.175 }, { x: 10035, y: 91.117 }, 
-                { x: 15000, y: 92.825 }, { x: 20011, y: 93.849 }, { x: 25126, y: 94.536 }, { x: 40168, y: 95.825 }, 
-                { x: 59993, y: 96.769 }
+                { x: 2049, y: 78.539 }, { x: 4056, y: 85.299 }, { x: 7051, y: 89.300 }, { x: 10121, y: 91.193 },
+                { x: 15360, y: 92.904 }, { x: 20126, y: 93.849 }, { x: 25276, y: 94.530 }, { x: 40119, y: 95.800 },
+                { x: 60094, y: 96.762 }
             ],
-            'AV1_AMF_4.0': [
+            'AV1_QSV_V10': [
+                { x: 2003, y: 78.212 }, { x: 4015, y: 85.394 }, { x: 7085, y: 89.750 }, { x: 10108, y: 91.430 },
+                { x: 15172, y: 93.073 }, { x: 20103, y: 93.993 }, { x: 25030, y: 94.591 }, { x: 40412, y: 95.860 },
+                { x: 60586, y: 96.739 }
+            ],
+            'AV1_QSV_V11': [
+                { x: 2038, y: 79.737 }, { x: 4034, y: 86.162 }, { x: 7004, y: 89.615 }, { x: 10119, y: 91.540 },
+                { x: 15197, y: 93.179 }, { x: 20159, y: 94.126 }, { x: 25129, y: 94.734 }, { x: 40149, y: 95.990 },
+                { x: 60187, y: 96.892 }
+            ],
+            'AV1_VCN_4.0': [
                 { x: 2017, y: 71.295 }, { x: 4020, y: 79.994 }, { x: 7025, y: 86.304 }, { x: 10040, y: 89.337 }, 
                 { x: 15010, y: 91.711 }, { x: 19582, y: 92.928 }, { x: 25172, y: 93.813 }, { x: 40096, y: 95.210 }, 
                 { x: 60105, y: 96.413 }
@@ -547,25 +576,24 @@
             'HEVC_NVENC_7th': '#00FFFF', 'HEVC_NVENC_8th': '#40E0D0', 'HEVC_NVENC_9th': '#20B2AA', 
             'AV1_NVENC_8th':  '#ADFF2F', 'AV1_NVENC_9th':  '#9ACD32', 
             /* ------------------- QSV ------------------- */
-            'HEVC_QSV_V8': '#1E90FF', 
-            'HEVC_QSV_V9': '#6495ED', 
-            'VP9_QSV_V8':  '#00BFFF',    
-            'VP9_QSV_V9':  '#4169E1', 'AV1_QSV_V9':  '#0000CD',    
-            /* ------------------- AMF ------------------- */
-            'HEVC_AMF_3.1': '#FF6347', 'HEVC_AMF_4.0': '#FF8C00', 'AV1_AMF_4.0':  '#FF7F50',   
+            'HEVC_QSV_V8':  '#87CEFA', 'HEVC_QSV_V9':  '#00BFFF', 'HEVC_QSV_V10': '#1E90FF', 'HEVC_QSV_V11': '#0055FF',
+            'VP9_QSV_V8':   '#B3ADFF', 'VP9_QSV_V9':   '#8F85FF', 'VP9_QSV_V10':  '#695CFF', 'VP9_QSV_V11':  '#4533FF',
+            'AV1_QSV_V9':   '#B0C4DE', 'AV1_QSV_V10':  '#6495ED', 'AV1_QSV_V11':  '#4169E1',
+            /* ------------------- VCN ------------------- */
+            'HEVC_VCN_3.1': '#FF6347', 'HEVC_VCN_4.0': '#FF8C00', 'AV1_VCN_4.0':  '#FF7F50',   
             /* ------------------- 流媒体 ------------------- */
             '哔哩哔哩': '#00A2E8' 
         };
 
         const ENCODER_MATRIX = {
-            'H.264': { 'CPU': ['x264'], 'NVENC': ['H264_NVENC_9th'], 'QSV': [], 'AMF': [], '流媒体': [] }, 
-            'H.265': { 'CPU': ['x265'], 'NVENC': ['HEVC_NVENC_7th', 'HEVC_NVENC_8th', 'HEVC_NVENC_9th'], 'QSV': ['HEVC_QSV_V8', 'HEVC_QSV_V9'], 'AMF': ['HEVC_AMF_3.1', 'HEVC_AMF_4.0'], '流媒体': ['哔哩哔哩'] },
-            'VP9': { 'CPU': [], 'NVENC': [], 'QSV': ['VP9_QSV_V8', 'VP9_QSV_V9'], 'AMF': [], '流媒体': [] },
-            'AV1': { 'CPU': ['SVT-AV1'], 'NVENC': ['AV1_NVENC_8th', 'AV1_NVENC_9th'], 'QSV': ['AV1_QSV_V9'], 'AMF': ['AV1_AMF_4.0'], '流媒体': [] },
-            'H.266': { 'CPU': ['VVenC'], 'NVENC': [], 'QSV': [], 'AMF': [], '流媒体': [] }
+            'H.264': { 'CPU': ['x264'], 'NVENC': ['H264_NVENC_9th'], 'QSV': [], 'VCN': [], '流媒体': [] }, 
+            'H.265': { 'CPU': ['x265'], 'NVENC': ['HEVC_NVENC_7th', 'HEVC_NVENC_8th', 'HEVC_NVENC_9th'], 'QSV': ['HEVC_QSV_V8', 'HEVC_QSV_V9', 'HEVC_QSV_V10', 'HEVC_QSV_V11'], 'VCN': ['HEVC_VCN_3.1', 'HEVC_VCN_4.0'], '流媒体': ['哔哩哔哩'] },
+            'VP9': { 'CPU': [], 'NVENC': [], 'QSV': ['VP9_QSV_V8', 'VP9_QSV_V9', 'VP9_QSV_V10', 'VP9_QSV_V11'], 'VCN': [], '流媒体': [] },
+            'AV1': { 'CPU': ['SVT-AV1'], 'NVENC': ['AV1_NVENC_8th', 'AV1_NVENC_9th'], 'QSV': ['AV1_QSV_V9', 'AV1_QSV_V10', 'AV1_QSV_V11'], 'VCN': ['AV1_VCN_4.0'], '流媒体': [] },
+            'H.266': { 'CPU': ['VVenC'], 'NVENC': [], 'QSV': [], 'VCN': [], '流媒体': [] }
         };
 
-        const COLUMN_HEADERS = ['CPU', 'NVENC', 'QSV', 'AMF', '流媒体'];
+        const COLUMN_HEADERS = ['CPU', 'NVENC', 'QSV', 'VCN', '流媒体'];
         const ROW_HEADERS = Object.keys(ENCODER_MATRIX);
 
         function getSimplifiedName(label) {
@@ -581,7 +609,7 @@
                 if (match) return match[1];
             }
 
-            if (label.includes('_AMF_')) {
+            if (label.includes('_VCN_')) {
                 const parts = label.split('_');
                 const version = parts.pop();
                 if (version.includes('.')) return version;
@@ -640,6 +668,30 @@
         }
 
         const initialParams = getChartParams();
+
+        function getBaseName(label) {
+            return label.replace(/_(V\d+|[0-9]+th|\d+\.\d+)$/, '');
+        }
+
+        const labels = Object.keys(rawData);
+        const orderMap = {};
+        let currentBaseOrder = 0;
+
+        let i = 0;
+        while (i < labels.length) {
+            let baseName = getBaseName(labels[i]);
+            let j = i;
+            while (j < labels.length && getBaseName(labels[j]) === baseName) {
+                j++;
+            }
+            let orderForThisGroup = currentBaseOrder;
+            for (let k = j - 1; k >= i; k--) {
+                orderMap[labels[k]] = orderForThisGroup++;
+            }
+            currentBaseOrder += 100; 
+            i = j;
+        }
+        
         const chartDatasets = Object.keys(rawData).map((label) => {
             const color = COLOR_MAP[label];
             const isSinglePoint = label === '哔哩哔哩';
@@ -654,7 +706,8 @@
                 borderWidth: initialParams.borderWidth,
                 showLine: !isSinglePoint,    
                 hidden: false,               
-                datasetIndex: -1,            
+                datasetIndex: -1,
+                order: orderMap[label],
                 simplifiedName: getSimplifiedName(label),
                 color: color 
             };
