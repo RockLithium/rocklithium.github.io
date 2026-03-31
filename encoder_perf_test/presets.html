@@ -234,7 +234,7 @@
     <p>以下表格展示了性能测试中所使用的各编码器详细配置参数和对应的 FFmpeg 命令行。</p>
 
     <div class="intro-text-container">
-    <p>FFmpeg版本 N-120856-g9893d66add-20250831。</p>
+    <p>FFmpeg版本 N-120856-g9893d66add-20250831。安卓手机测试结果基于<a href="https://github.com/JohanBlome/encapp" target="_blank">encapp</a>。</p>
     <p>本实验在测完x265、SVT-AV1和VVenC后才进行VP9的测试，在预实验中发现VPX-VP9编码器的速度与VVenC几乎处于同一水平，而质量却显著低于x265，故不做测试。SVT-VP9编码器理论上能提供快于x265的速度，但发行版FFmpeg并没有原生支持该编码器，故也不进行测试。</p>
     <p>预设的选择：由于硬件编码和x264软件编码速度较快，故使用最慢的Preset并尽可能使用两次编码。而x265、 AV1、VVC的软件编码速度很慢，故采用质量尽可能接近最慢档时较快的Preset，x265使用slower而不是veryslow，AV1使用3而不是0，VVC使用slow而不是slower。</p>
     <p>所有视频均由使用Prores 422 HQ压缩的3840x2160 60fps HDR 10bit 422原片压制而来，故全部使用了 -pix_fmt yuv420p10le/p010le 指令将其转为10bit 420 HDR。</p>
@@ -582,6 +582,30 @@
                 <tr class="command-row">
                     <td colspan="15">
                         <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> libvvenc <span class="code-param">-preset</span> slow <span class="code-param">-threads</span> 16 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td rowspan="2">HEVC_VPU</td>
+                    <td>H.265</td>
+                    <td>3840x2160</td>
+                    <td>60</td>
+                    <td>.mp4</td>
+                    <td>YUV 4:2:0</td>
+                    <td>10bpc</td>
+                    <td>BT.2020 PQ</td>
+                    <td>(自动)</td>
+                    <td>main10</td>
+                    <td>(自动)</td>
+                    <td>(自动)</td>
+                    <td>编码器=c2.qti.hevc.encoder</td>
+                    <td>VBR</td>
+                    <td>Adreno 830 (Snapdragon 8 Elite)</td>
+                    <td>-</td>
+                </tr>
+                <tr class="command-row">
+                    <td colspan="15">
+                        <code><span class="code-ffmpeg">python</span> scripts\encapp.py run config.pbtxt <span class="code-param">-r</span> (目标码率) <span class="code-param">-w</span> (输出目录) <span class="code-param">--device-workdir</span> (工作目录) </code>
                     </td>
                 </tr>
 
