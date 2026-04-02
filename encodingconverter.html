@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=850, user-scalable=yes">
+    <title>Text Encoding Converter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Condensed&display=swap" rel="stylesheet">
+    
+    <style>
+        @font-face {
+            font-family: 'Unispace Bd';
+            src: url('./fonts/Unispace Bd.otf') format('opentype');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Dempster';
+            src: url('./fonts/Dempster.otf') format('opentype');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+            size-adjust: 120%;
+        }
+
+        body {
+            background-color: #121212;
+            color: #E0E0E0;
+            margin: 0;
+            padding: 0;
+            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            letter-spacing: 0.3px;
+        }
+
+        #homeButton {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 16px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px) saturate(120%);
+            -webkit-backdrop-filter: blur(20px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        #homeButton:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.04);
+        }
+
+        #homeButton:active {
+            transform: scale(0.96);
+            transition: transform 0.05s;
+        }
+
+        #langSelectorContainer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .lang-select {
+            padding: 10px 16px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px) saturate(120%);
+            -webkit-backdrop-filter: blur(20px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            outline: none;
+            cursor: pointer;
+            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .lang-select:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .lang-select option {
+            background-color: #1a1a1a;
+            color: #E0E0E0;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 90%;
+            padding: 10px 0 40px 0;
+            margin-top: 70px;
+            margin-bottom: 40px;
+            background: rgba(30, 30, 30, 0.6);
+            backdrop-filter: blur(15px);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
+            font-size: 48px;
+            background: linear-gradient(45deg, #A52A2A 0%, #FF7E00 50%, #DAA520 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #888;
+            margin-bottom: 40px;
+            padding: 0 20px;
+        }
+
+        .converter-area {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .io-box {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 5px; 
+            min-height: 32px;
+        }
+
+        .box-title {
+            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
+            font-size: 16px;
+            color: #AAAAAA;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: left;
+            transform: translateY(3px);
+        }
+
+        .box-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-label {
+            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
+            font-size: 14px;
+            color: #888888;
+            margin-right: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .small-select {
+            font-family: 'Ubuntu Condensed', "PingFang SC", sans-serif;
+            font-size: 16px;
+            background-color: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #AAAAAA;
+            height: 30px;
+            line-height: 28px;
+            padding: 0 22px 0 10px;
+            appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23AAAAAA"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>');
+            background-repeat: no-repeat;
+            background-position: right 4px center;
+            background-size: 14px;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .small-select:hover {
+            border-color: #FF7E00;
+            color: #FF7E00;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23FF7E00"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>');
+        }
+
+        .small-select option {
+            background-color: #1a1a1a;
+            color: #E0E0E0;
+        }
+
+        .io-textarea {
+            width: 100%;
+            height: 180px;
+            background-color: rgba(42, 42, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            color: #E0E0E0;
+            padding: 15px;
+            padding-bottom: 50px; 
+            box-sizing: border-box;
+            outline: none;
+            font-size: 16px;
+            resize: vertical;
+            transition: all 0.3s ease;
+            text-align: left;
+            line-height: 1.5; 
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        .io-textarea:focus {
+            border-color: #FF7E00;
+            box-shadow: 0 0 12px rgba(255, 126, 0, 0.2);
+            background-color: rgba(50, 50, 50, 1);
+        }
+
+        .io-textarea[readonly] {
+            opacity: 0.85;
+            cursor: default;
+            background-color: rgba(30, 30, 30, 0.6);
+        }
+
+        .copy-btn {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #AAAAAA;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 5;
+            outline: none;
+        }
+
+        .copy-btn:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #FF7E00;
+            border-color: #FF7E00;
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        .copy-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            transition: all 0.2s ease;
+        }
+
+        .swap-btn-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 44px;
+            margin: 16px 0; 
+            position: relative;
+            z-index: 10;
+        }
+
+        .swap-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: rgba(42, 42, 42, 0.95);
+            border: 1px solid rgba(88, 88, 88, 0.5);
+            color: #AAAAAA;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            outline: none;
+        }
+
+        .swap-btn:hover {
+            border-color: #FF7E00;
+            color: #FF7E00;
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255, 126, 0, 0.3);
+            background-color: rgba(50, 50, 50, 1);
+        }
+
+        .swap-btn:active {
+            transform: scale(0.95);
+        }
+
+        .swap-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+            transition: transform 0.4s ease;
+        }
+
+        .swap-btn.rotated svg {
+            transform: rotate(180deg);
+        }
+        
+    </style>
+
+    <script>
+        var _nativeTextEncoder = window.TextEncoder;
+        var _nativeTextDecoder = window.TextDecoder;
+        window.TextEncoder = undefined;
+        window.TextDecoder = undefined;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding-indexes.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding.js"></script>
+    <script>
+        window.PolyfillTextEncoder = window.TextEncoder;
+        window.PolyfillTextDecoder = window.TextDecoder;
+        window.TextEncoder = _nativeTextEncoder;
+        window.TextDecoder = _nativeTextDecoder;
+    </script>
+</head>
+<body>
+    <a href="javascript:history.back()" id="homeButton">← Go Back</a>
+
+    <div id="langSelectorContainer">
+        <select class="lang-select" onchange="changeLanguage(this.value)">
+            <option value="en-US" selected>English</option>
+            <option value="zh-Hans">简体中文</option>
+            <option value="fr-FR">Français</option>
+            <option value="ru-RU">Русский</option>
+        </select>
+    </div>
+
+    <div class="container">
+        <h1 id="main-title">Text Encoding Converter</h1>
+        <div class="subtitle" id="main-subtitle">Convert text to various encodings and vice-versa in real-time.</div>
+        
+        <div class="converter-area" id="converter-area">
+            <div id="slot-top">
+                <div class="io-box" id="ui-text">
+                    <div class="box-header">
+                        <div class="box-title" id="label-text">TEXT</div>
+                    </div>
+                    <textarea class="io-textarea" id="input-text" placeholder="Enter text here..."></textarea>
+                    <button class="copy-btn" onclick="copyToClipboard('input-text', this)">
+                        <svg viewBox="0 0 24 24"><path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8C6.9 5 6 5.9 6 7v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="swap-btn-container">
+                <button class="swap-btn" id="swapBtn">
+                    <svg viewBox="0 0 24 24"><path d="M7 10l5-5 5 5H7zm10 4l-5 5-5-5h10z"/></svg>
+                </button>
+            </div>
+            
+            <div id="slot-bottom">
+                <div class="io-box" id="ui-code">
+                    <div class="box-header">
+                        <div class="box-title" id="label-code">ENCODED DATA</div>
+                        <div class="box-controls">
+                            <select id="sel-encoding" class="small-select">
+                                <option value="UTF-8" selected>UTF-8</option>
+                                <option value="UTF-16">UTF-16</option>
+                                <option value="UTF-32">UTF-32</option>
+                                <option value="ASCII">ASCII</option>
+                                <option value="GB18030">GB18030</option>
+                                <option value="GBK">GBK</option>
+                                <option value="GB2312">GB2312</option>
+                                <option value="Big5">Big5</option>
+                                <option value="Shift_JIS">Shift_JIS</option>
+                                <option value="EUC-KR">EUC-KR</option>
+                                <option value="Windows-1252">Windows-1252</option>
+                                <option value="ISO-8859-1">ISO-8859-1</option>
+                            </select>
+                            <select id="sel-base" class="small-select">
+                                <option value="16" selected>HEX</option>
+                                <option value="10">DEC</option>
+                                <option value="8">OCT</option>
+                                <option value="2">BIN</option>
+                            </select>
+                            <div style="display: flex; align-items: center;">
+                                <span class="control-label" id="label-groupby">GROUP BY</span>
+                                <select id="sel-group" class="small-select">
+                                    <option value="none" id="opt-none">None</option>
+                                    <option value="4bit" id="opt-4bit">4 Bits</option>
+                                    <option value="1" selected id="opt-1byte">1 Byte</option>
+                                    <option value="2" id="opt-2bytes">2 Bytes</option>
+                                    <option value="3" id="opt-3bytes">3 Bytes</option>
+                                    <option value="4" id="opt-4bytes">4 Bytes</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <textarea class="io-textarea" id="input-code" placeholder="Encoded data will appear here..." readonly></textarea>
+                    <button class="copy-btn" onclick="copyToClipboard('input-code', this)">
+                        <svg viewBox="0 0 24 24"><path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8C6.9 5 6 5.9 6 7v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            'en-US': {
+                goBack: "← Go Back",
+                title: "Text Encoding Converter",
+                subtitle: "Convert text to various encodings and vice-versa in real-time.",
+                textLabel: "TEXT",
+                codeLabel: "ENCODED DATA",
+                groupBy: "GROUP BY",
+                placeholderText: "Enter text here...",
+                placeholderCode: "Encoded data will appear here...",
+                placeholderCodeInput: "Enter encoded data here...",
+                placeholderTextOutput: "Decoded text will appear here..."
+            },
+            'zh-Hans': {
+                goBack: "← 返回",
+                title: "文本编码转换器",
+                subtitle: "实时将字符转化为多种编码数据格式，或逆向转换。",
+                textLabel: "字符文本",
+                codeLabel: "编码数据",
+                groupBy: "分组 (GROUP BY)",
+                placeholderText: "在此输入字符...",
+                placeholderCode: "编码数据将显示在这里...",
+                placeholderCodeInput: "在此输入编码数据（支持带/不带空格）...",
+                placeholderTextOutput: "解码后的字符将显示在这里..."
+            },
+            'fr-FR': {
+                goBack: "← Retour",
+                title: "Convertisseur d'Encodage",
+                subtitle: "Convertissez du texte en divers formats d'encodage et inversement en temps réel.",
+                textLabel: "TEXTE",
+                codeLabel: "DONNÉES ENCODÉES",
+                groupBy: "GROUPER PAR",
+                placeholderText: "Saisissez le texte ici...",
+                placeholderCode: "Les données encodées apparaîtront ici...",
+                placeholderCodeInput: "Saisissez les données encodées ici...",
+                placeholderTextOutput: "Le texte décodé apparaîtra ici..."
+            },
+            'ru-RU': {
+                goBack: "← Назад",
+                title: "Конвертер Кодировок",
+                subtitle: "Преобразование текста в закодированные данные и обратно в реальном времени.",
+                textLabel: "ТЕКСТ",
+                codeLabel: "ЗАКОДИРОВАННЫЕ ДАННЫЕ",
+                groupBy: "ГРУППИРОВАТЬ",
+                placeholderText: "Введите текст здесь...",
+                placeholderCode: "Здесь появятся закодированные данные...",
+                placeholderCodeInput: "Введите закодированные данные здесь...",
+                placeholderTextOutput: "Здесь появится декодированный текст..."
+            }
+        };
+
+        let currentLang = 'en-US';
+        let isTextToCode = true;
+
+        const slotTop = document.getElementById('slot-top');
+        const slotBottom = document.getElementById('slot-bottom');
+        const uiText = document.getElementById('ui-text');
+        const uiCode = document.getElementById('ui-code');
+        const inputText = document.getElementById('input-text');
+        const inputCode = document.getElementById('input-code');
+        const swapBtn = document.getElementById('swapBtn');
+        const selEncoding = document.getElementById('sel-encoding');
+        const selBase = document.getElementById('sel-base');
+        const selGroup = document.getElementById('sel-group');
+
+        let lastBase = selBase.value;
+        let lastGroup = selGroup.value;
+
+        function updatePlaceholders() {
+            const t = translations[currentLang];
+            if (isTextToCode) {
+                inputText.placeholder = t.placeholderText;
+                inputCode.placeholder = t.placeholderCode;
+            } else {
+                inputCode.placeholder = t.placeholderCodeInput;
+                inputText.placeholder = t.placeholderTextOutput;
+            }
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+
+            document.getElementById('homeButton').textContent = t.goBack;
+            document.getElementById('main-title').textContent = t.title;
+            document.getElementById('main-subtitle').textContent = t.subtitle;
+            document.getElementById('label-text').textContent = t.textLabel;
+            document.getElementById('label-code').textContent = t.codeLabel;
+            document.getElementById('label-groupby').textContent = t.groupBy;
+            
+            updatePlaceholders();
+        }
+
+        function textToBytes(text, encoding) {
+            let bytes = [];
+            if (encoding === 'UTF-16') {
+                for (let i = 0; i < text.length; i++) {
+                    let c = text.charCodeAt(i);
+                    bytes.push((c >> 8) & 0xFF, c & 0xFF);
+                }
+            } else if (encoding === 'UTF-32') {
+                for (let c of text) {
+                    let cp = c.codePointAt(0);
+                    bytes.push((cp >> 24) & 0xFF, (cp >> 16) & 0xFF, (cp >> 8) & 0xFF, cp & 0xFF);
+                }
+            } else if (encoding === 'ASCII') {
+                for (let i = 0; i < text.length; i++) {
+                    let c = text.charCodeAt(i);
+                    bytes.push(c > 127 ? 0x3F : c);
+                }
+            } else if (encoding === 'UTF-8') {
+                const encoder = new TextEncoder();
+                return Array.from(encoder.encode(text));
+            } else {
+                try {
+                    if (window.PolyfillTextEncoder) {
+                        const encoder = new window.PolyfillTextEncoder(encoding.toLowerCase(), { NONSTANDARD_allowLegacyEncoding: true });
+                        return Array.from(encoder.encode(text));
+                    }
+                } catch(e) {}
+            }
+            return bytes;
+        }
+
+        function formatBytes(bytes, baseStr, groupMode) {
+            if (bytes.length === 0) return "";
+            const base = parseInt(baseStr, 10);
+            const padSize = (base === 16) ? 2 : (base === 2) ? 8 : 3;
+
+            let byteStrs = bytes.map(b => {
+                let str = b.toString(base);
+                if (base === 16) str = str.toUpperCase();
+                return str.padStart(padSize, '0');
+            });
+
+            if (groupMode === '4bit' && (base === 16 || base === 2)) {
+                let nibbles = [];
+                for (let str of byteStrs) {
+                    if (base === 16) {
+                        nibbles.push(str[0], str[1]);
+                    } else if (base === 2) {
+                        nibbles.push(str.substring(0, 4), str.substring(4, 8));
+                    }
+                }
+                return nibbles.join(' ');
+            }
+
+            if (groupMode === 'none') {
+                return byteStrs.join('');
+            }
+
+            let groupSize = parseInt(groupMode, 10);
+            if (isNaN(groupSize)) groupSize = 1; 
+
+            let result = [];
+            for (let i = 0; i < byteStrs.length; i += groupSize) {
+                result.push(byteStrs.slice(i, i + groupSize).join(''));
+            }
+            return result.join(' ');
+        }
+
+        function parseMachineCodeToBytes(code, baseStr) {
+            let bytes = [];
+            code = code.trim();
+            if (!code) return bytes;
+            
+            const base = parseInt(baseStr, 10);
+
+            if (base === 16 || base === 2) {
+                let raw = code.replace(/\s+/g, '');
+                let chunkSize = (base === 16) ? 2 : 8;
+                
+                if (raw.length % chunkSize !== 0) {
+                    raw = raw.padStart(raw.length + (chunkSize - (raw.length % chunkSize)), '0');
+                }
+                for (let i = 0; i < raw.length; i += chunkSize) {
+                    let val = parseInt(raw.substring(i, i + chunkSize), base);
+                    if (!isNaN(val)) bytes.push(val & 0xFF);
+                }
+            } else {
+                let tokens = code.split(/\s+/);
+                let chunkSize = 3;
+                for (let token of tokens) {
+                    if (token.length > chunkSize) {
+                        if (token.length % chunkSize !== 0) {
+                            token = token.padStart(token.length + (chunkSize - (token.length % chunkSize)), '0');
+                        }
+                        for (let i = 0; i < token.length; i += chunkSize) {
+                            let val = parseInt(token.substring(i, i + chunkSize), base);
+                            if (!isNaN(val)) bytes.push(val & 0xFF);
+                        }
+                    } else {
+                        let val = parseInt(token, base);
+                        if (!isNaN(val)) bytes.push(val & 0xFF);
+                    }
+                }
+            }
+            return bytes;
+        }
+
+        function bytesToText(bytes, encoding) {
+            if (bytes.length === 0) return "";
+
+            if (encoding === 'UTF-16') {
+                let text = "";
+                for (let i = 0; i < bytes.length; i += 2) {
+                    let b1 = bytes[i];
+                    let b2 = (i + 1 < bytes.length) ? bytes[i+1] : 0;
+                    text += String.fromCharCode((b1 << 8) | b2);
+                }
+                return text;
+            } else if (encoding === 'UTF-32') {
+                let text = "";
+                for (let i = 0; i < bytes.length; i += 4) {
+                    let b1 = bytes[i] || 0;
+                    let b2 = bytes[i+1] || 0;
+                    let b3 = bytes[i+2] || 0;
+                    let b4 = bytes[i+3] || 0;
+                    let cp = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+                    try { text += String.fromCodePoint(cp); } catch(e) { text += '?'; }
+                }
+                return text;
+            } else if (encoding === 'ASCII') {
+                return bytes.map(n => String.fromCharCode(n & 0x7F)).join('');
+            } else if (encoding === 'UTF-8') {
+                try {
+                    const decoder = new TextDecoder('utf-8', { fatal: false });
+                    return decoder.decode(new Uint8Array(bytes));
+                } catch(e) { return ""; }
+            } else {
+                try {
+                    const decoder = new TextDecoder(encoding.toLowerCase(), { fatal: false });
+                    return decoder.decode(new Uint8Array(bytes));
+                } catch(e) {
+                    if (window.PolyfillTextDecoder) {
+                        try {
+                            const decoder = new window.PolyfillTextDecoder(encoding.toLowerCase(), { fatal: false });
+                            return decoder.decode(new Uint8Array(bytes));
+                        } catch(err) {}
+                    }
+                    return "";
+                }
+            }
+        }
+
+        function sanitizeInputCode() {
+            if (isTextToCode) return; 
+            const base = parseInt(selBase.value, 10);
+            let regex;
+            if (base === 2) regex = /[^01\s]/g;
+            else if (base === 8) regex = /[^0-7\s]/g;
+            else if (base === 10) regex = /[^0-9\s]/g;
+            else if (base === 16) regex = /[^0-9a-fA-F\s]/g;
+
+            if (regex && regex.test(inputCode.value)) {
+                const start = inputCode.selectionStart;
+                const end = inputCode.selectionEnd;
+                const beforeLen = inputCode.value.length;
+
+                inputCode.value = inputCode.value.replace(regex, '');
+
+                const diff = beforeLen - inputCode.value.length;
+                inputCode.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
+            }
+        }
+
+        function performConversion() {
+            const encoding = selEncoding.value;
+            const base = selBase.value;
+            const groupMode = selGroup.value;
+
+            if (isTextToCode) {
+                const text = inputText.value;
+                if (!text) {
+                    inputCode.value = "";
+                    return;
+                }
+                const bytes = textToBytes(text, encoding);
+                inputCode.value = formatBytes(bytes, base, groupMode);
+            } else {
+                const code = inputCode.value;
+                if (!code.trim()) {
+                    inputText.value = "";
+                    return;
+                }
+                const bytes = parseMachineCodeToBytes(code, base);
+                inputText.value = bytesToText(bytes, encoding);
+            }
+        }
+
+        function swapPanels() {
+            const elTop = slotTop.firstElementChild;
+            const elBottom = slotBottom.firstElementChild;
+            
+            const rectTop = elTop.getBoundingClientRect();
+            const rectBottom = elBottom.getBoundingClientRect();
+
+            const distDown = rectBottom.top - rectTop.top;
+            const distUp = rectTop.top - rectBottom.top;
+
+            elTop.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+            elBottom.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+            elTop.style.transform = `translateY(${distDown}px)`;
+            elBottom.style.transform = `translateY(${distUp}px)`;
+            
+            swapBtn.classList.toggle('rotated');
+
+            setTimeout(() => {
+                elTop.style.transition = '';
+                elBottom.style.transition = '';
+                elTop.style.transform = '';
+                elBottom.style.transform = '';
+
+                if (isTextToCode) {
+                    slotTop.appendChild(uiCode);
+                    slotBottom.appendChild(uiText);
+                    inputText.readOnly = true;
+                    inputCode.readOnly = false;
+                } else {
+                    slotTop.appendChild(uiText);
+                    slotBottom.appendChild(uiCode);
+                    inputText.readOnly = false;
+                    inputCode.readOnly = true;
+                }
+                
+                isTextToCode = !isTextToCode;
+                updatePlaceholders();
+                performConversion();
+                
+            }, 400); 
+        }
+
+        function copyToClipboard(elementId, btn) {
+            const textarea = document.getElementById(elementId);
+            if(!textarea.value) return;
+            
+            textarea.select();
+            textarea.setSelectionRange(0, 999999); 
+            
+            try {
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+
+                const originalSvg = btn.innerHTML;
+                btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+                btn.style.color = '#3CB371';
+                btn.style.borderColor = '#3CB371';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalSvg;
+                    btn.style.color = '';
+                    btn.style.borderColor = '';
+                }, 1500);
+            } catch (err) {
+                console.error("Copy failed", err);
+            }
+        }
+
+        swapBtn.addEventListener('click', swapPanels);
+        inputText.addEventListener('input', () => { if (isTextToCode) performConversion(); });
+        inputCode.addEventListener('input', () => { 
+            if (!isTextToCode) {
+                sanitizeInputCode();
+                performConversion(); 
+            }
+        });
+        selEncoding.addEventListener('change', performConversion);
+        
+        selBase.addEventListener('change', (e) => { 
+            const newBase = e.target.value;
+            
+            if ((newBase === '10' || newBase === '8') && selGroup.value === '4bit') {
+                selGroup.value = '1';
+            }
+
+            if (!isTextToCode) {
+                const bytes = parseMachineCodeToBytes(inputCode.value, lastBase);
+                inputCode.value = formatBytes(bytes, newBase, selGroup.value);
+                inputText.value = bytesToText(bytes, selEncoding.value);
+            } else {
+                performConversion(); 
+            }
+
+            lastBase = newBase;
+            lastGroup = selGroup.value;
+        });
+
+        selGroup.addEventListener('change', (e) => {
+            const newGroup = e.target.value;
+            
+            if (newGroup === '4bit' && (selBase.value === '10' || selBase.value === '8')) {
+                selBase.value = '16';
+            }
+            
+            if (!isTextToCode) {
+                const bytes = parseMachineCodeToBytes(inputCode.value, lastBase);
+                inputCode.value = formatBytes(bytes, selBase.value, newGroup);
+                inputText.value = bytesToText(bytes, selEncoding.value);
+            } else {
+                performConversion();
+            }
+
+            lastBase = selBase.value;
+            lastGroup = newGroup;
+        });
+
+        changeLanguage('en-US');
+
+    </script>
+</body>
+</html>
