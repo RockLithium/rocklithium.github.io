@@ -804,7 +804,7 @@
                     currentStageDisplay.textContent = '并行查找 (Miller-Rabin)'; 
                     progressLabel.textContent = `总进度:`; 
                 } else if (currentStageIndex === 1.1) {
-                    currentStageDisplay.textContent = '同步快速排序 & 结果处理'; 
+                    currentStageDisplay.textContent = '并行分桶排序 & 结果处理'; 
                     progressLabel.textContent = `总进度:`;
                 } else if (currentStageIndex === 2) {
                     currentStageDisplay.textContent = '已完成';
@@ -872,70 +872,109 @@
             async function processAndSaveChunk() {
                 if (currentRawResults.length === 0) return;
 
+                const numWorkers = WORKER_COUNT;
+                const minVal = nextSearchStart;
+                const maxVal = currentSearchLimit;
+                const range = maxVal - minVal;
+                const bucketSize = range / BigInt(numWorkers);
+                const bucketCounts = new Uint32Array(numWorkers);
+                const buckets = new Array(numWorkers);
+                const bucketPtrs = new Uint32Array(numWorkers);
+
+                for (let item of currentRawResults) {
+                    const arr = new BigUint64Array(item.buffer, 0, item.count);
+                    for (let i = 0; i < item.count; i++) {
+                        const val = arr[i];
+                        let bIdx = Number((val - minVal) / bucketSize);
+                        if (bIdx >= numWorkers) bIdx = numWorkers - 1;
+                        bucketCounts[bIdx]++;
+                    }
+                }
+
+                let totalLen = 0;
+                for (let i = 0; i < numWorkers; i++) {
+                    buckets[i] = new BigUint64Array(bucketCounts[i]);
+                    totalLen += bucketCounts[i];
+                }
+
+                for (let item of currentRawResults) {
+                    const arr = new BigUint64Array(item.buffer, 0, item.count);
+                    for (let i = 0; i < item.count; i++) {
+                        const val = arr[i];
+                        let bIdx = Number((val - minVal) / bucketSize);
+                        if (bIdx >= numWorkers) bIdx = numWorkers - 1;
+                        buckets[bIdx][bucketPtrs[bIdx]++] = val;
+                    }
+                }
+                
+                currentRawResults = [];
+
                 const sortWorkerCode = `
                     self.onmessage = function(e) {
-                        const rawResults = e.data;
+                        const { buffer, index, count } = e.data;
+                        const arr = new BigUint64Array(buffer);
                         
-                        let totalLen = 0;
-                        for (let item of rawResults) totalLen += item.count;
-
-                        let typedArray = new BigUint64Array(totalLen);
-                        let offset = 0;
-                        for (let item of rawResults) {
-                            typedArray.set(new BigUint64Array(item.buffer), offset);
-                            offset += item.count;
-                        }
-
-                        typedArray.sort();
+                        arr.sort();
                         
                         let strParts = [];
                         const CHUNK_SIZE = 500000; 
-                        for(let i = 0; i < totalLen; i += CHUNK_SIZE) {
+                        for(let i = 0; i < count; i += CHUNK_SIZE) {
                             let chunk = [];
-                            let end = Math.min(i + CHUNK_SIZE, totalLen);
+                            let end = Math.min(i + CHUNK_SIZE, count);
                             for(let j = i; j < end; j++) {
-                                chunk.push(typedArray[j].toString());
+                                chunk.push(arr[j].toString());
                             }
                             strParts.push(chunk.join(' '));
                         }
                         
-                        let finalStr = strParts.join(' ') + (totalLen > 0 ? ' ' : '');
+                        let finalStr = strParts.join(' ') + (count > 0 ? ' ' : '');
                         const uint8Array = new TextEncoder().encode(finalStr);
-                        self.postMessage({ buffer: uint8Array.buffer, count: totalLen }, [uint8Array.buffer]);
+                        self.postMessage({ buffer: uint8Array.buffer, count: count, index: index }, [uint8Array.buffer]);
                     };
                 `;
                 const blob = new Blob([sortWorkerCode], { type: 'application/javascript' });
                 const workerUrl = URL.createObjectURL(blob);
-                const sortWorker = new Worker(workerUrl);
+                const promises = [];
+                const sortedResults = new Array(numWorkers).fill(null);
 
-                await new Promise((resolve) => {
-                    sortWorker.onmessage = async (e) => {
-                        const { buffer, count } = e.data;
-                        if (count > 0) {
-                            const u8arr = new Uint8Array(buffer);
-                            if (useRealtimeSave && writableStream) {
-                                await writableStream.write(u8arr);
-                            } else {
-                                accumulatedPrimesBlobs.push(new Blob([u8arr], { type: 'text/plain' }));
-                            }
-                            totalPrimeCount += count;
+                for (let i = 0; i < numWorkers; i++) {
+                    if (bucketCounts[i] === 0) continue;
+
+                    promises.push(new Promise(resolve => {
+                        const w = new Worker(workerUrl);
+                        w.onmessage = (e) => {
+                            sortedResults[e.data.index] = e.data;
+                            w.terminate();
+                            resolve();
+                        };
+                        w.postMessage(
+                            { buffer: buckets[i].buffer, index: i, count: bucketCounts[i] }, 
+                            [buckets[i].buffer]
+                        );
+                    }));
+                }
+
+                await Promise.all(promises);
+                URL.revokeObjectURL(workerUrl);
+
+                for (let i = 0; i < numWorkers; i++) {
+                    const res = sortedResults[i];
+                    if (res && res.count > 0) {
+                        const u8arr = new Uint8Array(res.buffer);
+                        if (useRealtimeSave && writableStream) {
+                            await writableStream.write(u8arr);
+                        } else {
+                            accumulatedPrimesBlobs.push(new Blob([u8arr], { type: 'text/plain' }));
                         }
-                        sortWorker.terminate();
-                        URL.revokeObjectURL(workerUrl);
-                        resolve();
-                    };
-                    
-                    let transferables = currentRawResults.map(item => item.buffer);
-                    sortWorker.postMessage(currentRawResults, transferables);
-                });
-
-                currentRawResults = []; 
+                        totalPrimeCount += res.count;
+                    }
+                }
             }
 
             async function startSortStage() {
                 const formattedStart = nextSearchStart.toLocaleString();
                 const formattedEnd = currentSearchLimit.toLocaleString();
-                stageMessage.textContent = `查找 [${formattedStart} 至 ${formattedEnd}] 完成。正在进行后台快速排序和结果处理...`;
+                stageMessage.textContent = `查找 [${formattedStart} 至 ${formattedEnd}] 完成。正在进行排序和结果处理...`;
                 const sortStartTime = Date.now();
 
                 await processAndSaveChunk();
