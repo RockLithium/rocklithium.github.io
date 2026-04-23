@@ -192,8 +192,8 @@
 
             const maxTexSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const TEX_W = isMobile ? Math.min(4096, maxTexSize) : Math.min(7840, maxTexSize);
-            const TEX_H = isMobile ? Math.min(4096, maxTexSize) : Math.min(4320, maxTexSize);
+            const TEX_W = isMobile ? Math.min(3840, maxTexSize) : Math.min(7840, maxTexSize);
+            const TEX_H = isMobile ? Math.min(2160, maxTexSize) : Math.min(4320, maxTexSize);
 
             canvas.width = TEX_W;
             canvas.height = TEX_H;
