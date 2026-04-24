@@ -191,9 +191,11 @@
             const gl = canvas.getContext('webgl2', { powerPreference: "high-performance", desynchronized: true });
 
             const maxTexSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const TEX_W = isMobile ? Math.min(3840, maxTexSize) : Math.min(7840, maxTexSize);
-            const TEX_H = isMobile ? Math.min(2160, maxTexSize) : Math.min(4320, maxTexSize);
+            //const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            //const TEX_W = isMobile ? Math.min(3840, maxTexSize) : Math.min(7840, maxTexSize);
+            //const TEX_H = isMobile ? Math.min(2160, maxTexSize) : Math.min(4320, maxTexSize);
+            const TEX_W = Math.min(3840, maxTexSize);
+            const TEX_H = Math.min(2160, maxTexSize);
 
             canvas.width = TEX_W;
             canvas.height = TEX_H;
@@ -242,10 +244,14 @@
             const BOUNCES = 12.0;          
             const FAR_CLIP = 300.0;        
             const SHADOW_SAMPLES = 48.0;   
-            const FLAGS = 1 | 2 | 4 | 8;   
+            const FLAGS = 1 | 2 | 4 | 8;
             
             let lastDt = performance.now();
             
+            let renderPasses = 1;
+            let frameCount = 0;
+            let fpsTimer = 0;
+            let consecutiveHighFpsSeconds = 0;
             const syncs = [];
             const MAX_IN_FLIGHT = 2; 
             const channel = new MessageChannel();
@@ -265,6 +271,27 @@
                 const now = performance.now();
                 const dt = (now - lastDt) * 0.001;
                 lastDt = now;
+
+                frameCount++;
+                fpsTimer += dt;
+
+                if (fpsTimer >= 1.0) {
+                    let currentFps = frameCount / fpsTimer;
+                    
+                    if (currentFps > 2.0) {
+                        consecutiveHighFpsSeconds++;
+                        if (consecutiveHighFpsSeconds >= 1) {
+                            renderPasses++;
+                            consecutiveHighFpsSeconds = 0;
+                            console.log("Render passes: ", renderPasses);
+                        }
+                    } else {
+                        consecutiveHighFpsSeconds = 0;
+                    }
+                    
+                    frameCount = 0;
+                    fpsTimer = 0;
+                }
 
                 state.fractalRotAngle += dt * 0.05;
                 state.waterTime += dt * 1.0;
@@ -288,11 +315,14 @@
                 uData.set([ZOOM, state.fractalRotAngle, BOUNCES, FLAGS], 20);
                 uData.set([FAR_CLIP, SHADOW_SAMPLES, 0, 0], 24);
 
-                gl.bindBuffer(gl.UNIFORM_BUFFER, uboBuffer);
-                gl.bufferSubData(gl.UNIFORM_BUFFER, 0, uData);
-
                 gl.useProgram(program);
-                gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+                for (let i = 0; i < renderPasses; i++) {
+                    uData.set([state.fractalTime + i * 0.01, state.waterTime, TEX_W, TEX_H], 16);
+                    gl.bindBuffer(gl.UNIFORM_BUFFER, uboBuffer);
+                    gl.bufferSubData(gl.UNIFORM_BUFFER, 0, uData);
+                    gl.drawArrays(gl.TRIANGLES, 0, 6);
+                }
 
                 syncs.push(gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0));
                 gl.flush();
