@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物质溶解度</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            startup: { typeset: false }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        body { 
+            font-family: 'Ubuntu', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin: 20px auto; 
+            background-color: #222222; 
+            color: #E0E0E0;            
+        }
+
+        #homeButton {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            color: #e0e0e0;
+            background-color: #333333;
+            border: 1px solid #778899;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            z-index: 100;
+        }
+        
+        #homeButton:hover {
+            background-color: #444444; 
+        }
+        
+        h1 {
+            color: #1a73e8;
+            margin-top: 40px;
+            margin-bottom: 30px;
+            text-align: center; 
+        }
+
+        .controls-table-container {
+            width: 95%; 
+            max-width: 1200px; 
+            margin-top: 0px;
+            margin-bottom: 40px;
+            background-color: #222222; 
+            border: 3px solid #777777; 
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            overflow-x: auto; 
+            overflow-y: auto; 
+        }
+        
+        .controls-table {
+            width: 100%;
+            min-width: 900px; 
+            border-collapse: collapse; 
+            text-align: center;
+            border: none; 
+            table-layout: fixed;
+        }
+        
+        .controls-table th, .controls-table td {
+            color: #E0E0E0;
+            font-size: 15px; 
+            border: 1px solid #555555; 
+            vertical-align: middle;
+            text-align: center;
+            padding: 10px 5px;
+            height: auto; 
+            box-sizing: border-box; 
+            background-color: #222222;
+            line-height: 1.5;
+        }
+
+        .controls-table thead th {
+            background-color: #444444; 
+            font-weight: bold;
+            padding: 12px 5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .sticky-col-1 {
+            position: sticky;
+            left: 0;
+            z-index: 15; 
+            background-color: #444444 !important; 
+            font-weight: bold;
+        }
+
+        .sticky-col-2 {
+            position: sticky;
+            left: 120px;
+            z-index: 15; 
+            background-color: #444444 !important; 
+            font-weight: bold;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .sticky-col-span {
+            position: sticky;
+            left: 0;
+            z-index: 15;
+            background-color: #444444 !important;
+            font-weight: bold;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5); 
+        }
+
+        thead th.sticky-col-1, 
+        thead th.sticky-col-2, 
+        thead th.sticky-col-span {
+            z-index: 20; 
+        }
+
+        @media (max-width: 768px) {
+            #homeButton {
+                top: 10px; 
+                left: 10px; 
+                padding: 6px 10px; 
+                font-size: 0.75em; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="./" id="homeButton">← 返回上一级</a>
+    
+    <h1>物质溶解度表</h1>
+
+    <div class="controls-table-container">
+        <table class="controls-table">
+            <colgroup id="table-colgroup">
+            </colgroup>
+            <thead>
+                <tr id="table-head-row">
+                </tr>
+            </thead>
+            <tbody id="table-body">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            fetch('solubility.csv')
+                .then(response => {
+                    if (!response.ok) throw new Error('网络响应失败');
+                    return response.text();
+                })
+                .then(text => {
+                    if (text.charCodeAt(0) === 0xFEFF) text = text.substring(1);
+                    
+                    const lines = text.trim().split(/\r?\n/);
+                    if (lines.length === 0) return;
+
+                    const parseLine = line => line.split(',');
+                    const headers = parseLine(lines[0]);
+                    const dataRows = lines.slice(1).map(parseLine).filter(row => row.length >= 2);
+
+                    const colgroup = document.getElementById('table-colgroup');
+                    headers.forEach((_, index) => {
+                        const col = document.createElement('col');
+                        if (index === 0) col.style.width = '120px';
+                        else if (index === 1) col.style.width = '80px';
+                        colgroup.appendChild(col);
+                    });
+
+                    const headRow = document.getElementById('table-head-row');
+                    headers.forEach((headerText, index) => {
+                        const th = document.createElement('th');
+                        th.textContent = headerText.trim();
+                        
+                        if (index === 0) th.className = 'sticky-col-1';
+                        else if (index === 1) th.className = 'sticky-col-2';
+                        
+                        headRow.appendChild(th);
+                    });
+
+                    const groups = [];
+                    let currentFormula = null;
+                    let currentGroup = [];
+
+                    dataRows.forEach(row => {
+                        const formula = row[0].trim();
+                        if (formula === currentFormula) {
+                            currentGroup.push(row);
+                        } else {
+                            if (currentGroup.length > 0) groups.push(currentGroup);
+                            currentFormula = formula;
+                            currentGroup = [row];
+                        }
+                    });
+                    if (currentGroup.length > 0) groups.push(currentGroup);
+
+                    const tbody = document.getElementById('table-body');
+                    groups.forEach(group => {
+                        group.forEach((row, index) => {
+                            const tr = document.createElement('tr');
+                            const formula = row[0].trim();
+                            const crystalWater = row[1] ? row[1].trim() : '';
+
+                            if (index === 0) {
+                                const td1 = document.createElement('td');
+                                td1.textContent = formula;
+
+                                if (group.length === 1 && crystalWater === '') {
+                                    td1.colSpan = 2;
+                                    td1.className = 'sticky-col-span';
+                                    tr.appendChild(td1);
+                                } 
+                                else {
+                                    td1.rowSpan = group.length;
+                                    td1.className = 'sticky-col-1';
+                                    tr.appendChild(td1);
+                                    
+                                    const td2 = document.createElement('td');
+                                    td2.textContent = crystalWater;
+                                    td2.className = 'sticky-col-2';
+                                    tr.appendChild(td2);
+                                }
+                            } else {
+                                const td2 = document.createElement('td');
+                                td2.textContent = crystalWater;
+                                td2.className = 'sticky-col-2';
+                                tr.appendChild(td2);
+                            }
+
+                            for (let i = 2; i < row.length; i++) {
+                                const val = row[i] ? row[i].trim() : '';
+                                const td = document.createElement('td');
+                                td.textContent = (val === '-') ? '' : val;
+                                tr.appendChild(td);
+                            }
+
+                            tbody.appendChild(tr);
+                        });
+                    });
+
+                    function typesetMath() {
+                        if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                            MathJax.typesetPromise();
+                        } else {
+                            setTimeout(typesetMath, 100);
+                        }
+                    }
+                    typesetMath();
+                })
+                .catch(err => {
+                    console.error('加载 CSV 数据失败:', err);
+                    const tbody = document.getElementById('table-body');
+                    tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:#ff5555;padding:25px;">无法加载 solubility.csv 数据，请确保您在服务器环境下运行（如使用 VS Code Live Server），否则会被浏览器 CORS 安全策略阻挡。</td></tr>';
+                });
+        });
+    </script>
+</body>
+</html>
