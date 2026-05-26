@@ -21,8 +21,8 @@
             flex-direction: column; 
             align-items: center; 
             margin: 20px auto; 
-            background-color: #222222; 
-            color: #E0E0E0;            
+            background-color: #222222;
+            color: #E0E0E0;
         }
 
         #homeButton {
@@ -47,8 +47,49 @@
         h1 {
             color: #1a73e8;
             margin-top: 40px;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             text-align: center; 
+        }
+
+        .global-controls {
+            margin-top: 0px;
+            margin-bottom: 20px;
+            width: 90%;
+            max-width: 1100px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .global-btn {
+            cursor: pointer;
+            transition: background-color 0.15s ease, box-shadow 0.15s ease;
+            user-select: none;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            min-height: 35px;
+            width: 150px;
+            margin: 0;
+            color: #E0E0E0;
+            background-color: #666666;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .global-btn.active {
+            background-color: #1a73e8; 
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.4);
+            font-weight: bold;
+            color: white;
+        }
+
+        .global-btn:hover:not(.active) {
+            background-color: #888888;
         }
 
         .controls-table-container {
@@ -134,6 +175,15 @@
                 padding: 6px 10px; 
                 font-size: 0.75em; 
             }
+
+            .global-controls {
+                gap: 10px;
+            }
+
+            .global-btn {
+                width: 120px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -142,6 +192,11 @@
     <a href="./" id="homeButton">← 返回上一级</a>
     
     <h1>物质溶解度表</h1>
+
+    <div class="global-controls">
+        <button id="sortModeBtn" class="global-btn" type="button" aria-pressed="false" title="灰色为默认分组；蓝色为离子分组排序">默认分组</button>
+        <button id="downloadCsvBtn" class="global-btn" type="button">下载表格</button>
+    </div>
 
     <div class="controls-table-container">
         <table class="controls-table">
@@ -157,6 +212,626 @@
     </div>
 
     <script>
+        const ELEMENTS = {
+            H:{z:1,group:1,period:1},He:{z:2,group:18,period:1},Li:{z:3,group:1,period:2},Be:{z:4,group:2,period:2},B:{z:5,group:13,period:2},C:{z:6,group:14,period:2},N:{z:7,group:15,period:2},O:{z:8,group:16,period:2},F:{z:9,group:17,period:2},Ne:{z:10,group:18,period:2},
+            Na:{z:11,group:1,period:3},Mg:{z:12,group:2,period:3},Al:{z:13,group:13,period:3},Si:{z:14,group:14,period:3},P:{z:15,group:15,period:3},S:{z:16,group:16,period:3},Cl:{z:17,group:17,period:3},Ar:{z:18,group:18,period:3},
+            K:{z:19,group:1,period:4},Ca:{z:20,group:2,period:4},Sc:{z:21,group:3,period:4},Ti:{z:22,group:4,period:4},V:{z:23,group:5,period:4},Cr:{z:24,group:6,period:4},Mn:{z:25,group:7,period:4},Fe:{z:26,group:8,period:4},Co:{z:27,group:9,period:4},Ni:{z:28,group:10,period:4},Cu:{z:29,group:11,period:4},Zn:{z:30,group:12,period:4},Ga:{z:31,group:13,period:4},Ge:{z:32,group:14,period:4},As:{z:33,group:15,period:4},Se:{z:34,group:16,period:4},Br:{z:35,group:17,period:4},Kr:{z:36,group:18,period:4},
+            Rb:{z:37,group:1,period:5},Sr:{z:38,group:2,period:5},Y:{z:39,group:3,period:5},Zr:{z:40,group:4,period:5},Nb:{z:41,group:5,period:5},Mo:{z:42,group:6,period:5},Tc:{z:43,group:7,period:5},Ru:{z:44,group:8,period:5},Rh:{z:45,group:9,period:5},Pd:{z:46,group:10,period:5},Ag:{z:47,group:11,period:5},Cd:{z:48,group:12,period:5},In:{z:49,group:13,period:5},Sn:{z:50,group:14,period:5},Sb:{z:51,group:15,period:5},Te:{z:52,group:16,period:5},I:{z:53,group:17,period:5},Xe:{z:54,group:18,period:5},
+            Cs:{z:55,group:1,period:6},Ba:{z:56,group:2,period:6},La:{z:57,group:3,period:6},Ce:{z:58,group:3,period:6},Pr:{z:59,group:3,period:6},Nd:{z:60,group:3,period:6},Pm:{z:61,group:3,period:6},Sm:{z:62,group:3,period:6},Eu:{z:63,group:3,period:6},Gd:{z:64,group:3,period:6},Tb:{z:65,group:3,period:6},Dy:{z:66,group:3,period:6},Ho:{z:67,group:3,period:6},Er:{z:68,group:3,period:6},Tm:{z:69,group:3,period:6},Yb:{z:70,group:3,period:6},Lu:{z:71,group:3,period:6},Hf:{z:72,group:4,period:6},Ta:{z:73,group:5,period:6},W:{z:74,group:6,period:6},Re:{z:75,group:7,period:6},Os:{z:76,group:8,period:6},Ir:{z:77,group:9,period:6},Pt:{z:78,group:10,period:6},Au:{z:79,group:11,period:6},Hg:{z:80,group:12,period:6},Tl:{z:81,group:13,period:6},Pb:{z:82,group:14,period:6},Bi:{z:83,group:15,period:6},Po:{z:84,group:16,period:6},At:{z:85,group:17,period:6},Rn:{z:86,group:18,period:6},
+            Fr:{z:87,group:1,period:7},Ra:{z:88,group:2,period:7},Ac:{z:89,group:3,period:7},Th:{z:90,group:3,period:7},Pa:{z:91,group:3,period:7},U:{z:92,group:3,period:7},Np:{z:93,group:3,period:7},Pu:{z:94,group:3,period:7},Am:{z:95,group:3,period:7},Cm:{z:96,group:3,period:7},Bk:{z:97,group:3,period:7},Cf:{z:98,group:3,period:7},Es:{z:99,group:3,period:7},Fm:{z:100,group:3,period:7},Md:{z:101,group:3,period:7},No:{z:102,group:3,period:7},Lr:{z:103,group:3,period:7},Rf:{z:104,group:4,period:7},Db:{z:105,group:5,period:7},Sg:{z:106,group:6,period:7},Bh:{z:107,group:7,period:7},Hs:{z:108,group:8,period:7},Mt:{z:109,group:9,period:7},Ds:{z:110,group:10,period:7},Rg:{z:111,group:11,period:7},Cn:{z:112,group:12,period:7},Nh:{z:113,group:13,period:7},Fl:{z:114,group:14,period:7},Mc:{z:115,group:15,period:7},Lv:{z:116,group:16,period:7},Ts:{z:117,group:17,period:7},Og:{z:118,group:18,period:7}
+        };
+
+        const CATION_LIKE_ELEMENTS = new Set([
+            'Li','Na','K','Rb','Cs','Fr','Be','Mg','Ca','Sr','Ba','Ra','Al','Ga','In','Tl','Sn','Pb','Bi',
+            'Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd',
+            'La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu','Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg',
+            'Ac','Th','Pa','U','Np','Pu','Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr'
+        ]);
+
+        function cleanFormula(formula) {
+            return formula
+                .replace(/\$|\s/g, '')
+                .replace(/\\text\{([^}]*)\}/g, '$1')
+                .replace(/\\cdot.*$/g, '')
+                .replace(/_\{?(\d+)\}?/g, '$1')
+                .replace(/[{}]/g, '');
+        }
+
+        function readNumber(str, index) {
+            let digits = '';
+            while (index < str.length && /\d/.test(str[index])) {
+                digits += str[index];
+                index++;
+            }
+            return { value: digits ? parseInt(digits, 10) : 1, index };
+        }
+
+        function findMatchingParen(str, openIndex) {
+            let depth = 0;
+            for (let i = openIndex; i < str.length; i++) {
+                if (str[i] === '(') depth++;
+                else if (str[i] === ')') {
+                    depth--;
+                    if (depth === 0) return i;
+                }
+            }
+            return -1;
+        }
+
+        function splitTopLevelComponents(formula) {
+            const components = [];
+            let i = 0;
+
+            while (i < formula.length) {
+                if (formula[i] === '(') {
+                    const close = findMatchingParen(formula, i);
+                    if (close === -1) break;
+                    const parsed = readNumber(formula, close + 1);
+                    components.push({
+                        type: 'group',
+                        symbol: formula.slice(i + 1, close),
+                        multiplier: parsed.value,
+                        start: i,
+                        end: parsed.index
+                    });
+                    i = parsed.index;
+                    continue;
+                }
+
+                if (/[A-Z]/.test(formula[i])) {
+                    let symbol = formula[i];
+                    i++;
+                    if (i < formula.length && /[a-z]/.test(formula[i])) {
+                        symbol += formula[i];
+                        i++;
+                    }
+                    const parsed = readNumber(formula, i);
+                    components.push({
+                        type: 'element',
+                        symbol,
+                        multiplier: parsed.value,
+                        start: i - symbol.length,
+                        end: parsed.index
+                    });
+                    i = parsed.index;
+                    continue;
+                }
+
+                i++;
+            }
+
+            return components;
+        }
+
+        function parseElementCounts(formula) {
+            const stack = [{}];
+            let i = 0;
+
+            while (i < formula.length) {
+                const ch = formula[i];
+
+                if (ch === '(') {
+                    stack.push({});
+                    i++;
+                    continue;
+                }
+
+                if (ch === ')') {
+                    const group = stack.pop() || {};
+                    i++;
+                    const parsed = readNumber(formula, i);
+                    i = parsed.index;
+                    for (const [el, count] of Object.entries(group)) {
+                        stack[stack.length - 1][el] = (stack[stack.length - 1][el] || 0) + count * parsed.value;
+                    }
+                    continue;
+                }
+
+                if (/[A-Z]/.test(ch)) {
+                    let element = ch;
+                    i++;
+                    if (i < formula.length && /[a-z]/.test(formula[i])) {
+                        element += formula[i];
+                        i++;
+                    }
+                    const parsed = readNumber(formula, i);
+                    i = parsed.index;
+                    stack[stack.length - 1][element] = (stack[stack.length - 1][element] || 0) + parsed.value;
+                    continue;
+                }
+
+                i++;
+            }
+
+            return stack[0];
+        }
+
+        function componentText(source, component) {
+            return source.slice(component.start, component.end);
+        }
+
+        function isNH4Component(component) {
+            return component && component.type === 'group' && component.symbol === 'NH4';
+        }
+
+        function isOxoAnionLike(formula) {
+            const counts = parseElementCounts(formula);
+            return (counts.O || 0) > 0 && Object.keys(counts).some(el => el !== 'O' && el !== 'H');
+        }
+
+        function anionFromComponents(source, components, startIndex) {
+            if (startIndex >= components.length) return source;
+
+            const remaining = components.slice(startIndex);
+            if (remaining.length === 1) {
+                const only = remaining[0];
+                if (only.type === 'group') return only.symbol;
+                if (only.type === 'element') return only.symbol;
+            }
+
+            return source.slice(remaining[0].start);
+        }
+
+        function addCation(cations, formula, count = 1) {
+            cations.push({ formula, count });
+        }
+
+        function shouldConsumeAsAdditionalCation(components, index) {
+            const next = components[index + 1];
+            if (!next) return false;
+
+            if (next.type === 'group') return isOxoAnionLike(next.symbol);
+
+            return false;
+        }
+
+        function consumeCations(source, initialCations = []) {
+            const components = splitTopLevelComponents(source);
+            const cations = [...initialCations];
+            let i = 0;
+
+            while (i < components.length) {
+                const component = components[i];
+
+                if (isNH4Component(component)) {
+                    addCation(cations, 'NH4', component.multiplier || 1);
+                    i++;
+                    continue;
+                }
+
+                if (component.type === 'element' && CATION_LIKE_ELEMENTS.has(component.symbol)) {
+                    const isFirstCation = cations.length === 0;
+                    const isAdditionalDoubleSaltCation = !isFirstCation && shouldConsumeAsAdditionalCation(components, i);
+
+                    if (isFirstCation || isAdditionalDoubleSaltCation) {
+                        addCation(cations, component.symbol, component.multiplier || 1);
+                        i++;
+                        continue;
+                    }
+                }
+
+                break;
+            }
+
+            return {
+                cations,
+                anion: anionFromComponents(source, components, i)
+            };
+        }
+
+        function isPlausibleAnionPrefix(anion) {
+            if (!anion) return false;
+
+            const simpleAnions = new Set(['F', 'Cl', 'Br', 'I', 'CN', 'SCN', 'OH', 'S']);
+            if (simpleAnions.has(anion)) return true;
+
+            const counts = parseElementCounts(anion);
+            const elements = Object.keys(counts);
+            if (elements.length === 0) return false;
+
+            const hasOxoSkeleton = (counts.O || 0) > 0 && elements.some(el => el !== 'O' && el !== 'H');
+            const hasCyanoLikeSkeleton = !!(counts.C && counts.N);
+
+            return hasOxoSkeleton || hasCyanoLikeSkeleton;
+        }
+
+        function consumeTrailingCationForSalt(formula) {
+            let match = formula.match(/\(NH4\)(\d*)$/);
+            let cation = null;
+            let count = 1;
+            let suffix = '';
+
+            if (match) {
+                cation = 'NH4';
+                count = match[1] ? parseInt(match[1], 10) : 1;
+                suffix = match[0];
+            } else {
+                match = formula.match(/(NH4|[A-Z][a-z]?)(\d*)$/);
+                if (!match) return null;
+
+                cation = match[1];
+                count = match[2] ? parseInt(match[2], 10) : 1;
+                suffix = match[0];
+            }
+
+            if (cation !== 'NH4' && !CATION_LIKE_ELEMENTS.has(cation)) return null;
+
+            const anion = formula.slice(0, formula.length - suffix.length);
+            if (!isPlausibleAnionPrefix(anion)) return null;
+
+            return {
+                cations: [{ formula: cation, count }],
+                anion
+            };
+        }
+
+        function extractIonParts(formulaText) {
+            const formula = cleanFormula(formulaText);
+
+            if (formula.startsWith('NH4') && formula.length > 3) {
+                const consumed = consumeCations(formula.slice(3), [{ formula: 'NH4', count: 1 }]);
+                return finalizeIonParts(formula, consumed.cations, consumed.anion);
+            }
+
+            const trailingSalt = consumeTrailingCationForSalt(formula);
+            if (trailingSalt) {
+                return finalizeIonParts(formula, trailingSalt.cations, trailingSalt.anion);
+            }
+
+            const acidMatch = formula.match(/^H(\d*)(?![a-z])(.+)$/);
+            if (acidMatch && !formula.startsWith('NH4')) {
+                return {
+                    formula,
+                    category: 0,
+                    cations: [{ formula: 'H', count: acidMatch[1] ? parseInt(acidMatch[1], 10) : 1 }],
+                    anion: acidMatch[2]
+                };
+            }
+
+            const consumed = consumeCations(formula);
+            return finalizeIonParts(formula, consumed.cations, consumed.anion);
+        }
+
+        function finalizeIonParts(formula, cations, anion) {
+            const anionCounts = parseElementCounts(anion);
+            const isHydroxide = anion === 'OH' || (anionCounts.O === 1 && anionCounts.H === 1 && Object.keys(anionCounts).length === 2);
+            const isOrganic = isOrganicFormula(anion, formula);
+
+            return {
+                formula,
+                category: isHydroxide ? 1 : (isOrganic ? 3 : 2),
+                cations,
+                anion
+            };
+        }
+
+        function isOrganicFormula(anion, wholeFormula) {
+            const counts = parseElementCounts(anion || wholeFormula);
+            if (!counts.C) return false;
+            if (isInorganicCarbonFormula(counts)) return false;
+            return true;
+        }
+
+        function isInorganicCarbonFormula(counts) {
+            const keys = Object.keys(counts);
+            const keySet = new Set(keys);
+            const only = allowed => keys.every(k => allowed.includes(k));
+
+            if (
+                only(['C', 'O', 'H']) && counts.C === 1 && counts.O === 3 && (counts.H || 0) <= 1
+            ) return true;
+
+            if (only(['C'])) return true;
+
+            const hasOnlyCyanoLikeElements = keys.every(k => ['C', 'N', 'S', 'Fe', 'Co', 'Ni', 'Cr', 'Mn'].includes(k));
+            if (counts.C && counts.N && !counts.H && !counts.O && hasOnlyCyanoLikeElements) return true;
+
+            if (counts.C === 1 && counts.N === 1 && counts.O === 1 && !counts.H && keySet.size === 3) return true;
+
+            return false;
+        }
+
+        const STRUCTURAL_LEADING_H_ANIONS = new Set([
+            // 甲酸根的 H 是碳上的结构氢，不是“酸式氢”；不要把 HCOO 归并成 COO。
+            'HCOO'
+        ]);
+
+        const ACIDIC_H_ANION_BASE_OVERRIDES = {
+            HCO3: 'CO3',
+            HSO3: 'SO3',
+            HSO4: 'SO4',
+            HCrO4: 'CrO4',
+            H2PO4: 'PO4',
+            HPO4: 'PO4',
+            HS: 'S',
+            HC2O4: 'C2O4'
+        };
+
+        function leadingHydrogenCount(anion) {
+            const match = anion.match(/^H(\d*)(?![a-z])(.+)$/);
+            if (!match) return 0;
+            return match[1] ? parseInt(match[1], 10) : 1;
+        }
+
+        function withLeadingHydrogen(count, baseAnion) {
+            if (count <= 0) return baseAnion;
+            return `H${count === 1 ? '' : count}${baseAnion}`;
+        }
+
+        function normalizeAnionForSort(anion, knownAnions = null) {
+            if (STRUCTURAL_LEADING_H_ANIONS.has(anion)) {
+                return { baseAnion: anion, acidicHCount: 0 };
+            }
+
+            if (Object.prototype.hasOwnProperty.call(ACIDIC_H_ANION_BASE_OVERRIDES, anion)) {
+                return {
+                    baseAnion: ACIDIC_H_ANION_BASE_OVERRIDES[anion],
+                    acidicHCount: leadingHydrogenCount(anion)
+                };
+            }
+
+            const match = anion.match(/^H(\d*)(?![a-z])(.+)$/);
+            if (!match) return { baseAnion: anion, acidicHCount: 0 };
+
+            const acidicHCount = match[1] ? parseInt(match[1], 10) : 1;
+            const baseAnion = match[2];
+            if (!isPlausibleAnionPrefix(baseAnion)) return { baseAnion: anion, acidicHCount: 0 };
+
+            if (knownAnions) {
+                const lowerHydrogenSibling = withLeadingHydrogen(acidicHCount - 1, baseAnion);
+                if (knownAnions.has(baseAnion) || knownAnions.has(lowerHydrogenSibling)) {
+                    return { baseAnion, acidicHCount };
+                }
+            }
+
+            const baseCounts = parseElementCounts(baseAnion);
+            if (!baseCounts.C && isOxoAnionLike(baseAnion)) {
+                return { baseAnion, acidicHCount };
+            }
+
+            if (isInorganicCarbonFormula(baseCounts)) {
+                return { baseAnion, acidicHCount };
+            }
+
+            // 对 HC2O4 这类“去 H 后成为无氢多碳羧酸根骨架”的阴离子，仍按酸式氢处理。
+            // HCOO 是反例，已在 STRUCTURAL_LEADING_H_ANIONS 中排除。
+            if ((baseCounts.C || 0) >= 2 && (baseCounts.O || 0) >= 2 && !(baseCounts.H || 0)) {
+                return { baseAnion, acidicHCount };
+            }
+
+            return { baseAnion: anion, acidicHCount: 0 };
+        }
+
+        function buildOrganicSortKey(anion, knownAnions = null) {
+            const acidPart = normalizeAnionForSort(anion, knownAnions);
+            const counts = parseElementCounts(acidPart.baseAnion);
+
+            const key = [
+                counts.C || 0,
+                counts.H || 0,
+                counts.N || 0,
+                counts.O || 0,
+                -acidPart.acidicHCount
+            ];
+
+            Object.keys(ELEMENTS)
+                .filter(el => !['C', 'H', 'N', 'O'].includes(el))
+                .sort((a, b) => ELEMENTS[a].z - ELEMENTS[b].z)
+                .forEach(el => key.push(counts[el] || 0));
+
+            return key;
+        }
+
+        function buildAnionSortKey(anion, knownAnions = null) {
+            const acidPart = normalizeAnionForSort(anion, knownAnions);
+            const counts = parseElementCounts(acidPart.baseAnion);
+            const nonOElements = Object.keys(counts)
+                .filter(el => el !== 'O')
+                .sort((a, b) => (ELEMENTS[b]?.z || 0) - (ELEMENTS[a]?.z || 0));
+
+            const key = [];
+
+            for (const el of nonOElements) {
+                key.push(ELEMENTS[el]?.z || 999);
+                key.push(counts[el]);
+            }
+
+            key.push(counts.O || 0);
+            key.push(Object.keys(counts).length);
+            key.push(-acidPart.acidicHCount);
+
+            return key;
+        }
+
+        function cationTokenSortKey(cation) {
+            if (cation.formula === 'NH4') return [0, 0, 0, cation.count || 1, 'NH4'];
+
+            const counts = parseElementCounts(cation.formula);
+            const element = Object.keys(counts)
+                .filter(el => ELEMENTS[el])
+                .sort((a, b) => counts[b] - counts[a] || ELEMENTS[a].z - ELEMENTS[b].z)[0];
+
+            if (!element) return [99, 99, 999, cation.count || 1, cation.formula || ''];
+            const data = ELEMENTS[element];
+            return [data.group, data.period, data.z, cation.count || 1, element];
+        }
+
+        function buildCationSortKey(cations) {
+            const list = cations && cations.length ? cations : [{ formula: '', count: 1 }];
+
+            const isAuxiliaryCation = cation => {
+                if (cation.formula === 'NH4') return true;
+
+                const counts = parseElementCounts(cation.formula);
+                const elements = Object.keys(counts).filter(el => ELEMENTS[el]);
+                if (elements.length !== 1) return false;
+
+                const el = elements[0];
+                return ELEMENTS[el].group === 1;
+            };
+
+            const mainCations = list.filter(c => !isAuxiliaryCation(c));
+            const auxiliaryCations = list.filter(isAuxiliaryCation);
+
+            if (mainCations.length > 0 && auxiliaryCations.length > 0) {
+                const mainKeys = mainCations
+                    .map(cationTokenSortKey)
+                    .sort(compareArrays)
+                    .flat();
+
+                const auxiliaryKeys = auxiliaryCations
+                    .map(cationTokenSortKey)
+                    .sort(compareArrays)
+                    .flat();
+
+                return [
+                    ...mainKeys,
+                    1,
+                    ...auxiliaryKeys
+                ];
+            }
+
+            const tokenKeys = list
+                .map(cationTokenSortKey)
+                .sort(compareArrays);
+
+            return [
+                ...tokenKeys.flat(),
+                0
+            ];
+        }
+
+        function compareArrays(a, b) {
+            const length = Math.max(a.length, b.length);
+            for (let i = 0; i < length; i++) {
+                const av = a[i] ?? -1;
+                const bv = b[i] ?? -1;
+                if (typeof av === 'string' || typeof bv === 'string') {
+                    const result = String(av).localeCompare(String(bv), 'en');
+                    if (result !== 0) return result;
+                } else if (av !== bv) {
+                    return av - bv;
+                }
+            }
+            return 0;
+        }
+
+        function compareGroupsByIon(groupA, groupB, knownAnions = null) {
+            const a = extractIonParts(groupA[0][0]);
+            const b = extractIonParts(groupB[0][0]);
+
+            const aNorm = normalizeAnionForSort(a.anion, knownAnions);
+            const bNorm = normalizeAnionForSort(b.anion, knownAnions);
+            const aAnionKey = a.category === 3 ? buildOrganicSortKey(a.anion, knownAnions) : buildAnionSortKey(a.anion, knownAnions);
+            const bAnionKey = b.category === 3 ? buildOrganicSortKey(b.anion, knownAnions) : buildAnionSortKey(b.anion, knownAnions);
+
+            return (a.category - b.category)
+                || compareArrays(aAnionKey, bAnionKey)
+                || aNorm.baseAnion.localeCompare(bNorm.baseAnion, 'en')
+                || (bNorm.acidicHCount - aNorm.acidicHCount)
+                || compareArrays(buildCationSortKey(a.cations), buildCationSortKey(b.cations))
+                || a.formula.localeCompare(b.formula, 'en');
+        }
+
+        function makeGroups(dataRows) {
+            const groups = [];
+            let currentFormula = null;
+            let currentGroup = [];
+
+            dataRows.forEach(row => {
+                const formula = row[0].trim();
+                if (formula === currentFormula) {
+                    currentGroup.push(row);
+                } else {
+                    if (currentGroup.length > 0) groups.push(currentGroup);
+                    currentFormula = formula;
+                    currentGroup = [row];
+                }
+            });
+            if (currentGroup.length > 0) groups.push(currentGroup);
+
+            return groups;
+        }
+
+        function typesetMath() {
+            if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
+            } else {
+                setTimeout(typesetMath, 100);
+            }
+        }
+
+        function renderTable(groups) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            groups.forEach(group => {
+                group.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    const formula = row[0].trim();
+                    const crystalWater = row[1] ? row[1].trim() : '';
+
+                    if (index === 0) {
+                        const td1 = document.createElement('td');
+                        td1.textContent = formula;
+
+                        if (group.length === 1 && crystalWater === '') {
+                            td1.colSpan = 2;
+                            td1.className = 'sticky-col-span';
+                            tr.appendChild(td1);
+                        } else {
+                            td1.rowSpan = group.length;
+                            td1.className = 'sticky-col-1';
+                            tr.appendChild(td1);
+
+                            const td2 = document.createElement('td');
+                            td2.textContent = crystalWater;
+                            td2.className = 'sticky-col-2';
+                            tr.appendChild(td2);
+                        }
+                    } else {
+                        const td2 = document.createElement('td');
+                        td2.textContent = crystalWater;
+                        td2.className = 'sticky-col-2';
+                        tr.appendChild(td2);
+                    }
+
+                    for (let i = 2; i < row.length; i++) {
+                        const val = row[i] ? row[i].trim() : '';
+                        const td = document.createElement('td');
+                        td.textContent = (val === '-') ? '' : val;
+                        tr.appendChild(td);
+                    }
+
+                    tbody.appendChild(tr);
+                });
+            });
+
+            typesetMath();
+        }
+
+        function downloadCSV() {
+            fetch('solubility.csv')
+                .then(response => {
+                    if (!response.ok) throw new Error('网络响应失败');
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'solubility.csv';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                })
+                .catch(err => {
+                    console.error('下载 CSV 失败:', err);
+                    alert('下载表格失败，请检查控制台了解详情。');
+                });
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
             fetch('solubility.csv')
                 .then(response => {
@@ -165,7 +840,7 @@
                 })
                 .then(text => {
                     if (text.charCodeAt(0) === 0xFEFF) text = text.substring(1);
-                    
+
                     const lines = text.trim().split(/\r?\n/);
                     if (lines.length === 0) return;
 
@@ -174,6 +849,7 @@
                     const dataRows = lines.slice(1).map(parseLine).filter(row => row.length >= 2);
 
                     const colgroup = document.getElementById('table-colgroup');
+                    colgroup.innerHTML = '';
                     headers.forEach((_, index) => {
                         const col = document.createElement('col');
                         if (index === 0) col.style.width = '120px';
@@ -182,89 +858,48 @@
                     });
 
                     const headRow = document.getElementById('table-head-row');
+                    headRow.innerHTML = '';
                     headers.forEach((headerText, index) => {
+                        if (index === 1) return;
+
                         const th = document.createElement('th');
                         th.textContent = headerText.trim();
-                        
-                        if (index === 0) th.className = 'sticky-col-1';
-                        else if (index === 1) th.className = 'sticky-col-2';
-                        
+
+                        if (index === 0) {
+                            th.colSpan = 2;
+                            th.className = 'sticky-col-span';
+                        }
+
                         headRow.appendChild(th);
                     });
 
-                    const groups = [];
-                    let currentFormula = null;
-                    let currentGroup = [];
+                    const originalGroups = makeGroups(dataRows);
+                    const knownAnions = new Set(originalGroups.map(group => extractIonParts(group[0][0]).anion));
+                    const ionGroups = [...originalGroups].sort((groupA, groupB) => compareGroupsByIon(groupA, groupB, knownAnions));
+                    const sortModeBtn = document.getElementById('sortModeBtn');
+                    const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+                    let ionSortEnabled = false;
 
-                    dataRows.forEach(row => {
-                        const formula = row[0].trim();
-                        if (formula === currentFormula) {
-                            currentGroup.push(row);
-                        } else {
-                            if (currentGroup.length > 0) groups.push(currentGroup);
-                            currentFormula = formula;
-                            currentGroup = [row];
-                        }
-                    });
-                    if (currentGroup.length > 0) groups.push(currentGroup);
-
-                    const tbody = document.getElementById('table-body');
-                    groups.forEach(group => {
-                        group.forEach((row, index) => {
-                            const tr = document.createElement('tr');
-                            const formula = row[0].trim();
-                            const crystalWater = row[1] ? row[1].trim() : '';
-
-                            if (index === 0) {
-                                const td1 = document.createElement('td');
-                                td1.textContent = formula;
-
-                                if (group.length === 1 && crystalWater === '') {
-                                    td1.colSpan = 2;
-                                    td1.className = 'sticky-col-span';
-                                    tr.appendChild(td1);
-                                } 
-                                else {
-                                    td1.rowSpan = group.length;
-                                    td1.className = 'sticky-col-1';
-                                    tr.appendChild(td1);
-                                    
-                                    const td2 = document.createElement('td');
-                                    td2.textContent = crystalWater;
-                                    td2.className = 'sticky-col-2';
-                                    tr.appendChild(td2);
-                                }
-                            } else {
-                                const td2 = document.createElement('td');
-                                td2.textContent = crystalWater;
-                                td2.className = 'sticky-col-2';
-                                tr.appendChild(td2);
-                            }
-
-                            for (let i = 2; i < row.length; i++) {
-                                const val = row[i] ? row[i].trim() : '';
-                                const td = document.createElement('td');
-                                td.textContent = (val === '-') ? '' : val;
-                                tr.appendChild(td);
-                            }
-
-                            tbody.appendChild(tr);
-                        });
-                    });
-
-                    function typesetMath() {
-                        if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
-                            MathJax.typesetPromise();
-                        } else {
-                            setTimeout(typesetMath, 100);
-                        }
+                    function applySortMode(enabled) {
+                        ionSortEnabled = enabled;
+                        sortModeBtn.classList.toggle('active', enabled);
+                        sortModeBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+                        sortModeBtn.textContent = enabled ? '离子分组' : '默认分组';
+                        renderTable(enabled ? ionGroups : originalGroups);
                     }
-                    typesetMath();
+
+                    sortModeBtn.addEventListener('click', () => {
+                        applySortMode(!ionSortEnabled);
+                    });
+
+                    downloadCsvBtn.addEventListener('click', downloadCSV);
+
+                    applySortMode(false);
                 })
                 .catch(err => {
                     console.error('加载 CSV 数据失败:', err);
                     const tbody = document.getElementById('table-body');
-                    tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:#ff5555;padding:25px;">无法加载 solubility.csv 数据，请确保您在服务器环境下运行（如使用 VS Code Live Server），否则会被浏览器 CORS 安全策略阻挡。</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:#ff5555;padding:25px;">无法加载 solubility.csv 数据。</td></tr>';
                 });
         });
     </script>
