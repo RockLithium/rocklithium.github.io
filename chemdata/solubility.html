@@ -181,7 +181,7 @@
             }
 
             .global-btn {
-                width: 120px;
+                width: 160px;
                 font-size: 12px;
             }
         }
@@ -228,6 +228,14 @@
             'Ac','Th','Pa','U','Np','Pu','Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr'
         ]);
 
+        const CATEGORY = {
+            ACID: 0,
+            OXIDE: 1,
+            BASE: 2,
+            INORGANIC: 3,
+            ORGANIC: 4
+        };
+
         function cleanFormula(formula) {
             return formula
                 .replace(/\$|\s/g, '')
@@ -235,6 +243,34 @@
                 .replace(/\\cdot.*$/g, '')
                 .replace(/_\{?(\d+)\}?/g, '$1')
                 .replace(/[{}]/g, '');
+        }
+
+        function formulaToLinearText(text) {
+            return String(text || '')
+                .trim()
+                .replace(/^\$|\$$/g, '')
+                .replace(/\\\(|\\\)/g, '')
+                .replace(/\\ce\{([^{}]*)\}/g, '$1')
+                .replace(/\\mathrm\{([^{}]*)\}/g, '$1')
+                .replace(/\\text\{([^{}]*)\}/g, '$1')
+                .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '$1/$2')
+                .replace(/\\left|\\right/g, '')
+                .replace(/\\cdot/g, '·')
+                .replace(/\\bullet/g, '·')
+                .replace(/\\,/g, '')
+                .replace(/_\{([^{}]+)\}/g, '$1')
+                .replace(/_([A-Za-z0-9+\-]+)/g, '$1')
+                .replace(/\^\{([^{}]+)\}/g, '^$1')
+                .replace(/\^([A-Za-z0-9+\-]+)/g, '^$1')
+                .replace(/[{}]/g, '')
+                .replace(/\\/g, '')
+                .replace(/\s+/g, '');
+        }
+
+        function setCellText(cell, value, isFormulaLike = false) {
+            const text = String(value || '').trim();
+            cell.textContent = text;
+            cell.dataset.copyText = isFormulaLike ? formulaToLinearText(text) : text;
         }
 
         function readNumber(str, index) {
@@ -482,7 +518,7 @@
             if (acidMatch && !formula.startsWith('NH4')) {
                 return {
                     formula,
-                    category: 0,
+                    category: CATEGORY.ACID,
                     cations: [{ formula: 'H', count: acidMatch[1] ? parseInt(acidMatch[1], 10) : 1 }],
                     anion: acidMatch[2]
                 };
@@ -494,12 +530,17 @@
 
         function finalizeIonParts(formula, cations, anion) {
             const anionCounts = parseElementCounts(anion);
+            const isOxide = isOxideFormula(formula);
             const isHydroxide = anion === 'OH' || (anionCounts.O === 1 && anionCounts.H === 1 && Object.keys(anionCounts).length === 2);
             const isOrganic = isOrganicFormula(anion, formula);
 
             return {
                 formula,
-                category: isHydroxide ? 1 : (isOrganic ? 3 : 2),
+                category: isOxide
+                    ? CATEGORY.OXIDE
+                    : (isHydroxide
+                        ? CATEGORY.BASE
+                        : (isOrganic ? CATEGORY.ORGANIC : CATEGORY.INORGANIC)),
                 cations,
                 anion
             };
@@ -531,8 +572,22 @@
             return false;
         }
 
+        function isOxideFormula(formula) {
+            const counts = parseElementCounts(formula);
+            const elements = Object.keys(counts);
+
+            if ((counts.O || 0) === 0) return false;
+            if (counts.H) return false;
+
+            const nonOElements = elements.filter(el => el !== 'O');
+
+            if (nonOElements.length !== 1) return false;
+            if (!ELEMENTS[nonOElements[0]]) return false;
+
+            return true;
+        }
+
         const STRUCTURAL_LEADING_H_ANIONS = new Set([
-            // 甲酸根的 H 是碳上的结构氢，不是“酸式氢”；不要把 HCOO 归并成 COO。
             'HCOO'
         ]);
 
@@ -593,8 +648,6 @@
                 return { baseAnion, acidicHCount };
             }
 
-            // 对 HC2O4 这类“去 H 后成为无氢多碳羧酸根骨架”的阴离子，仍按酸式氢处理。
-            // HCOO 是反例，已在 STRUCTURAL_LEADING_H_ANIONS 中排除。
             if ((baseCounts.C || 0) >= 2 && (baseCounts.O || 0) >= 2 && !(baseCounts.H || 0)) {
                 return { baseAnion, acidicHCount };
             }
@@ -643,6 +696,10 @@
             return key;
         }
 
+        const CATION_SORT_POSITION_OVERRIDES = {
+            Al: [2, 99, 13]
+        };
+
         function cationTokenSortKey(cation) {
             if (cation.formula === 'NH4') return [0, 0, 0, cation.count || 1, 'NH4'];
 
@@ -652,8 +709,15 @@
                 .sort((a, b) => counts[b] - counts[a] || ELEMENTS[a].z - ELEMENTS[b].z)[0];
 
             if (!element) return [99, 99, 999, cation.count || 1, cation.formula || ''];
+
             const data = ELEMENTS[element];
-            return [data.group, data.period, data.z, cation.count || 1, element];
+            const positionKey = CATION_SORT_POSITION_OVERRIDES[element] || [data.group, data.period, data.z];
+
+            return [
+                ...positionKey,
+                cation.count || 1,
+                element
+            ];
         }
 
         function buildCationSortKey(cations) {
@@ -720,10 +784,17 @@
             const a = extractIonParts(groupA[0][0]);
             const b = extractIonParts(groupB[0][0]);
 
-            const aNorm = normalizeAnionForSort(a.anion, knownAnions);
-            const bNorm = normalizeAnionForSort(b.anion, knownAnions);
-            const aAnionKey = a.category === 3 ? buildOrganicSortKey(a.anion, knownAnions) : buildAnionSortKey(a.anion, knownAnions);
-            const bAnionKey = b.category === 3 ? buildOrganicSortKey(b.anion, knownAnions) : buildAnionSortKey(b.anion, knownAnions);
+            const aSortAnion = a.category === CATEGORY.OXIDE ? a.formula : a.anion;
+            const bSortAnion = b.category === CATEGORY.OXIDE ? b.formula : b.anion;
+
+            const aNorm = normalizeAnionForSort(aSortAnion, knownAnions);
+            const bNorm = normalizeAnionForSort(bSortAnion, knownAnions);
+            const aAnionKey = a.category === CATEGORY.ORGANIC
+                ? buildOrganicSortKey(aSortAnion, knownAnions)
+                : buildAnionSortKey(aSortAnion, knownAnions);
+            const bAnionKey = b.category === CATEGORY.ORGANIC
+                ? buildOrganicSortKey(bSortAnion, knownAnions)
+                : buildAnionSortKey(bSortAnion, knownAnions);
 
             return (a.category - b.category)
                 || compareArrays(aAnionKey, bAnionKey)
@@ -761,6 +832,49 @@
             }
         }
 
+        function installTableCopyAsLinearText() {
+            document.addEventListener('copy', event => {
+                const selection = window.getSelection();
+                if (!selection || selection.rangeCount === 0) return;
+
+                const table = document.querySelector('.controls-table');
+                if (!table) return;
+
+                if (!table.contains(selection.anchorNode) && !table.contains(selection.focusNode)) {
+                    return;
+                }
+
+                const range = selection.getRangeAt(0);
+
+                function intersects(node) {
+                    try {
+                        return range.intersectsNode(node);
+                    } catch {
+                        return false;
+                    }
+                }
+
+                const rows = Array.from(table.querySelectorAll('tr'))
+                    .filter(row => intersects(row));
+
+                const lines = rows.map(row => {
+                    const cells = Array.from(row.children)
+                        .filter(cell => intersects(cell));
+
+                    return cells.map(cell => {
+                        return (cell.dataset.copyText || cell.innerText || '')
+                            .replace(/\s+/g, ' ')
+                            .trim();
+                    }).join('\t');
+                }).filter(line => line.length > 0);
+
+                if (lines.length === 0) return;
+
+                event.clipboardData.setData('text/plain', lines.join('\n'));
+                event.preventDefault();
+            });
+        }
+
         function renderTable(groups) {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
@@ -773,7 +887,7 @@
 
                     if (index === 0) {
                         const td1 = document.createElement('td');
-                        td1.textContent = formula;
+                        setCellText(td1, formula, true);
 
                         if (group.length === 1 && crystalWater === '') {
                             td1.colSpan = 2;
@@ -785,13 +899,13 @@
                             tr.appendChild(td1);
 
                             const td2 = document.createElement('td');
-                            td2.textContent = crystalWater;
+                            setCellText(td2, crystalWater, true);
                             td2.className = 'sticky-col-2';
                             tr.appendChild(td2);
                         }
                     } else {
                         const td2 = document.createElement('td');
-                        td2.textContent = crystalWater;
+                        setCellText(td2, crystalWater, true);
                         td2.className = 'sticky-col-2';
                         tr.appendChild(td2);
                     }
@@ -799,7 +913,7 @@
                     for (let i = 2; i < row.length; i++) {
                         const val = row[i] ? row[i].trim() : '';
                         const td = document.createElement('td');
-                        td.textContent = (val === '-') ? '' : val;
+                        setCellText(td, (val === '-') ? '' : val, false);
                         tr.appendChild(td);
                     }
 
@@ -833,6 +947,8 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            installTableCopyAsLinearText();
+
             fetch('solubility.csv')
                 .then(response => {
                     if (!response.ok) throw new Error('网络响应失败');
@@ -852,7 +968,7 @@
                     colgroup.innerHTML = '';
                     headers.forEach((_, index) => {
                         const col = document.createElement('col');
-                        if (index === 0) col.style.width = '120px';
+                        if (index === 0) col.style.width = '160px';
                         else if (index === 1) col.style.width = '80px';
                         colgroup.appendChild(col);
                     });
@@ -863,7 +979,7 @@
                         if (index === 1) return;
 
                         const th = document.createElement('th');
-                        th.textContent = headerText.trim();
+                        setCellText(th, headerText.trim(), false);
 
                         if (index === 0) {
                             th.colSpan = 2;
