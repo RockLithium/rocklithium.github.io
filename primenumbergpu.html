@@ -28,6 +28,10 @@
             font-family: 'PingFang SC', 'Helvetica Neue', sans-serif !important;
         }
 
+        .status-text {
+            font-family: 'PingFang SC', 'Helvetica Neue', sans-serif !important;
+        }
+
         #homeButton {
             position: absolute;
             top: 20px;
@@ -221,7 +225,7 @@
         </div>
         <div class="status-line">
             <span>累计已用时间：</span>
-            <span id="elapsedTime" class="monospace-value">0.000s</span>
+            <span id="elapsedTime"><span class="monospace-value">0.000s</span></span>
         </div>
         <div class="status-line">
             <span id="progressLabel">总进度:</span>
@@ -764,7 +768,7 @@
             clearInterval(timerInterval);
             if (startTime > 0) {
                 const frozenTime = ((Date.now() - startTime) / 1000).toFixed(3);
-                elapsedTimeDisplay.innerHTML = `<span class="monospace-value">${frozenTime}s</span> (已停止)`;
+                elapsedTimeDisplay.innerHTML = `<span class="monospace-value">${frozenTime}s</span> <span class="status-text">(已停止)</span>`;
             }
             stageButton.textContent = '开始计算';
             stageButton.className = 'start-btn';
@@ -827,11 +831,17 @@
             }
 
             const outputBuf32 = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
-            const readBuf32 = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+            const readBuf32 = [
+                device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }),
+                device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST })
+            ];
             const uniformBuf32 = device.createBuffer({ size: 8, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
             const outputBuf64 = device.createBuffer({ size: GPU_BATCH_SIZE * 8, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
-            const readBuf64 = device.createBuffer({ size: GPU_BATCH_SIZE * 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+            const readBuf64 = [
+                device.createBuffer({ size: GPU_BATCH_SIZE * 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }),
+                device.createBuffer({ size: GPU_BATCH_SIZE * 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST })
+            ];
             const uniformBuf64 = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
             const bindGroup32 = device.createBindGroup({
@@ -844,9 +854,38 @@
             });
 
             let processedInRange = 0n;
+            const MAX_PENDING_READBACKS = 2;
+            const pendingReadbacks = [];
+            let readbackSlot32 = 0;
+            let readbackSlot64 = 0;
+
+            function beginMappedReadback(buffer, byteLength, type) {
+                return buffer.mapAsync(GPUMapMode.READ).then(() => {
+                    const mapped = buffer.getMappedRange(0, byteLength);
+                    const res = new Uint32Array(mapped.slice(0));
+                    buffer.unmap();
+                    return { type, data: res };
+                });
+            }
+
+            async function drainOldestReadback() {
+                if (pendingReadbacks.length === 0) return;
+                const result = await pendingReadbacks.shift();
+                currentRawResults.push(result);
+            }
+
+            async function drainAllReadbacks() {
+                while (pendingReadbacks.length > 0) {
+                    await drainOldestReadback();
+                }
+            }
 
             while (current <= max && isRunning) {
                 const searchStepStart = performance.now();
+
+                if (pendingReadbacks.length >= MAX_PENDING_READBACKS) {
+                    await drainOldestReadback();
+                }
                 
                 const BIT32_SAFE_ZONE = 4294967280n;
                 let is64Bit = current >= BIT32_SAFE_ZONE;
@@ -867,6 +906,9 @@
 
                 if (!is64Bit) {
                     let shaderLimit = max < 4294967295n ? Number(max) : 4294967295;
+                    const readBuffer = readBuf32[readbackSlot32];
+                    readbackSlot32 = (readbackSlot32 + 1) % 2;
+
                     device.queue.writeBuffer(uniformBuf32, 0, new Uint32Array([Number(current), shaderLimit]));
                     const encoder = device.createCommandEncoder();
                     const pass = encoder.beginComputePass();
@@ -874,17 +916,17 @@
                     pass.setBindGroup(0, bindGroup32);
                     pass.dispatchWorkgroups(Math.ceil(processNow / 64));
                     pass.end();
-                    encoder.copyBufferToBuffer(outputBuf32, 0, readBuf32, 0, processNow * 4);
+                    encoder.copyBufferToBuffer(outputBuf32, 0, readBuffer, 0, processNow * 4);
                     device.queue.submit([encoder.finish()]);
-                    await readBuf32.mapAsync(GPUMapMode.READ);
-                    const res = new Uint32Array(readBuf32.getMappedRange(0, processNow * 4).slice());
-                    readBuf32.unmap();
-                    currentRawResults.push({ type: '32', data: res });
+                    pendingReadbacks.push(beginMappedReadback(readBuffer, processNow * 4, '32'));
                 } else {
                     const startLo = Number(current & 0xFFFFFFFFn);
                     const startHi = Number(current >> 32n);
                     const maxLo = Number(max & 0xFFFFFFFFn);
                     const maxHi = Number(max >> 32n);
+                    const readBuffer = readBuf64[readbackSlot64];
+                    readbackSlot64 = (readbackSlot64 + 1) % 2;
+
                     device.queue.writeBuffer(uniformBuf64, 0, new Uint32Array([startLo, startHi, maxLo, maxHi]));
                     const encoder = device.createCommandEncoder();
                     const pass = encoder.beginComputePass();
@@ -892,12 +934,9 @@
                     pass.setBindGroup(0, bindGroup64);
                     pass.dispatchWorkgroups(Math.ceil(processNow / 64));
                     pass.end();
-                    encoder.copyBufferToBuffer(outputBuf64, 0, readBuf64, 0, processNow * 8);
+                    encoder.copyBufferToBuffer(outputBuf64, 0, readBuffer, 0, processNow * 8);
                     device.queue.submit([encoder.finish()]);
-                    await readBuf64.mapAsync(GPUMapMode.READ);
-                    const res = new Uint32Array(readBuf64.getMappedRange(0, processNow * 8).slice());
-                    readBuf64.unmap();
-                    currentRawResults.push({ type: '64', data: res });
+                    pendingReadbacks.push(beginMappedReadback(readBuffer, processNow * 8, '64'));
                 }
 
                 totalSearchTime += (performance.now() - searchStepStart);
@@ -908,11 +947,22 @@
                 updateUIProgress(current, max);
 
                 if (processedInRange >= BigInt(SAVE_CHUNK_SIZE) || current > max) {
+                    const drainStart = performance.now();
+                    if (pendingReadbacks.length > 0) {
+                        currentStage.textContent = "等待 GPU 回读中...";
+                        await drainAllReadbacks();
+                    }
+                    totalSearchTime += (performance.now() - drainStart);
+
                     currentStage.textContent = "多线程转换与整理中...";
                     await parallelFormatAndFlush();
                     processedInRange = 0n;
                     if (isRunning) currentStage.textContent = "并行查找 (Miller-Rabin)";
                 }
+            }
+
+            if (!isRunning && pendingReadbacks.length > 0) {
+                try { await drainAllReadbacks(); } catch (e) { console.warn("停止后清理回读失败:", e); }
             }
 
             if (isRunning) finish();
