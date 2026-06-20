@@ -629,12 +629,11 @@
                             if(b.data[i] !== 0) arr.push(b.data[i]);
                         }
                     } else {
-                        for(let i = 0; i < b.data.length; i+=2) {
+                        for(let i = 0, len = b.data.length; i < len; i+=2) {
                             const lo = b.data[i];
                             const hi = b.data[i+1];
                             if(lo !== 0 || hi !== 0) {
-                                const primeBigInt = BigInt(hi) * 4294967296n + BigInt(lo);
-                                arr.push(primeBigInt.toString());
+                                arr.push(hi * 4294967296 + lo);
                             }
                         }
                     }
