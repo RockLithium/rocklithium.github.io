@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>质数查找器</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #1a1a1a; 
+            color: #d3d3d3; 
+        }
+        
+        .value, 
+        #workerCountInput, 
+        #exponentInput,
+        .core-p-value, 
+        #currentProgress,
+        .progress-fill {
+            font-family: 'Ubuntu Mono', Consolas, monospace !important;
+        }
+
+        .monospace-value {
+             font-family: 'Ubuntu Mono', Consolas, monospace !important;
+        }
+        
+        .stage-value {
+            color: #90ee90;
+            font-weight: bold;
+            font-family: 'PingFang SC', 'Helvetica Neue', sans-serif !important;
+        }
+
+        #homeButton {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            color: #e0e0e0;
+            background-color: #333333;
+            border: 1px solid #778899;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            z-index: 100;
+        }
+
+        #homeButton:hover {
+            background-color: #444444;
+        }
+
+        h1 {
+            color: #aae0e0; 
+            text-shadow: 0 0 5px rgba(170, 224, 224, 0.3); 
+            font-weight: 900; 
+        }
+        
+        #controls {
+            margin-bottom: 25px;
+            background: rgba(40, 40, 40, 0.8); 
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #778899;
+            text-align: center;
+            width: 95%; 
+            max-width: 600px; 
+        }
+
+        #configGroup {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-line {
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             gap: 10px;
+             margin-bottom: 5px;
+        }
+        
+        #exponentGroup {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #workerCountInput, #exponentInput {
+            background: #333333;
+            color: #d3d3d3;
+            border: 1px solid #778899;
+            padding: 5px;
+            width: 80px; 
+            border-radius: 3px;
+            text-align: center;
+        }
+        
+        #exponentInput.numerical {
+             width: 120px; 
+        }
+        
+        #modeSwitchButton {
+            padding: 5px 10px;
+            font-size: 0.9em;
+            background-color: #555555;
+            color: #d3d3d3;
+            border: 1px solid #778899;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+        #modeSwitchButton:hover {
+            background-color: #666666;
+        }
+
+        #limitDisplay {
+            color: #90ee90;
+            font-weight: bold;
+            font-size: 1.1em; 
+            text-align: center; 
+            margin-top: 5px; 
+            min-height: 20px;
+        }
+
+        #stageButton {
+            padding: 10px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+            font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+        }
+        
+        #stageButton.start-btn {
+            background-color: #40a0a0; 
+        }
+        #stageButton.stop-btn {
+            background-color: #cc6666; 
+        }
+
+        #stageMessage {
+            color: #778899; 
+            min-height: 40px; 
+            padding: 5px 0;
+            margin: 0;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            word-wrap: break-word;
+        }
+
+        #statusArea {
+            width: 95%; 
+            max-width: 1200px;
+            margin-top: 15px;
+            padding: 20px;
+            background: rgba(40, 40, 40, 0.8);
+            border-radius: 10px;
+        }
+        
+        .status-line {
+            margin: 10px 0;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-bar-container {
+            height: 12px;
+            background-color: #333333;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 5px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #40e0d0; 
+            line-height: 12px;
+            color: #1a1a1a;
+            font-size: 0.7em;
+            text-align: center;
+            transition: width 0.1s ease-out;
+        }
+        
+        #coreProgress {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px dashed #444444;
+        }
+        
+        #coreStatusContainers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .core-status {
+            padding: 8px;
+            border: 1px solid #383838;
+            border-radius: 5px;
+            background: rgba(50, 50, 50, 0.6); 
+            height: 50px; 
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .core-label {
+            font-weight: bold;
+            color: #aae0e0; 
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+            font-size: 0.9em;
+        }
+        
+        .core-p-value {
+            color: #90ee90; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #resultArea {
+            width: 95%; 
+            max-width: 1200px;
+            margin-top: 15px;
+            padding: 20px;
+            background: rgba(40, 40, 40, 0.8);
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        #downloadButton {
+            padding: 10px 20px;
+            font-size: 1.1em;
+            background-color: #40a0a0;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body onload="initializeUI()">
+
+    <a href="./perftests" id="homeButton">← 返回上一级</a>
+
+    <h1>质数查找器</h1>
+
+    <div id="controls">
+        <div id="configGroup">
+            <div class="config-line">
+                <label for="workerCountInput" style="color: #aae0e0;">指定线程数：</label>
+                <input type="number" id="workerCountInput" min="1" max="4" value="4">
+            </div>
+            <span id="autoDetectHint" style="font-size: 0.8em; color: #778899; margin-bottom: 10px;"></span>
+
+            <div class="config-line" id="exponentGroup">
+                <label id="limitLabel" style="color: #aae0e0;">质数查找上限 (2^N), N=</label>
+                <input type="number" id="exponentInput" value="24">
+                <button id="modeSwitchButton" onclick="window.toggleMode()">切换模式</button>
+            </div>
+            <span id="limitDisplay"></span>
+        </div>
+        
+        <div id="realtimeSaveGroup" style="display: none; margin-bottom: 15px; align-items: center; justify-content: center; color: #ffcc00; font-size: 0.95em;">
+            <label style="cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <input type="checkbox" id="realtimeSaveCheckbox" style="margin-right: 8px; width: 16px; height: 16px;">
+                启用实时落盘 (节约内存，适合超大范围)
+            </label>
+        </div>
+
+        <button id="stageButton" class="start-btn" onclick="window.handleStageControl()">开始计算</button>
+        <p id="stageMessage"></p>
+    </div>
+    
+    <div id="statusArea">
+        <div class="status-line">
+            <span>当前阶段：</span>
+            <span id="currentStage" class="stage-value">等待配置</span>
+        </div>
+        <div class="status-line">
+            <span>累计已用时间：</span>
+            <span id="elapsedTime">0.000s</span>
+        </div>
+        <div class="status-line">
+            <span id="progressLabel">总进度:</span>
+            <span id="currentProgress" class="value">0 / 0</span>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-fill" id="progressFill">0%</div>
+        </div>
+
+        <div id="coreProgress">
+            <h3 style="color: #40e0d0; margin-top: 5px;">线程实时状态</h3>
+            <div id="coreStatusContainers"></div>
+        </div>
+    </div>
+
+    <div id="resultArea" style="display: none;">
+        <h3 style="color: #40e0d0; text-align: center;">计算任务完成</h3>
+        <p id="resultSummary"></p>
+        <button id="downloadButton" onclick="window.downloadPrimes()">下载质数列表 (.txt)</button>
+    </div>
+
+
+    <script>
+        (function() {
+            const MIN_EXPONENT = 1; 
+            const MAX_EXPONENT = 40;
+            const DEFAULT_EXPONENT = 24; 
+            const BATCH_MULTIPLIER = 1024; 
+            const MAX_LIMIT_BIGINT = 1n << 40n;
+            
+            const CHUNK_LIMIT_EXPONENT = 30;
+            const CHUNK_LIMIT_BIGINT = 1n << BigInt(CHUNK_LIMIT_EXPONENT); 
+            
+            let stageButton, stageMessage, currentProgress, progressFill, autoDetectHint, coreStatusContainers;
+            let workerCountInput, elapsedTimeDisplay, progressLabel, exponentInput, limitDisplay;
+            let currentStageDisplay, resultArea, resultSummary, limitLabel, modeSwitchButton;
+            
+
+            let SYSTEM_CORE_COUNT = navigator.hardwareConcurrency || 4;
+            let WORKER_COUNT = SYSTEM_CORE_COUNT;
+            
+            let STAGE_MAX_NUMBER = BigInt(0);
+            let currentSearchLimit = BigInt(0);
+            let nextSearchStart = 3n;
+            let workers = [];
+            let sortWorkers = [];
+            let sortCancelers = [];
+            let currentStageIndex = 0;
+            let isRunning = false;
+            
+            let startTime = 0;        
+            let totalTimeElapsed = 0; 
+            let timerInterval = null;
+            
+            let totalChecks = BigInt(0); 
+            let checksCompleted = 0n; 
+            let currentSearchProgress = 0n;
+            
+            let currentRawResults = []; 
+            let accumulatedPrimesBlobs = []; 
+            
+            let coreStatuses = []; 
+            
+            let isExponentMode = true; 
+            let currentExponent = DEFAULT_EXPONENT;
+            
+            let searchStageStartTime = 0; 
+            let totalSearchTime = 0;      
+            let totalSortTime = 0;
+            let totalPrimeCount = 0;
+
+            let useRealtimeSave = false;
+            let writableStream = null;
+
+            const getEffort = (x) => {
+                if (x <= 2) return 0;
+                const I = (n) => n * Math.log(n) - n;
+                const T1 = 3037000000;
+                const T2 = 4294967296;
+                const M1 = 1.0;
+                const M2 = 2.7;
+                const M3 = 3.1;
+                if (x <= T1) {
+                    return M1 * I(x);
+                } else if (x <= T2) {
+                    return M1 * I(T1) + M2 * (I(x) - I(T1));
+                } else {
+                    return M1 * I(T1) + M2 * (I(T2) - I(T1)) + M3 * (I(x) - I(T2));
+                }
+            };
+            
+            window.finalPrimesContentParts = []; 
+
+
+            // --- Worker Script (Segmented Sieve) ---
+            function getWorkerScript() {
+                return `
+                    let isWorkerRunning = false;
+                    let workerId = -1;
+                    let PROGRESS_BATCH_SIZE = 1n; 
+
+                    self.onmessage = function(e) {
+                        if (e.data.command === 'stop') {
+                            isWorkerRunning = false;
+                        } else if (e.data.command === 'start_sieve_step') {
+                            isWorkerRunning = true;
+                            workerId = e.data.workerId;
+                            PROGRESS_BATCH_SIZE = BigInt(e.data.batch_size); 
+                            runSegmentedSieveStep(
+                                BigInt(e.data.start_num), 
+                                BigInt(e.data.max_num), 
+                                BigInt(e.data.worker_idx),
+                                BigInt(e.data.total_workers),
+                                BigInt(e.data.block_size_odds)
+                            );
+                        }
+                    };
+
+                    function generateBasePrimes(limit) {
+                        const sieve = new Uint8Array(limit + 1);
+                        const primes = [];
+                        for (let n = 2; n <= limit; n++) {
+                            if (sieve[n] === 0) {
+                                primes.push(n);
+                                if (n * n <= limit) {
+                                    for (let m = n * n; m <= limit; m += n) {
+                                        sieve[m] = 1;
+                                    }
+                                }
+                            }
+                        }
+                        return primes;
+                    }
+
+                    function runSegmentedSieveStep(startNum, maxNum, workerIdx, totalWorkers, blockSizeOdds) {
+                        let bufferSize = 100000; 
+                        let primesBuffer = new BigUint64Array(bufferSize);
+                        let primesCount = 0;
+                        let checksInBatch = 0n; 
+
+                        const startNumNumber = Number(startNum);
+                        const maxNumNumber = Number(maxNum);
+                        const workerIdxNumber = Number(workerIdx);
+                        const totalWorkersNumber = Number(totalWorkers);
+                        const blockSizeOddsNumber = Number(blockSizeOdds);
+                        const basePrimes = generateBasePrimes(Math.floor(Math.sqrt(maxNumNumber)) + 1);
+                        
+                        let blockIdx = workerIdxNumber;
+                        while (isWorkerRunning) {
+                            let blockStart = startNumNumber + blockIdx * blockSizeOddsNumber * 2;
+                            if (blockStart > maxNumNumber) break;
+                            
+                            let blockEnd = blockStart + (blockSizeOddsNumber - 1) * 2;
+                            if (blockEnd > maxNumNumber) blockEnd = maxNumNumber;
+                            if ((blockStart & 1) === 0) blockStart++;
+                            if ((blockEnd & 1) === 0) blockEnd--;
+
+                            const oddCount = Math.floor((blockEnd - blockStart) / 2) + 1;
+                            const composite = new Uint8Array(oddCount);
+
+                            for (let i = 0; i < basePrimes.length && isWorkerRunning; i++) {
+                                const p = basePrimes[i];
+                                if (p === 2) continue;
+                                const p2 = p * p;
+                                if (p2 > blockEnd) break;
+
+                                let first = Math.max(p2, Math.ceil(blockStart / p) * p);
+                                if ((first & 1) === 0) first += p;
+
+                                for (let m = first; m <= blockEnd; m += p * 2) {
+                                    composite[(m - blockStart) >> 1] = 1;
+                                }
+                            }
+                            if (!isWorkerRunning) break;
+
+                            for (let i = 0; i < oddCount && isWorkerRunning; i++) {
+                                const n = blockStart + i * 2;
+                                checksInBatch += 1n;
+                                if (composite[i] === 0 && n >= 3) {
+                                    if (primesCount >= primesBuffer.length) {
+                                        let newBuffer = new BigUint64Array(primesBuffer.length * 2);
+                                        newBuffer.set(primesBuffer);
+                                        primesBuffer = newBuffer;
+                                    }
+                                    primesBuffer[primesCount++] = BigInt(n);
+                                }
+                                if (checksInBatch >= PROGRESS_BATCH_SIZE) {
+                                    self.postMessage({ 
+                                        command: 'progress_sieve', 
+                                        workerId: workerId,
+                                        current_num: n.toString(),
+                                        checks_done: checksInBatch.toString() 
+                                    });
+                                    checksInBatch = 0n; 
+                                }
+                            }
+                            blockIdx += totalWorkersNumber;
+                        }
+                        
+                        if (isWorkerRunning) {
+                            let finalBuffer = primesBuffer.slice(0, primesCount).buffer;
+                            self.postMessage({
+                                command: 'finished_step',
+                                workerId: workerId,
+                                checks_done: checksInBatch.toString(), 
+                                primesBuffer: finalBuffer,
+                                count: primesCount
+                            }, [finalBuffer]);
+                        }
+                        self.postMessage({ command: 'task_complete', workerId: workerId });
+                    }
+                `;
+            }
+            
+            window.toggleMode = function() {
+                const currentLimitBigInt = parseLimitInput(exponentInput.value); 
+                isExponentMode = !isExponentMode;
+                
+                if (isExponentMode) {
+                    limitLabel.textContent = '质数查找上限 (2^N), N=';
+                    exponentInput.type = 'number';
+                    exponentInput.classList.remove('numerical');
+                    exponentInput.min = MIN_EXPONENT;
+                    exponentInput.max = MAX_EXPONENT;
+
+                    let newExp = 0;
+                    if (currentLimitBigInt > 0n) {
+                        let tempLimit = Number(currentLimitBigInt); 
+                        if (tempLimit > 0) {
+                             newExp = Math.round(Math.log2(tempLimit));
+                        } else {
+                             newExp = currentExponent;
+                        }
+                        newExp = Math.min(MAX_EXPONENT, Math.max(MIN_EXPONENT, newExp));
+                    } else {
+                         newExp = currentExponent;
+                    }
+                    
+                    currentExponent = newExp; 
+                    exponentInput.value = currentExponent;
+                    
+                } else {
+                    limitLabel.textContent = '质数查找上限 (数值)=';
+                    exponentInput.type = 'text'; 
+                    exponentInput.classList.add('numerical');
+                    exponentInput.min = null;
+                    exponentInput.max = null;
+
+                    exponentInput.value = currentLimitBigInt.toLocaleString();
+                }
+                
+                window.updateLimitDisplay(); 
+            }
+
+            function parseLimitInput(value) {
+                let limit = 0n;
+                
+                if (isExponentMode) {
+                    let exp = parseInt(value);
+                    
+                    if (isNaN(exp) || value.trim() === '') {
+                        limit = (1n << BigInt(currentExponent)); 
+                        return limit; 
+                    }
+                    
+                    let clampedExp = Math.min(MAX_EXPONENT, Math.max(MIN_EXPONENT, exp));
+                    
+                    currentExponent = clampedExp; 
+                    
+                    if (exp !== clampedExp || exp.toString() !== exponentInput.value) {
+                        exponentInput.value = clampedExp;
+                    }
+
+                    limit = (1n << BigInt(currentExponent));
+                    
+                } else {
+                    try {
+                        limit = BigInt(value.replace(/,/g, ''));
+                    } catch (e) {
+                        limit = 1n; 
+                    }
+                    
+                    if (limit < 1n) limit = 1n;
+                    
+                    if (limit > MAX_LIMIT_BIGINT) {
+                        limit = MAX_LIMIT_BIGINT;
+                    }
+                    
+                    exponentInput.value = limit.toLocaleString();
+                }
+                
+                return limit;
+            }
+
+            window.updateLimitDisplay = function() {
+                STAGE_MAX_NUMBER = parseLimitInput(exponentInput.value);
+                
+                const THRESHOLD_32 = 1n << 32n;
+                const realtimeGroup = document.getElementById('realtimeSaveGroup');
+                if (STAGE_MAX_NUMBER >= THRESHOLD_32) {
+                    realtimeGroup.style.display = 'flex';
+                } else {
+                    realtimeGroup.style.display = 'none';
+                }
+
+                if (STAGE_MAX_NUMBER >= 3n) {
+                    totalChecks = (STAGE_MAX_NUMBER - 1n) / 2n + 1n; 
+                } else if (STAGE_MAX_NUMBER === 2n) {
+                    totalChecks = 1n;
+                } else {
+                    totalChecks = 0n;
+                }
+                
+                const formattedLimit = STAGE_MAX_NUMBER.toLocaleString('en-US', {useGrouping: true});
+                
+                let modeText = isExponentMode ? `(2^${currentExponent})` : `(数值)`;
+                
+                limitDisplay.innerHTML = `上限 ${modeText}：<span class="value">${formattedLimit}</span>`;
+                
+                const totalCores = WORKER_COUNT;
+                
+                if (!isRunning) {
+                     stageMessage.textContent = `点击“开始计算”：将使用 ${totalCores} 个线程并行测试 2 到 ${formattedLimit} 的所有数字。`;
+                }
+
+                if (!isRunning) {
+                    updateOverallProgress();
+                }
+            }
+            
+            window.updateWorkerCountInput = function() {
+                const maxCores = SYSTEM_CORE_COUNT;
+                workerCountInput.max = maxCores * 2;
+                
+                let requestedCount = parseInt(workerCountInput.value);
+                
+                requestedCount = Math.max(1, requestedCount);
+
+                if (requestedCount > maxCores * 2) {
+                    requestedCount = maxCores * 2;
+                    workerCountInput.value = maxCores * 2;
+                }
+                
+                WORKER_COUNT = requestedCount;
+                if (!isRunning) {
+                    initializeCoreStatusContainers(WORKER_COUNT);
+                    window.updateLimitDisplay(); 
+                }
+            }
+
+            function updateButtonUI() {
+                const isFinished = (currentStageIndex === 0 || currentStageIndex === 2);
+                const isSearching = (currentStageIndex === 1);
+                const isSorting = (currentStageIndex === 1.1);
+
+                if (isFinished) {
+                    stageButton.textContent = '开始计算';
+                    stageButton.classList.remove('stop-btn');
+                    stageButton.classList.add('start-btn');
+                    stageButton.disabled = false; 
+                    workerCountInput.disabled = false;
+                    exponentInput.disabled = false;
+                    modeSwitchButton.disabled = false;
+                } else if (isSearching || isSorting) {
+                    stageButton.textContent = '停止计算';
+                    stageButton.classList.remove('start-btn');
+                    stageButton.classList.add('stop-btn');
+                    stageButton.disabled = false; 
+                    workerCountInput.disabled = true;
+                    exponentInput.disabled = true;
+                    modeSwitchButton.disabled = true;
+                } 
+            }
+            
+            window.initializeUI = function() {
+                stageButton = document.getElementById('stageButton');
+                stageMessage = document.getElementById('stageMessage');
+                currentProgress = document.getElementById('currentProgress');
+                progressFill = document.getElementById('progressFill');
+                autoDetectHint = document.getElementById('autoDetectHint');
+                coreStatusContainers = document.getElementById('coreStatusContainers');
+                workerCountInput = document.getElementById('workerCountInput');
+                elapsedTimeDisplay = document.getElementById('elapsedTime');
+                progressLabel = document.getElementById('progressLabel');
+                exponentInput = document.getElementById('exponentInput');
+                limitDisplay = document.getElementById('limitDisplay');
+                currentStageDisplay = document.getElementById('currentStage');
+                resultArea = document.getElementById('resultArea');
+                resultSummary = document.getElementById('resultSummary');
+                limitLabel = document.getElementById('limitLabel');
+                modeSwitchButton = document.getElementById('modeSwitchButton');
+
+                workerCountInput.value = SYSTEM_CORE_COUNT;
+                workerCountInput.oninput = window.updateWorkerCountInput; 
+                exponentInput.oninput = window.updateLimitDisplay; 
+                
+                isExponentMode = true; 
+                currentExponent = DEFAULT_EXPONENT; 
+                
+                limitLabel.textContent = '质数查找上限 (2^N), N=';
+                exponentInput.type = 'number';
+                exponentInput.classList.remove('numerical');
+                exponentInput.min = MIN_EXPONENT;
+                exponentInput.max = MAX_EXPONENT;
+                exponentInput.value = currentExponent; 
+                
+                autoDetectHint.textContent = `(系统检测到 ${SYSTEM_CORE_COUNT} 个线程)`;
+                
+                window.updateWorkerCountInput(); 
+            }
+
+            function initializeCoreStatusContainers(count) {
+                if (coreStatusContainers.children.length !== count) {
+                    coreStatusContainers.innerHTML = '';
+                    for (let i = 0; i < count; i++) {
+                        const statusDiv = document.createElement('div');
+                        statusDiv.className = 'core-status';
+                        statusDiv.id = `core-${i}`;
+                        statusDiv.innerHTML = `
+                            <div class="core-label">
+                                <span>线程 ${i}: <span class="core-p-value">N/A</span></span>
+                            </div>
+                        `;
+                        coreStatusContainers.appendChild(statusDiv);
+                    }
+                }
+                
+                while (coreStatuses.length < count) {
+                     coreStatuses.push({ id: coreStatuses.length, currentP: 'N/A', isFinished: false });
+                }
+                if (coreStatuses.length > count) {
+                    coreStatuses.splice(count);
+                }
+                
+                coreStatuses.forEach((_, i) => updateCoreStatusUI(i));
+            }
+            
+            function startTimer() {
+                if (timerInterval) clearInterval(timerInterval);
+                
+                if (startTime === 0) {
+                     startTime = Date.now();
+                }
+                timerInterval = setInterval(updateElapsedTime, 10); 
+            }
+
+            function stopTimer() {
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+                updateElapsedTime(true); 
+            }
+
+            function updateElapsedTime(isFinal = false) {
+                if (startTime === 0) return;
+                
+                const now = Date.now();
+                
+                const elapsed = now - startTime; 
+                totalTimeElapsed = elapsed; 
+                
+                const formattedTime = (totalTimeElapsed / 1000).toFixed(3);
+                
+                if (isRunning || isFinal) {
+                    elapsedTimeDisplay.innerHTML = `<span class="monospace-value">${formattedTime}s</span>`;
+                }
+            }
+            
+            function updateOverallProgress() {
+                let progressPercentage = 0;
+                if (currentStageIndex === 1 || currentStageIndex === 1.1) {
+                    const span = STAGE_MAX_NUMBER > 2n ? STAGE_MAX_NUMBER - 2n : 1n;
+                    const current = currentSearchProgress > STAGE_MAX_NUMBER ? STAGE_MAX_NUMBER : currentSearchProgress;
+                    const done = current > 2n ? current - 2n : 0n;
+                    progressPercentage = Number(done * 10000n / span) / 100;
+                } else if (currentStageIndex === 2) {
+                    progressPercentage = 100;
+                }
+
+                let numCurBigInt = currentSearchProgress;
+                let displayCurrentNum = numCurBigInt > STAGE_MAX_NUMBER ? STAGE_MAX_NUMBER : numCurBigInt;
+                
+                if (displayCurrentNum === 0n && currentStageIndex === 1) {
+                    displayCurrentNum = nextSearchStart;
+                }
+                
+                const currentCountStr = displayCurrentNum.toLocaleString();
+                const totalCountStr = STAGE_MAX_NUMBER.toLocaleString();
+
+                if (currentStageIndex === 1) {
+                    currentStageDisplay.textContent = '并行筛选 (分段筛)'; 
+                    progressLabel.textContent = `总进度:`; 
+                } else if (currentStageIndex === 1.1) {
+                    currentStageDisplay.textContent = '并行分桶排序 & 结果处理'; 
+                    progressLabel.textContent = `总进度:`;
+                } else if (currentStageIndex === 2) {
+                    currentStageDisplay.textContent = '已完成';
+                    progressLabel.textContent = `总进度:`;
+                } else {
+                    currentStageDisplay.textContent = '等待配置';
+                    progressLabel.textContent = `总进度:`;
+                }
+                
+                currentProgress.textContent = `${currentCountStr} / ${totalCountStr}`;
+                progressFill.style.width = progressPercentage.toFixed(2) + '%';
+                progressFill.textContent = progressPercentage.toFixed(2) + '%';
+            }
+
+            function handleWorkerMessage(e) {
+                const data = e.data;
+                const workerId = data.workerId;
+                
+                if (data.command === 'progress_sieve') {
+                    if (currentStageIndex !== 1) return;
+                    
+                    checksCompleted += BigInt(data.checks_done);
+                    const currentNum = BigInt(data.current_num);
+                    if (currentNum > currentSearchProgress) currentSearchProgress = currentNum;
+                    
+                    coreStatuses[workerId].currentP = data.current_num.toLocaleString();
+                    updateOverallProgress(); 
+                    updateCoreStatusUI(workerId);
+
+                } else if (data.command === 'finished_step') {
+                    if (currentStageIndex !== 1) return;
+
+                    checksCompleted += BigInt(data.checks_done);
+                    currentRawResults.push({ buffer: data.primesBuffer, count: data.count });
+                    
+                    updateOverallProgress();
+
+                    coreStatuses[workerId].currentP = `Finished (Primes: ${data.count})`;
+                    coreStatuses[workerId].isFinished = true;
+                    updateCoreStatusUI(workerId);
+                    
+                } else if (data.command === 'task_complete') {
+                    checkAllWorkersFinished();
+                }
+            }
+            
+            function checkAllWorkersFinished() {
+                if (currentStageIndex !== 1) return;
+                
+                let allFinished = coreStatuses.every(s => s.isFinished);
+
+                if (allFinished) {
+                    workers.forEach(w => w.terminate());
+                    workers = [];
+                    currentSearchProgress = currentSearchLimit;
+                    
+                    const searchTimeElapsed = Date.now() - searchStageStartTime;
+                    totalSearchTime += searchTimeElapsed;
+                    
+                    currentStageIndex = 1.1; 
+                    updateOverallProgress(); 
+                    updateButtonUI();        
+                    
+                    setTimeout(startSortStage, 0); 
+                }
+            }
+
+            async function processAndSaveChunk() {
+                if (currentRawResults.length === 0) return;
+
+                const numWorkers = WORKER_COUNT;
+                const minVal = nextSearchStart;
+                const maxVal = currentSearchLimit;
+                const range = maxVal - minVal;
+                let bucketSize = range / BigInt(numWorkers);
+                if (bucketSize < 1n) bucketSize = 1n;
+                const bucketCounts = new Uint32Array(numWorkers);
+                const buckets = new Array(numWorkers);
+                const bucketPtrs = new Uint32Array(numWorkers);
+
+                for (let item of currentRawResults) {
+                    const arr = new BigUint64Array(item.buffer, 0, item.count);
+                    for (let i = 0; i < item.count; i++) {
+                        const val = arr[i];
+                        let bIdx = Number((val - minVal) / bucketSize);
+                        if (bIdx >= numWorkers) bIdx = numWorkers - 1;
+                        bucketCounts[bIdx]++;
+                    }
+                }
+
+                let totalLen = 0;
+                for (let i = 0; i < numWorkers; i++) {
+                    buckets[i] = new BigUint64Array(bucketCounts[i]);
+                    totalLen += bucketCounts[i];
+                }
+
+                for (let item of currentRawResults) {
+                    const arr = new BigUint64Array(item.buffer, 0, item.count);
+                    for (let i = 0; i < item.count; i++) {
+                        const val = arr[i];
+                        let bIdx = Number((val - minVal) / bucketSize);
+                        if (bIdx >= numWorkers) bIdx = numWorkers - 1;
+                        buckets[bIdx][bucketPtrs[bIdx]++] = val;
+                    }
+                }
+                
+                currentRawResults = [];
+
+                const sortWorkerCode = `
+                    self.onmessage = function(e) {
+                        const { buffer, index, count } = e.data;
+                        const arr = new BigUint64Array(buffer);
+                        
+                        arr.sort();
+                        
+                        let strParts = [];
+                        const CHUNK_SIZE = 500000; 
+                        for(let i = 0; i < count; i += CHUNK_SIZE) {
+                            let chunk = [];
+                            let end = Math.min(i + CHUNK_SIZE, count);
+                            for(let j = i; j < end; j++) {
+                                chunk.push(Number(arr[j]).toString());
+                            }
+                            strParts.push(chunk.join(' '));
+                        }
+                        
+                        let finalStr = strParts.join(' ') + (count > 0 ? ' ' : '');
+                        const uint8Array = new TextEncoder().encode(finalStr);
+                        self.postMessage({ buffer: uint8Array.buffer, count: count, index: index }, [uint8Array.buffer]);
+                    };
+                `;
+                const blob = new Blob([sortWorkerCode], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(blob);
+                const promises = [];
+                const sortedResults = new Array(numWorkers).fill(null);
+                sortCancelers.forEach(cancel => cancel());
+                sortWorkers.forEach(w => { try { w.terminate(); } catch (e) { /* ignore */ } });
+                sortCancelers = [];
+                sortWorkers = [];
+
+                for (let i = 0; i < numWorkers; i++) {
+                    if (bucketCounts[i] === 0) continue;
+
+                    promises.push(new Promise(resolve => {
+                        const w = new Worker(workerUrl);
+                        let settled = false;
+                        let cancel;
+                        const settle = () => {
+                            if (settled) return;
+                            settled = true;
+                            try { w.terminate(); } catch (e) { /* ignore */ }
+                            sortWorkers = sortWorkers.filter(worker => worker !== w);
+                            sortCancelers = sortCancelers.filter(fn => fn !== cancel);
+                            resolve();
+                        };
+                        cancel = settle;
+                        sortWorkers.push(w);
+                        sortCancelers.push(cancel);
+                        w.onmessage = (e) => {
+                            sortedResults[e.data.index] = e.data;
+                            settle();
+                        };
+                        w.onerror = settle;
+                        w.postMessage(
+                            { buffer: buckets[i].buffer, index: i, count: bucketCounts[i] }, 
+                            [buckets[i].buffer]
+                        );
+                    }));
+                }
+
+                await Promise.all(promises);
+                sortCancelers = [];
+                sortWorkers = [];
+                URL.revokeObjectURL(workerUrl);
+                if (!isRunning && currentStageIndex !== 2) return;
+
+                for (let i = 0; i < numWorkers; i++) {
+                    const res = sortedResults[i];
+                    if (res && res.count > 0) {
+                        const u8arr = new Uint8Array(res.buffer);
+                        if (useRealtimeSave && writableStream) {
+                            await writableStream.write(u8arr);
+                        } else {
+                            accumulatedPrimesBlobs.push(new Blob([u8arr], { type: 'text/plain' }));
+                        }
+                        totalPrimeCount += res.count;
+                    }
+                }
+            }
+
+            async function startSortStage() {
+                const formattedStart = nextSearchStart.toLocaleString();
+                const formattedEnd = currentSearchLimit.toLocaleString();
+                stageMessage.textContent = `筛选 [${formattedStart} 至 ${formattedEnd}] 完成。正在进行排序和结果处理...`;
+                const sortStartTime = Date.now();
+
+                await processAndSaveChunk();
+                if (!isRunning && currentStageIndex !== 2) return;
+
+                totalSortTime += (Date.now() - sortStartTime);
+                setTimeout(() => continueSearchOrFinish(), 0); 
+            }
+            
+            function continueSearchOrFinish() {
+                if (!isRunning) return;
+                const useChunking = STAGE_MAX_NUMBER > CHUNK_LIMIT_BIGINT;
+                if (!useChunking) {
+                    finishFinalStage();
+                    return;
+                }
+                
+                let limit = currentSearchLimit;
+                let nextStartCandidate = limit + 1n; 
+                
+                if (nextStartCandidate % 2n === 0n) {
+                    nextSearchStart = nextStartCandidate + 1n;
+                } else {
+                    nextSearchStart = nextStartCandidate;
+                }
+
+                if (nextSearchStart > STAGE_MAX_NUMBER) {
+                    finishFinalStage();
+                    return;
+                }
+                
+                const remainingChecks = totalChecks - checksCompleted;
+                const formattedLimit = STAGE_MAX_NUMBER.toLocaleString('en-US', {useGrouping: true});
+                stageMessage.textContent = `✅ 排序/处理完成。剩余 ${remainingChecks.toLocaleString()} 次检查。即将开始下一个查找周期 [${nextSearchStart.toLocaleString()} 至 ${formattedLimit}]...`;
+                startNextChunkSearch();
+            }
+
+            function updateCoreStatusUI(workerId) {
+                const status = coreStatuses[workerId];
+                const coreElement = document.getElementById(`core-${workerId}`);
+                if (!coreElement) return;
+
+                const pValueSpan = coreElement.querySelector('.core-p-value');
+                
+                const isFinished = status.isFinished;
+                const pValueColor = isFinished ? '#778899' : '#90ee90';
+                
+                pValueSpan.textContent = status.currentP;
+                pValueSpan.style.color = pValueColor;
+
+                if (isFinished) {
+                    coreElement.classList.add('completed');
+                } else {
+                    coreElement.classList.remove('completed');
+                }
+            }
+
+            function fullReset() {
+                startTime = 0; 
+                totalTimeElapsed = 0;
+                totalSearchTime = 0;
+                totalSortTime = 0; 
+                checksCompleted = 0n;
+                currentSearchProgress = 0n;
+                totalPrimeCount = 0;
+                
+                currentRawResults = []; 
+                accumulatedPrimesBlobs = [];
+                window.finalPrimesContentParts = [];
+                nextSearchStart = 3n;
+                sortCancelers.forEach(cancel => cancel());
+                sortWorkers.forEach(worker => {
+                    try { worker.terminate(); } catch (e) { /* ignore */ }
+                });
+                sortCancelers = [];
+                sortWorkers = [];
+                
+                coreStatuses.forEach(s => { s.currentP = 'N/A'; s.isFinished = false; });
+                coreStatuses.forEach(s => updateCoreStatusUI(s.id));
+
+                elapsedTimeDisplay.innerHTML = `<span class="monospace-value">0.000s</span>`;
+                resultArea.style.display = 'none';
+                updateOverallProgress();
+            }
+
+            async function startSearch() {
+                if (isRunning) return;
+                
+                fullReset(); 
+
+                isRunning = true;
+                startTimer(); 
+                
+                if (STAGE_MAX_NUMBER >= 2n) {
+                    checksCompleted += 1n; 
+                    if (useRealtimeSave && writableStream) {
+                        const initialU8 = new TextEncoder().encode('2 ');
+                        await writableStream.write(initialU8);
+                        totalPrimeCount += 1;
+                    }
+                }
+                
+                if (STAGE_MAX_NUMBER < 3n) {
+                    finishFinalStage();
+                    return;
+                }
+
+                startNextChunkSearch();
+            }
+            
+            function startNextChunkSearch() {
+                currentStageIndex = 1; 
+                updateButtonUI(); 
+                
+                const useChunking = STAGE_MAX_NUMBER > CHUNK_LIMIT_BIGINT;
+
+                if (useChunking) {
+                    const nextBoundary = ((nextSearchStart - 1n) / CHUNK_LIMIT_BIGINT + 1n) * CHUNK_LIMIT_BIGINT;
+                    currentSearchLimit = nextBoundary > STAGE_MAX_NUMBER ? STAGE_MAX_NUMBER : nextBoundary;
+                } else {
+                    currentSearchLimit = STAGE_MAX_NUMBER;
+                }
+                currentSearchProgress = nextSearchStart;
+                
+                coreStatuses.forEach(s => { s.currentP = 'N/A'; s.isFinished = false; });
+                coreStatuses.forEach(s => updateCoreStatusUI(s.id));
+
+                searchStageStartTime = Date.now();
+                const formattedStart = nextSearchStart.toLocaleString('en-US', {useGrouping: true});
+                const formattedEnd = currentSearchLimit.toLocaleString('en-US', {useGrouping: true});
+                stageMessage.textContent = `正在并行筛选 [${formattedStart} 至 ${formattedEnd}] 的所有数字`;
+                updateOverallProgress();
+
+                const maxNum = currentSearchLimit;
+                const startNum = nextSearchStart; 
+                const PROGRESS_BATCH_SIZE = BigInt(SYSTEM_CORE_COUNT) * BigInt(BATCH_MULTIPLIER);
+                
+                const totalOdds = (maxNum - startNum) / 2n + 1n;
+                let blockSizeOdds = totalOdds / (BigInt(WORKER_COUNT) * 10n);
+                if (blockSizeOdds < 1n) blockSizeOdds = 1n;
+                if (blockSizeOdds > 262144n) blockSizeOdds = 262144n;
+
+                workers.forEach(w => {try{w.terminate()}catch(e){}});
+                workers = [];
+                initializeCoreStatusContainers(WORKER_COUNT);
+
+                for (let i = 0; i < WORKER_COUNT; i++) {
+                    if (totalOdds <= BigInt(i) && blockSizeOdds === 1n) {
+                        coreStatuses[i].currentP = "Queue Empty";
+                        coreStatuses[i].isFinished = true;
+                        updateCoreStatusUI(i);
+                        continue;
+                    }
+
+                    const worker = new Worker(URL.createObjectURL(new Blob([getWorkerScript()])));
+                    worker.onmessage = handleWorkerMessage;
+                    workers.push(worker);
+                    
+                    let firstNum = startNum + BigInt(i) * blockSizeOdds * 2n;
+                    coreStatuses[i].currentP = firstNum <= maxNum ? firstNum.toString() : "N/A";
+                    coreStatuses[i].isFinished = false;
+                    updateCoreStatusUI(i);
+
+                    workers[i].postMessage({
+                        command: 'start_sieve_step',
+                        workerId: i,
+                        start_num: startNum.toString(),
+                        max_num: maxNum.toString(),
+                        worker_idx: i.toString(),
+                        total_workers: WORKER_COUNT.toString(),
+                        block_size_odds: blockSizeOdds.toString(),
+                        batch_size: PROGRESS_BATCH_SIZE.toString()
+                    });
+                }
+                
+                checkAllWorkersFinished();
+            }
+            
+            async function finishFinalStage() {
+                isRunning = false;
+                currentStageIndex = 2; 
+                
+                await processAndSaveChunk();
+                if (!isRunning && currentStageIndex !== 2) return;
+
+                if (STAGE_MAX_NUMBER >= 2n) {
+                    if (!useRealtimeSave) {
+                        accumulatedPrimesBlobs.unshift(new Blob(['2 '], { type: 'text/plain' }));
+                        totalPrimeCount += 1; 
+                    }
+                }
+                
+                updateElapsedTime(true); 
+                stopTimer(); 
+                const finalTime = totalTimeElapsed; 
+                totalSortTime = finalTime - totalSearchTime; 
+                
+                const totalTimeFormatted = (finalTime / 1000).toFixed(3);
+                const searchTimeFormatted = (totalSearchTime / 1000).toFixed(3);
+                const sortTimeFormatted = (totalSortTime / 1000).toFixed(3);
+
+                resultSummary.textContent = `共发现 ${totalPrimeCount.toLocaleString()} 个质数，总耗时 ${totalTimeFormatted} 秒。`
+                                          + `查找累计耗时 ${searchTimeFormatted} 秒，`
+                                          + `排序和整理累计耗时 ${sortTimeFormatted} 秒。`
+                                          + (useRealtimeSave ? " (已通过实时落盘保存到文件)" : "");
+
+                resultArea.style.display = 'block';
+                stageMessage.textContent = `✅ 计算任务已完成！结果已准备好。`;
+                updateOverallProgress(); 
+                updateButtonUI(); 
+                
+                window.finalPrimesContentParts = accumulatedPrimesBlobs; 
+
+                if (useRealtimeSave && writableStream) {
+                    try { await writableStream.close(); } catch(e){}
+                    writableStream = null;
+                    document.getElementById('downloadButton').style.display = 'none';
+                } else {
+                    document.getElementById('downloadButton').style.display = 'inline-block';
+                }
+            }
+
+            async function stopStressTest() {
+                if (!isRunning) return;
+
+                isRunning = false;
+                currentStageIndex = 0; 
+                
+                workers.forEach(worker => {
+                    try { worker.postMessage({ command: 'stop' }); worker.terminate(); } catch (e) { /* ignore */ }
+                });
+                workers = []; 
+                sortCancelers.forEach(cancel => cancel());
+                sortWorkers.forEach(worker => {
+                    try { worker.terminate(); } catch (e) { /* ignore */ }
+                });
+                sortCancelers = [];
+                sortWorkers = [];
+
+                stopTimer(); 
+                
+                const frozenTime = (totalTimeElapsed / 1000).toFixed(3);
+                
+                elapsedTimeDisplay.innerHTML = `<span class="monospace-value">${frozenTime}s</span> (已停止)`; 
+
+                workerCountInput.disabled = false;
+                exponentInput.disabled = false;
+                modeSwitchButton.disabled = false;
+
+                stageMessage.textContent = '程序已停止。您可以修改配置后再次点击“开始计算”。';
+                updateButtonUI(); 
+
+                if (useRealtimeSave && writableStream) {
+                    try { await writableStream.close(); } catch(e){}
+                    writableStream = null;
+                }
+            }
+
+            window.handleStageControl = async function() {
+                if (currentStageIndex === 1 || currentStageIndex === 1.1) {
+                    await stopStressTest();
+                } else if (currentStageIndex === 0 || currentStageIndex === 2) {
+                    window.updateLimitDisplay(); 
+                    
+                    const THRESHOLD_WARN = 1n << 36n;
+                    const checkbox = document.getElementById('realtimeSaveCheckbox');
+                    useRealtimeSave = checkbox.checked && document.getElementById('realtimeSaveGroup').style.display !== 'none';
+
+                    if (STAGE_MAX_NUMBER > THRESHOLD_WARN && !useRealtimeSave) {
+                        if (!confirm("如果不使用实时落盘，可能由于缓存占用过大而无法存盘或导致页面崩溃。是否确认强制开始？")) {
+                            return;
+                        }
+                    }
+
+                    if (useRealtimeSave) {
+                        try {
+                            const fileHandle = await window.showSaveFilePicker({
+                                suggestedName: `primes_up_to_${STAGE_MAX_NUMBER.toLocaleString('en-US')}.txt`,
+                                types: [{
+                                    description: 'Text Files',
+                                    accept: {'text/plain': ['.txt']},
+                                }],
+                            });
+                            writableStream = await fileHandle.createWritable();
+                        } catch (e) {
+                            console.error("用户取消了文件选择或发生错误:", e);
+                            return;
+                        }
+                    }
+
+                    startSearch(); 
+                }
+            }
+            
+            window.downloadPrimes = function() {
+                const contentParts = window.finalPrimesContentParts;
+                if (!contentParts || contentParts.length === 0) {
+                    alert('没有质数可以下载。');
+                    return;
+                }
+                
+                const blob = new Blob(contentParts, { type: 'text/plain;charset=utf-8' }); 
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `primes_up_to_${STAGE_MAX_NUMBER.toLocaleString('en-US')}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            }
+
+        })();
+    </script>
+</body>
+</html>

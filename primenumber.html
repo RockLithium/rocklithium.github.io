@@ -348,6 +348,8 @@
             let currentSearchLimit = BigInt(0);
             let nextSearchStart = 3n;
             let workers = [];
+            let sortWorkers = [];
+            let sortCancelers = [];
             let currentStageIndex = 0;
             let isRunning = false;
             
@@ -448,13 +450,15 @@
                     const bases_small = [2n, 7n, 61n];
                     const bases_large = [2n, 13n, 23n, 1662803n];
                     const THRESHOLD_32 = 4294967296n;
+                    const small_primes = [3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n, 37n, 41n, 43n, 47n];
 
                     function isBigIntPrime(n) {
                         if (n <= 1n) return false;
-                        if (n % 3n === 0n) return n === 3n;
-                        if (n % 5n === 0n) return n === 5n;
-                        if (n % 7n === 0n) return n === 7n;
-                        if (n % 11n === 0n) return n === 11n;
+                        for (let i = 0; i < small_primes.length; i++) {
+                            const p = small_primes[i];
+                            if (n === p) return true;
+                            if (n % p === 0n) return false;
+                        }
                         
                         const bases = n <= THRESHOLD_32 ? bases_small : bases_large;
                         
@@ -871,6 +875,7 @@
 
             async function processAndSaveChunk() {
                 if (currentRawResults.length === 0) return;
+                if (!isRunning && currentStageIndex !== 2) return;
 
                 const numWorkers = WORKER_COUNT;
                 const minVal = nextSearchStart;
@@ -922,7 +927,7 @@
                             let chunk = [];
                             let end = Math.min(i + CHUNK_SIZE, count);
                             for(let j = i; j < end; j++) {
-                                chunk.push(arr[j].toString());
+                                chunk.push(Number(arr[j]).toString());
                             }
                             strParts.push(chunk.join(' '));
                         }
@@ -936,17 +941,36 @@
                 const workerUrl = URL.createObjectURL(blob);
                 const promises = [];
                 const sortedResults = new Array(numWorkers).fill(null);
+                sortCancelers.forEach(cancel => cancel());
+                sortWorkers.forEach(worker => {
+                    try { worker.terminate(); } catch (e) { /* ignore */ }
+                });
+                sortCancelers = [];
+                sortWorkers = [];
 
                 for (let i = 0; i < numWorkers; i++) {
                     if (bucketCounts[i] === 0) continue;
 
                     promises.push(new Promise(resolve => {
                         const w = new Worker(workerUrl);
-                        w.onmessage = (e) => {
-                            sortedResults[e.data.index] = e.data;
-                            w.terminate();
+                        let settled = false;
+                        let cancel;
+                        const settle = () => {
+                            if (settled) return;
+                            settled = true;
+                            try { w.terminate(); } catch (e) { /* ignore */ }
+                            sortWorkers = sortWorkers.filter(worker => worker !== w);
+                            sortCancelers = sortCancelers.filter(fn => fn !== cancel);
                             resolve();
                         };
+                        cancel = settle;
+                        sortWorkers.push(w);
+                        sortCancelers.push(cancel);
+                        w.onmessage = (e) => {
+                            sortedResults[e.data.index] = e.data;
+                            settle();
+                        };
+                        w.onerror = settle;
                         w.postMessage(
                             { buffer: buckets[i].buffer, index: i, count: bucketCounts[i] }, 
                             [buckets[i].buffer]
@@ -955,7 +979,10 @@
                 }
 
                 await Promise.all(promises);
+                sortCancelers = [];
+                sortWorkers = [];
                 URL.revokeObjectURL(workerUrl);
+                if (!isRunning && currentStageIndex !== 2) return;
 
                 for (let i = 0; i < numWorkers; i++) {
                     const res = sortedResults[i];
@@ -978,12 +1005,14 @@
                 const sortStartTime = Date.now();
 
                 await processAndSaveChunk();
+                if (!isRunning && currentStageIndex !== 2) return;
 
                 totalSortTime += (Date.now() - sortStartTime);
                 setTimeout(() => continueSearchOrFinish(), 0); 
             }
             
             function continueSearchOrFinish() {
+                if (!isRunning) return;
                 const useChunking = STAGE_MAX_NUMBER > CHUNK_LIMIT_BIGINT;
                 if (!useChunking) {
                     finishFinalStage();
@@ -1042,6 +1071,12 @@
                 accumulatedPrimesBlobs = [];
                 window.finalPrimesContentParts = [];
                 nextSearchStart = 3n;
+                sortCancelers.forEach(cancel => cancel());
+                sortWorkers.forEach(worker => {
+                    try { worker.terminate(); } catch (e) { /* ignore */ }
+                });
+                sortCancelers = [];
+                sortWorkers = [];
                 
                 coreStatuses.forEach(s => { s.currentP = 'N/A'; s.isFinished = false; });
                 coreStatuses.forEach(s => updateCoreStatusUI(s.id));
@@ -1148,6 +1183,7 @@
                 currentStageIndex = 2; 
                 
                 await processAndSaveChunk();
+                if (!isRunning && currentStageIndex !== 2) return;
 
                 if (STAGE_MAX_NUMBER >= 2n) {
                     if (!useRealtimeSave) {
@@ -1196,6 +1232,12 @@
                     try { worker.postMessage({ command: 'stop' }); worker.terminate(); } catch (e) { /* ignore */ }
                 });
                 workers = []; 
+                sortCancelers.forEach(cancel => cancel());
+                sortWorkers.forEach(worker => {
+                    try { worker.terminate(); } catch (e) { /* ignore */ }
+                });
+                sortCancelers = [];
+                sortWorkers = [];
 
                 stopTimer(); 
                 
