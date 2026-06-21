@@ -471,53 +471,45 @@
                     }
 
                     function runMillerRabinStep(startNum, maxNum, workerIdx, totalWorkers, blockSizeOdds) {
-                        let bufferSize = 100000; 
-                        let primesBuffer = new BigUint64Array(bufferSize);
-                        let primesCount = 0;
-                        let checksInBatch = 0n; 
-                        
+                        let checksInBatch = 0n;
+                        let totalPrimesFound = 0;
                         let blockIdx = workerIdx;
                         while (isWorkerRunning) {
                             let blockStart = startNum + blockIdx * blockSizeOdds * 2n;
                             if (blockStart > maxNum) break;
-                            
+
                             let blockEnd = blockStart + (blockSizeOdds - 1n) * 2n;
                             if (blockEnd > maxNum) blockEnd = maxNum;
-                            
+
+                            let blockBuffer = new BigUint64Array(4096);
+                            let blockCount = 0;
                             for (let n = blockStart; n <= blockEnd && isWorkerRunning; n += 2n) {
-                                checksInBatch += 1n; 
+                                checksInBatch += 1n;
                                 if (isBigIntPrime(n)) {
-                                    if (primesCount >= primesBuffer.length) {
-                                        let newBuffer = new BigUint64Array(primesBuffer.length * 2);
-                                        newBuffer.set(primesBuffer);
-                                        primesBuffer = newBuffer;
+                                    if (blockCount >= blockBuffer.length) {
+                                        let newBuffer = new BigUint64Array(blockBuffer.length * 2);
+                                        newBuffer.set(blockBuffer);
+                                        blockBuffer = newBuffer;
                                     }
-                                    primesBuffer[primesCount++] = n;
+                                    blockBuffer[blockCount++] = n;
                                 }
                                 if (checksInBatch >= BATCH_SIZE_N) {
-                                    self.postMessage({ 
-                                        command: 'progress_miller_rabin', 
-                                        workerId: workerId,
-                                        current_num: n.toString(),
-                                        checks_done: checksInBatch.toString() 
-                                    });
-                                    checksInBatch = 0n; 
+                                    self.postMessage({ command: 'progress_miller_rabin', workerId, current_num: n.toString(), checks_done: checksInBatch.toString() });
+                                    checksInBatch = 0n;
                                 }
+                            }
+                            if (isWorkerRunning && blockCount > 0) {
+                                totalPrimesFound += blockCount;
+                                const finalBuffer = blockBuffer.slice(0, blockCount).buffer;
+                                self.postMessage({ command: 'block_result', workerId, blockIdx: blockIdx.toString(), primesBuffer: finalBuffer, count: blockCount }, [finalBuffer]);
                             }
                             blockIdx += totalWorkers;
                         }
-                        
+
                         if (isWorkerRunning) {
-                            let finalBuffer = primesBuffer.slice(0, primesCount).buffer;
-                            self.postMessage({
-                                command: 'finished_step',
-                                workerId: workerId,
-                                checks_done: checksInBatch.toString(), 
-                                primesBuffer: finalBuffer,
-                                count: primesCount
-                            }, [finalBuffer]);
+                            self.postMessage({ command: 'finished_step', workerId, checks_done: checksInBatch.toString(), count: totalPrimesFound });
                         }
-                        self.postMessage({ command: 'task_complete', workerId: workerId });
+                        self.postMessage({ command: 'task_complete', workerId });
                     }
                 `;
             }
@@ -808,7 +800,7 @@
                     currentStageDisplay.textContent = '并行查找 (Miller-Rabin)'; 
                     progressLabel.textContent = `总进度:`; 
                 } else if (currentStageIndex === 1.1) {
-                    currentStageDisplay.textContent = '并行分桶排序 & 结果处理'; 
+                    currentStageDisplay.textContent = '块索引排序 & 结果整理'; 
                     progressLabel.textContent = `总进度:`;
                 } else if (currentStageIndex === 2) {
                     currentStageDisplay.textContent = '已完成';
@@ -836,11 +828,17 @@
                     updateOverallProgress(); 
                     updateCoreStatusUI(workerId);
 
+                } else if (data.command === 'block_result') {
+                    if (currentStageIndex !== 1) return;
+                    currentRawResults.push({ blockIdx: BigInt(data.blockIdx), buffer: data.primesBuffer, count: data.count });
+
                 } else if (data.command === 'finished_step') {
                     if (currentStageIndex !== 1) return;
 
                     checksCompleted += BigInt(data.checks_done);
-                    currentRawResults.push({ buffer: data.primesBuffer, count: data.count });
+                    if (data.primesBuffer && data.count > 0) {
+                        currentRawResults.push({ buffer: data.primesBuffer, count: data.count });
+                    }
                     
                     updateOverallProgress();
 
@@ -877,80 +875,42 @@
                 if (currentRawResults.length === 0) return;
                 if (!isRunning && currentStageIndex !== 2) return;
 
-                const numWorkers = WORKER_COUNT;
-                const minVal = nextSearchStart;
-                const maxVal = currentSearchLimit;
-                const range = maxVal - minVal;
-                const bucketSize = range / BigInt(numWorkers);
-                const bucketCounts = new Uint32Array(numWorkers);
-                const buckets = new Array(numWorkers);
-                const bucketPtrs = new Uint32Array(numWorkers);
-
-                for (let item of currentRawResults) {
-                    const arr = new BigUint64Array(item.buffer, 0, item.count);
-                    for (let i = 0; i < item.count; i++) {
-                        const val = arr[i];
-                        let bIdx = Number((val - minVal) / bucketSize);
-                        if (bIdx >= numWorkers) bIdx = numWorkers - 1;
-                        bucketCounts[bIdx]++;
-                    }
-                }
-
-                let totalLen = 0;
-                for (let i = 0; i < numWorkers; i++) {
-                    buckets[i] = new BigUint64Array(bucketCounts[i]);
-                    totalLen += bucketCounts[i];
-                }
-
-                for (let item of currentRawResults) {
-                    const arr = new BigUint64Array(item.buffer, 0, item.count);
-                    for (let i = 0; i < item.count; i++) {
-                        const val = arr[i];
-                        let bIdx = Number((val - minVal) / bucketSize);
-                        if (bIdx >= numWorkers) bIdx = numWorkers - 1;
-                        buckets[bIdx][bucketPtrs[bIdx]++] = val;
-                    }
-                }
-                
-                currentRawResults = [];
-
-                const sortWorkerCode = `
+                currentRawResults.sort((a, b) => a.blockIdx < b.blockIdx ? -1 : (a.blockIdx > b.blockIdx ? 1 : 0));
+                const formatWorkerCode = `
                     self.onmessage = function(e) {
-                        const { buffer, index, count } = e.data;
-                        const arr = new BigUint64Array(buffer);
-                        
-                        arr.sort();
-                        
-                        let strParts = [];
-                        const CHUNK_SIZE = 500000; 
-                        for(let i = 0; i < count; i += CHUNK_SIZE) {
-                            let chunk = [];
-                            let end = Math.min(i + CHUNK_SIZE, count);
-                            for(let j = i; j < end; j++) {
-                                chunk.push(Number(arr[j]).toString());
+                        const { items, index } = e.data;
+                        const strParts = [];
+                        let count = 0;
+                        const CHUNK_SIZE = 500000;
+                        let chunk = [];
+                        for (const item of items) {
+                            const arr = new BigUint64Array(item.buffer, 0, item.count);
+                            for (let i = 0; i < arr.length; i++) {
+                                chunk.push(Number(arr[i]).toString());
+                                count++;
+                                if (chunk.length >= CHUNK_SIZE) { strParts.push(chunk.join(' ')); chunk = []; }
                             }
-                            strParts.push(chunk.join(' '));
                         }
-                        
-                        let finalStr = strParts.join(' ') + (count > 0 ? ' ' : '');
+                        if (chunk.length > 0) strParts.push(chunk.join(' '));
+                        const finalStr = strParts.join(' ') + (count > 0 ? ' ' : '');
                         const uint8Array = new TextEncoder().encode(finalStr);
-                        self.postMessage({ buffer: uint8Array.buffer, count: count, index: index }, [uint8Array.buffer]);
+                        self.postMessage({ buffer: uint8Array.buffer, count, index }, [uint8Array.buffer]);
                     };
                 `;
-                const blob = new Blob([sortWorkerCode], { type: 'application/javascript' });
+                const blob = new Blob([formatWorkerCode], { type: 'application/javascript' });
                 const workerUrl = URL.createObjectURL(blob);
+                const numWorkers = Math.min(navigator.hardwareConcurrency || 4, Math.max(1, currentRawResults.length));
+                const itemsPerWorker = Math.ceil(currentRawResults.length / numWorkers);
+                const formattedResults = new Array(numWorkers).fill(null);
                 const promises = [];
-                const sortedResults = new Array(numWorkers).fill(null);
                 sortCancelers.forEach(cancel => cancel());
-                sortWorkers.forEach(worker => {
-                    try { worker.terminate(); } catch (e) { /* ignore */ }
-                });
+                sortWorkers.forEach(worker => { try { worker.terminate(); } catch (e) { /* ignore */ } });
                 sortCancelers = [];
                 sortWorkers = [];
 
                 for (let i = 0; i < numWorkers; i++) {
-                    if (bucketCounts[i] === 0) continue;
-
+                    const items = currentRawResults.slice(i * itemsPerWorker, (i + 1) * itemsPerWorker);
+                    if (items.length === 0) continue;
                     promises.push(new Promise(resolve => {
                         const w = new Worker(workerUrl);
                         let settled = false;
@@ -966,33 +926,24 @@
                         cancel = settle;
                         sortWorkers.push(w);
                         sortCancelers.push(cancel);
-                        w.onmessage = (e) => {
-                            sortedResults[e.data.index] = e.data;
-                            settle();
-                        };
+                        w.onmessage = (e) => { formattedResults[e.data.index] = e.data; settle(); };
                         w.onerror = settle;
-                        w.postMessage(
-                            { buffer: buckets[i].buffer, index: i, count: bucketCounts[i] }, 
-                            [buckets[i].buffer]
-                        );
+                        w.postMessage({ items, index: i }, items.map(item => item.buffer));
                     }));
                 }
 
+                currentRawResults = [];
                 await Promise.all(promises);
                 sortCancelers = [];
                 sortWorkers = [];
                 URL.revokeObjectURL(workerUrl);
                 if (!isRunning && currentStageIndex !== 2) return;
 
-                for (let i = 0; i < numWorkers; i++) {
-                    const res = sortedResults[i];
+                for (const res of formattedResults) {
                     if (res && res.count > 0) {
                         const u8arr = new Uint8Array(res.buffer);
-                        if (useRealtimeSave && writableStream) {
-                            await writableStream.write(u8arr);
-                        } else {
-                            accumulatedPrimesBlobs.push(new Blob([u8arr], { type: 'text/plain' }));
-                        }
+                        if (useRealtimeSave && writableStream) await writableStream.write(u8arr);
+                        else accumulatedPrimesBlobs.push(new Blob([u8arr], { type: 'text/plain' }));
                         totalPrimeCount += res.count;
                     }
                 }
@@ -1001,7 +952,7 @@
             async function startSortStage() {
                 const formattedStart = nextSearchStart.toLocaleString();
                 const formattedEnd = currentSearchLimit.toLocaleString();
-                stageMessage.textContent = `查找 [${formattedStart} 至 ${formattedEnd}] 完成。正在进行排序和结果处理...`;
+                stageMessage.textContent = `查找 [${formattedStart} 至 ${formattedEnd}] 完成。正在按分块顺序整理结果...`;
                 const sortStartTime = Date.now();
 
                 await processAndSaveChunk();
@@ -1035,7 +986,7 @@
                 
                 const remainingChecks = totalChecks - checksCompleted;
                 const formattedLimit = STAGE_MAX_NUMBER.toLocaleString('en-US', {useGrouping: true});
-                stageMessage.textContent = `✅ 排序/处理完成。剩余 ${remainingChecks.toLocaleString()} 次检查。即将开始下一个查找周期 [${nextSearchStart.toLocaleString()} 至 ${formattedLimit}]...`;
+                stageMessage.textContent = `✅ 整理完成。剩余 ${remainingChecks.toLocaleString()} 次检查。即将开始下一个查找周期 [${nextSearchStart.toLocaleString()} 至 ${formattedLimit}]...`;
                 startNextChunkSearch();
             }
 
@@ -1203,7 +1154,7 @@
 
                 resultSummary.textContent = `共发现 ${totalPrimeCount.toLocaleString()} 个质数，总耗时 ${totalTimeFormatted} 秒。`
                                           + `查找累计耗时 ${searchTimeFormatted} 秒，`
-                                          + `排序和整理累计耗时 ${sortTimeFormatted} 秒。`
+                                          + `整理累计耗时 ${sortTimeFormatted} 秒。`
                                           + (useRealtimeSave ? " (已通过实时落盘保存到文件)" : "");
 
                 resultArea.style.display = 'block';

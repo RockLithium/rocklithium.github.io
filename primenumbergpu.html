@@ -1072,7 +1072,7 @@
 
             resultSummary.textContent = `共发现 ${totalPrimeCount.toLocaleString()} 个质数，总耗时 ${wallTimeTotal.toFixed(3)} 秒。`
                                       + `查找累计耗时 ${searchTimeSec.toFixed(3)} 秒，`
-                                      + `排序和整理累计耗时 ${formatTimeSec.toFixed(3)} 秒。`
+                                      + `整理累计耗时 ${formatTimeSec.toFixed(3)} 秒。`
                                       + (useRealtimeSave ? " (已通过实时落盘保存到文件)" : "");
             
             resultArea.style.display = 'block';
