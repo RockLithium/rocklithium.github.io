@@ -463,7 +463,7 @@
 
                             for (let i = 0; i < basePrimes.length && isWorkerRunning; i++) {
                                 const p = basePrimes[i];
-                                if (p === 2) continue;
+                                if (p === 2 || p === 3 || p === 5) continue;
                                 const p2 = p * p;
                                 if (p2 > blockEnd) break;
 
@@ -476,20 +476,32 @@
 
                             let blockBuffer = new BigUint64Array(4096);
                             let blockCount = 0;
-                            for (let i = 0; i < oddCount && isWorkerRunning; i++) {
-                                const n = blockStart + i * 2;
+                            const pushPrime = (n) => {
+                                if (blockCount >= blockBuffer.length) {
+                                    let newBuffer = new BigUint64Array(blockBuffer.length * 2);
+                                    newBuffer.set(blockBuffer);
+                                    blockBuffer = newBuffer;
+                                }
+                                blockBuffer[blockCount++] = BigInt(n);
+                            };
+                            if (blockStart <= 3 && 3 <= blockEnd) pushPrime(3);
+                            if (blockStart <= 5 && 5 <= blockEnd) pushPrime(5);
+
+                            const residues = [1, 7, 11, 13, 17, 19, 23, 29];
+                            let wheelBase = Math.floor(blockStart / 30) * 30;
+                            for (; wheelBase <= blockEnd && isWorkerRunning; wheelBase += 30) {
+                                for (let rIdx = 0; rIdx < residues.length && isWorkerRunning; rIdx++) {
+                                    const n = wheelBase + residues[rIdx];
+                                    if (n < blockStart || n > blockEnd || n < 7) continue;
+                                    const i = (n - blockStart) >> 1;
                                 checksInBatch += 1n;
                                 if (composite[i] === 0 && n >= 3) {
-                                    if (blockCount >= blockBuffer.length) {
-                                        let newBuffer = new BigUint64Array(blockBuffer.length * 2);
-                                        newBuffer.set(blockBuffer);
-                                        blockBuffer = newBuffer;
-                                    }
-                                    blockBuffer[blockCount++] = BigInt(n);
+                                    pushPrime(n);
                                 }
                                 if (checksInBatch >= PROGRESS_BATCH_SIZE) {
                                     self.postMessage({ command: 'progress_sieve', workerId, current_num: n.toString(), checks_done: checksInBatch.toString() });
                                     checksInBatch = 0n;
+                                }
                                 }
                             }
                             if (isWorkerRunning && blockCount > 0) {
