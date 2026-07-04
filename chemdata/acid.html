@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=850, user-scalable=yes">
+    <title>无机酸密度浓度计算</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #222222;
+            --panel: #2b2b2b;
+            --panel-2: #333333;
+            --border: #666666;
+            --border-soft: #4d4d4d;
+            --text: #e0e0e0;
+            --muted: #aeb7c2;
+            --accent: #1a73e8;
+            --accent-2: #46a0ff;
+            --warn: #ffbe55;
+            --bad: #ff6b6b;
+            --good: #70d37b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Ubuntu', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px auto 44px;
+            min-width: 850px;
+            background-color: var(--bg);
+            color: var(--text);
+        }
+
+        #homeButton {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            color: var(--text);
+            background-color: var(--panel-2);
+            border: 1px solid #778899;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            z-index: 100;
+        }
+
+        #homeButton:hover {
+            background-color: #444444;
+        }
+
+        h1 {
+            color: var(--accent);
+            margin-top: 40px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .subtitle {
+            margin: 0 0 22px;
+            color: var(--muted);
+            text-align: center;
+            font-size: 15px;
+        }
+
+        .calculator {
+            width: 95%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: minmax(360px, 0.82fr) minmax(420px, 1.18fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .panel {
+            background-color: var(--panel);
+            border: 3px solid #777777;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.45);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 13px 16px;
+            background-color: #444444;
+            border-bottom: 1px solid var(--border);
+            font-weight: bold;
+        }
+
+        .panel-body {
+            padding: 16px;
+        }
+
+        .field-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            min-height: 39px;
+            padding: 8px 10px;
+            color: var(--text);
+            background-color: #1f1f1f;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font: inherit;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent-2);
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.22);
+        }
+
+        .acid-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .global-btn {
+            cursor: pointer;
+            transition: background-color 0.15s ease, box-shadow 0.15s ease;
+            user-select: none;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            min-height: 38px;
+            padding: 0 18px;
+            color: var(--text);
+            background-color: #666666;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .global-btn.primary {
+            background-color: var(--accent);
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .global-btn.active {
+            background-color: var(--accent);
+            color: #ffffff;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.45);
+            font-weight: bold;
+        }
+
+        .global-btn:hover {
+            background-color: #888888;
+        }
+
+        .global-btn.primary:hover {
+            background-color: #2b82f0;
+        }
+
+        .result-card {
+            border: 1px solid var(--border-soft);
+            background-color: #242424;
+            border-radius: 6px;
+            padding: 16px;
+        }
+
+        .result-value {
+            margin: 0;
+            color: #ffffff;
+            font-size: 40px;
+            line-height: 1.1;
+            font-weight: bold;
+        }
+
+        .result-value span {
+            color: var(--accent-2);
+        }
+
+        .result-detail {
+            margin: 9px 0 0;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message {
+            margin-top: 12px;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message.warn {
+            color: var(--warn);
+        }
+
+        .message.bad {
+            color: var(--bad);
+        }
+
+        .message.good {
+            color: var(--good);
+        }
+
+        .controls-table-container {
+            width: 100%;
+            max-height: 560px;
+            overflow: auto;
+            background-color: var(--bg);
+        }
+
+        .controls-table {
+            width: 100%;
+            min-width: 620px;
+            border-collapse: collapse;
+            text-align: center;
+            table-layout: fixed;
+        }
+
+        .controls-table th,
+        .controls-table td {
+            color: var(--text);
+            font-size: 14px;
+            border: 1px solid #555555;
+            vertical-align: middle;
+            text-align: center;
+            padding: 9px 6px;
+            background-color: #222222;
+            line-height: 1.45;
+        }
+
+        .controls-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #444444;
+            font-weight: bold;
+        }
+
+        .controls-table tbody tr.is-bracket td {
+            background-color: rgba(26, 115, 232, 0.18);
+        }
+
+        .controls-table tbody tr.is-nearest td {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        @media (max-width: 960px) {
+            .calculator {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="./" id="homeButton">← 返回上一级</a>
+
+    <h1>无机酸密度浓度计算</h1>
+    <p class="subtitle">输入密度和温度，按表格数据做线性插值，估算质量百分浓度。</p>
+
+    <main class="calculator">
+        <section class="panel">
+            <div class="panel-header">计算参数</div>
+            <div class="panel-body">
+                <div class="field-grid">
+                    <div>
+                        <label>酸种类</label>
+                        <div class="acid-buttons" id="acidButtons"></div>
+                    </div>
+                    <div class="input-row">
+                        <div>
+                            <label for="densityInput">密度 kg/L</label>
+                            <input id="densityInput" type="number" step="0.0001" inputmode="decimal">
+                        </div>
+                        <div>
+                            <label for="temperatureInput">温度 °C</label>
+                            <input id="temperatureInput" type="number" step="0.1" inputmode="decimal">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <span>计算结果</span>
+            </div>
+            <div class="panel-body">
+                <div class="result-card">
+                    <p class="result-value"><span id="concentrationValue">--</span>%</p>
+                    <p class="result-detail" id="resultDetail">等待数据加载完成。</p>
+                </div>
+                <div id="message" class="message"></div>
+            </div>
+            <div class="controls-table-container">
+                <table class="controls-table">
+                    <thead>
+                        <tr>
+                            <th>浓度 %</th>
+                            <th>插值密度 kg/L</th>
+                            <th>与输入差值</th>
+                            <th>使用状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sampleBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const DATA_URL = 'acid.csv';
+        const ACID_ORDER = ['hydrochloric', 'sulfuric', 'nitric'];
+        const state = {
+            acids: new Map(),
+            selectedAcidId: 'hydrochloric',
+            currentResult: null
+        };
+
+        function parseCsv(text) {
+            return text.trim().split(/\r?\n/).map(line => {
+                const cells = [];
+                let cell = '';
+                let quoted = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        if (quoted && line[i + 1] === '"') {
+                            cell += '"';
+                            i++;
+                        } else {
+                            quoted = !quoted;
+                        }
+                    } else if (char === ',' && !quoted) {
+                        cells.push(cell);
+                        cell = '';
+                    } else {
+                        cell += char;
+                    }
+                }
+                cells.push(cell);
+                return cells;
+            });
+        }
+
+        function formatNumber(value, digits = 4) {
+            if (!Number.isFinite(value)) return '--';
+            return value.toFixed(digits).replace(/\.?0+$/, '');
+        }
+
+        function formatResult(value) {
+            if (!Number.isFinite(value)) return '--';
+            return value.toFixed(3);
+        }
+
+        function interpolate(x0, y0, x1, y1, x) {
+            if (x1 === x0) return y0;
+            return y0 + (y1 - y0) * ((x - x0) / (x1 - x0));
+        }
+
+        function findBounds(values, target) {
+            const sorted = [...values].sort((a, b) => a - b);
+            if (target < sorted[0] || target > sorted[sorted.length - 1]) return null;
+            for (let i = 0; i < sorted.length - 1; i++) {
+                if (target >= sorted[i] && target <= sorted[i + 1]) {
+                    return [sorted[i], sorted[i + 1]];
+                }
+            }
+            return [sorted[sorted.length - 1], sorted[sorted.length - 1]];
+        }
+
+        function buildAcidData(rows) {
+            const header = rows[0];
+            const index = Object.fromEntries(header.map((name, i) => [name.replace(/^\uFEFF/, ''), i]));
+
+            rows.slice(1).forEach(row => {
+                const id = row[index.acid_id];
+                if (!id) return;
+                if (!state.acids.has(id)) {
+                    state.acids.set(id, {
+                        id,
+                        name: row[index.acid_name],
+                        formula: row[index.formula],
+                        points: [],
+                        concentrations: new Set(),
+                        temperatures: new Set()
+                    });
+                }
+                const acid = state.acids.get(id);
+                const concentration = Number(row[index.concentration_pct]);
+                const temperature = Number(row[index.temperature_c]);
+                const density = Number(row[index.density_kg_l]);
+                if ([concentration, temperature, density].every(Number.isFinite)) {
+                    acid.points.push({ concentration, temperature, density });
+                    acid.concentrations.add(concentration);
+                    acid.temperatures.add(temperature);
+                }
+            });
+
+            for (const acid of state.acids.values()) {
+                acid.concentrations = [...acid.concentrations].sort((a, b) => a - b);
+                acid.temperatures = [...acid.temperatures].sort((a, b) => a - b);
+                acid.byConcentration = new Map();
+                acid.points.forEach(point => {
+                    if (!acid.byConcentration.has(point.concentration)) {
+                        acid.byConcentration.set(point.concentration, new Map());
+                    }
+                    acid.byConcentration.get(point.concentration).set(point.temperature, point.density);
+                });
+            }
+        }
+
+        function interpolateDensityAtTemperature(acid, temperature) {
+            const samples = [];
+            acid.concentrations.forEach(concentration => {
+                const tempMap = acid.byConcentration.get(concentration);
+                const availableTemps = [...tempMap.keys()].sort((a, b) => a - b);
+                const bounds = findBounds(availableTemps, temperature);
+                if (!bounds) return;
+                const [t0, t1] = bounds;
+                const d0 = tempMap.get(t0);
+                const d1 = tempMap.get(t1);
+                samples.push({
+                    concentration,
+                    density: interpolate(t0, d0, t1, d1, temperature),
+                    t0,
+                    t1
+                });
+            });
+            return samples.sort((a, b) => a.concentration - b.concentration);
+        }
+
+        function calculate() {
+            const acid = state.acids.get(state.selectedAcidId);
+            const densityText = document.getElementById('densityInput').value.trim();
+            const temperatureText = document.getElementById('temperatureInput').value.trim();
+            const density = Number(densityText);
+            const temperature = Number(temperatureText);
+            const message = document.getElementById('message');
+            message.className = 'message';
+            message.textContent = '';
+            state.currentResult = null;
+
+            if (!acid || !densityText || !temperatureText || !Number.isFinite(density) || !Number.isFinite(temperature)) {
+                setResult('--', '请输入有效的密度和温度。');
+                renderSamples([]);
+                return;
+            }
+
+            const tempMin = acid.temperatures[0];
+            const tempMax = acid.temperatures[acid.temperatures.length - 1];
+            if (temperature < tempMin || temperature > tempMax) {
+                setResult('--', `${acid.name}（${acid.formula}）数据温度范围为 ${tempMin} 到 ${tempMax} °C。`);
+                message.className = 'message bad';
+                message.textContent = '当前页面不做外推，请输入表格范围内的温度。';
+                renderSamples([]);
+                return;
+            }
+
+            const samples = interpolateDensityAtTemperature(acid, temperature);
+            if (samples.length < 2) {
+                setResult('--', '该温度下可用于插值的数据不足。');
+                renderSamples(samples);
+                return;
+            }
+
+            const densities = samples.map(sample => sample.density);
+            const dMin = Math.min(...densities);
+            const dMax = Math.max(...densities);
+            if (density < dMin || density > dMax) {
+                setResult('--', `${temperature} °C 下，${acid.name}可计算密度范围约为 ${formatNumber(dMin, 5)} 到 ${formatNumber(dMax, 5)} kg/L。`);
+                message.className = 'message bad';
+                message.textContent = '当前页面不做浓度外推，请输入表格范围内的密度。';
+                renderSamples(samples, density);
+                return;
+            }
+
+            const brackets = [];
+            for (let i = 0; i < samples.length - 1; i++) {
+                const a = samples[i];
+                const b = samples[i + 1];
+                const lo = Math.min(a.density, b.density);
+                const hi = Math.max(a.density, b.density);
+                if (density >= lo && density <= hi) {
+                    brackets.push([a, b]);
+                }
+            }
+
+            if (brackets.length === 0) {
+                setResult('--', '没有找到可包围该密度的相邻浓度点。');
+                renderSamples(samples, density);
+                return;
+            }
+
+            const rawResults = brackets.map(([lower, upper]) => ({
+                lower,
+                upper,
+                concentration: interpolate(lower.density, lower.concentration, upper.density, upper.concentration, density)
+            }));
+            const results = [];
+            rawResults.forEach(result => {
+                const duplicate = results.some(existing => Math.abs(existing.concentration - result.concentration) < 1e-9);
+                if (!duplicate) results.push(result);
+            });
+            const resultText = results.map(result => formatResult(result.concentration)).join(' / ');
+            setResult(resultText, `${acid.name}（${acid.formula}），温度 ${formatNumber(temperature, 2)} °C，密度 ${formatNumber(density, 5)} kg/L。`);
+
+            state.currentResult = {
+                acid,
+                density,
+                temperature,
+                results
+            };
+
+            const bracketConcentrations = new Set();
+            results.forEach(result => {
+                bracketConcentrations.add(result.lower.concentration);
+                bracketConcentrations.add(result.upper.concentration);
+            });
+
+            const exactMatch = results.some(result => Math.abs(result.lower.density - density) < 1e-10 || Math.abs(result.upper.density - density) < 1e-10);
+            message.className = results.length > 1 ? 'message warn' : 'message good';
+            message.textContent = results.length > 1
+                ? `该密度对应 ${results.length} 个可能浓度，请结合样品实际浓度范围判断。`
+                : (exactMatch
+                    ? '输入密度与表格插值后的数据点完全一致。'
+                    : `使用 ${results[0].lower.concentration}% 和 ${results[0].upper.concentration}% 两个相邻浓度点进行线性插值。`);
+            renderSamples(samples, density, bracketConcentrations);
+        }
+
+        function setResult(value, detail) {
+            document.getElementById('concentrationValue').textContent = value;
+            document.getElementById('resultDetail').textContent = detail;
+        }
+
+        function renderSamples(samples, density = null, bracketConcentrations = new Set()) {
+            const tbody = document.getElementById('sampleBody');
+            tbody.innerHTML = '';
+            if (samples.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4">暂无可显示数据</td></tr>';
+                return;
+            }
+
+            let nearest = null;
+            if (Number.isFinite(density)) {
+                nearest = samples.reduce((best, sample) => {
+                    if (!best) return sample;
+                    return Math.abs(sample.density - density) < Math.abs(best.density - density) ? sample : best;
+                }, null);
+            }
+
+            samples.forEach(sample => {
+                const tr = document.createElement('tr');
+                const isBracket = bracketConcentrations.has(sample.concentration);
+                const isNearest = nearest && sample.concentration === nearest.concentration;
+                if (isBracket) tr.classList.add('is-bracket');
+                if (isNearest) tr.classList.add('is-nearest');
+
+                const diff = Number.isFinite(density) ? sample.density - density : NaN;
+                const status = isBracket ? '插值点' : (isNearest ? '最近点' : '');
+                tr.innerHTML = `
+                    <td>${formatNumber(sample.concentration, 3)}</td>
+                    <td>${formatNumber(sample.density, 5)}</td>
+                    <td>${Number.isFinite(diff) ? formatNumber(diff, 5) : '--'}</td>
+                    <td>${status}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderAcidOptions() {
+            const container = document.getElementById('acidButtons');
+            container.innerHTML = '';
+            ACID_ORDER
+                .map(id => state.acids.get(id))
+                .filter(Boolean)
+                .forEach(acid => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'global-btn';
+                    button.dataset.acidId = acid.id;
+                    button.textContent = acid.name;
+                    button.addEventListener('click', () => {
+                        state.selectedAcidId = acid.id;
+                        updateAcidButtons();
+                        calculate();
+                    });
+                    container.appendChild(button);
+                });
+            updateAcidButtons();
+        }
+
+        function updateAcidButtons() {
+            document.querySelectorAll('#acidButtons .global-btn').forEach(button => {
+                button.classList.toggle('active', button.dataset.acidId === state.selectedAcidId);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch(DATA_URL)
+                .then(response => {
+                    if (!response.ok) throw new Error('无法加载数据');
+                    return response.text();
+                })
+                .then(text => {
+                    buildAcidData(parseCsv(text));
+                    renderAcidOptions();
+                    calculate();
+                })
+                .catch(error => {
+                    setResult('--', error.message);
+                    document.getElementById('message').className = 'message bad';
+                    document.getElementById('message').textContent = '请确认 acid.csv 与本页面位于同一目录。';
+                });
+
+            document.getElementById('densityInput').addEventListener('input', calculate);
+            document.getElementById('temperatureInput').addEventListener('input', calculate);
+        });
+    </script>
+</body>
+</html>
