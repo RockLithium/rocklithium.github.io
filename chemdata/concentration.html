@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=850, user-scalable=yes">
-    <title>无机酸密度浓度计算</title>
+    <title>溶液密度浓度计算</title>
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -131,10 +131,17 @@
             box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.22);
         }
 
-        .acid-buttons {
+        .choice-buttons {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 10px;
+        }
+
+        .category-buttons {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .item-buttons {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .input-row {
@@ -199,6 +206,24 @@
 
         .result-value span {
             color: var(--accent-2);
+        }
+
+        .molarity-value {
+            margin: 8px 0 0;
+            color: #ffffff;
+            font-size: 24px;
+            line-height: 1.2;
+            font-weight: bold;
+        }
+
+        .molarity-value span {
+            color: var(--good);
+        }
+
+        .result-unit {
+            color: #ffffff;
+            font-size: 0.78em;
+            font-style: normal;
         }
 
         .result-detail {
@@ -281,7 +306,7 @@
 <body>
     <a href="./" id="homeButton">← 返回上一级</a>
 
-    <h1>无机酸密度浓度计算</h1>
+    <h1>溶液密度浓度计算</h1>
     <p class="subtitle">输入密度和温度，按表格数据做线性插值，估算质量百分浓度。</p>
 
     <main class="calculator">
@@ -290,8 +315,12 @@
             <div class="panel-body">
                 <div class="field-grid">
                     <div>
-                        <label>酸种类</label>
-                        <div class="acid-buttons" id="acidButtons"></div>
+                        <label>类别</label>
+                        <div class="choice-buttons category-buttons" id="categoryButtons"></div>
+                    </div>
+                    <div>
+                        <label>物质</label>
+                        <div class="choice-buttons item-buttons" id="itemButtons"></div>
                     </div>
                     <div class="input-row">
                         <div>
@@ -313,7 +342,8 @@
             </div>
             <div class="panel-body">
                 <div class="result-card">
-                    <p class="result-value"><span id="concentrationValue">--</span>%</p>
+                    <p class="result-value"><span id="primaryValue">--</span>% <em id="primaryUnit" class="result-unit">w/w</em></p>
+                    <p class="molarity-value"><span id="molarityValue">--</span> mol/L</p>
                     <p class="result-detail" id="resultDetail">等待数据加载完成。</p>
                 </div>
                 <div id="message" class="message"></div>
@@ -335,11 +365,30 @@
     </main>
 
     <script>
-        const DATA_URL = 'acid.csv';
-        const ACID_ORDER = ['hydrochloric', 'sulfuric', 'nitric'];
+        const DATA_URL = 'concentration.csv';
+        const WATER_DENSITY_TABLE = new Map([
+            [0, 0.99984283], [0.1, 0.9998493], [0.2, 0.9998558], [0.3, 0.9998622], [0.4, 0.9998683], [0.5, 0.9998743], [0.6, 0.9998801], [0.7, 0.9998857], [0.8, 0.9998912], [0.9, 0.9998964],
+            [1, 0.9999015], [2, 0.9999429], [3, 0.9999672], [4, 0.9999750], [5, 0.9999668], [6, 0.9999430], [7, 0.9999043], [8, 0.9998509], [9, 0.9997834],
+            [10, 0.9997021], [11, 0.9996074], [12, 0.9994996], [13, 0.9993792], [14, 0.9992464], [15, 0.9991016], [15.56, 0.9990153], [16, 0.9989450], [17, 0.9987769], [18, 0.9985976], [19, 0.9984073],
+            [20, 0.9982063], [21, 0.9979948], [22, 0.9977730], [23, 0.9975412], [24, 0.9972994], [25, 0.9970480], [26, 0.9967870], [27, 0.9965166], [28, 0.9962371], [29, 0.9959486],
+            [30, 0.9956511], [31, 0.9953450], [32, 0.9950302], [33, 0.9947071], [34, 0.9943756], [35, 0.9940359], [36, 0.9936883], [37, 0.9933328], [38, 0.9929695], [39, 0.9925987],
+            [40, 0.9922204], [41, 0.99183], [42, 0.99144], [43, 0.99104], [44, 0.99063], [45, 0.99021], [46, 0.98979], [47, 0.98936], [48, 0.98893], [49, 0.98848],
+            [50, 0.98804], [51, 0.98758], [52, 0.98712], [53, 0.98665], [54, 0.98617], [55, 0.98569], [56, 0.98521], [57, 0.98471], [58, 0.98421], [59, 0.98371],
+            [60, 0.98320], [61, 0.98268], [62, 0.98216], [63, 0.98163], [64, 0.98109], [65, 0.98055], [66, 0.98000], [67, 0.97945], [68, 0.97890], [69, 0.97833],
+            [70, 0.97776], [71, 0.97719], [72, 0.97661], [73, 0.97603], [74, 0.97544], [75, 0.97484], [76, 0.97424], [77, 0.97364], [78, 0.97303], [79, 0.97241],
+            [80, 0.97179], [81, 0.97116], [82, 0.97053], [83, 0.96990], [84, 0.96926], [85, 0.96861], [86, 0.96796], [87, 0.96731], [88, 0.96664], [89, 0.96598],
+            [90, 0.96531], [91, 0.96463], [92, 0.96396], [93, 0.96327], [94, 0.96258], [95, 0.96189], [96, 0.96119], [97, 0.96049], [98, 0.95978], [99, 0.95907]
+        ]);
+        const CATEGORY_ORDER = ['inorganic_acid', 'alcohol'];
+        const ITEM_ORDER = {
+            inorganic_acid: ['hydrochloric', 'sulfuric', 'nitric'],
+            alcohol: ['methanol', 'ethanol', 'isopropanol']
+        };
         const state = {
-            acids: new Map(),
-            selectedAcidId: 'hydrochloric',
+            solutions: new Map(),
+            categories: new Map(),
+            selectedCategory: 'inorganic_acid',
+            selectedItemId: 'hydrochloric',
             currentResult: null
         };
 
@@ -371,12 +420,18 @@
 
         function formatNumber(value, digits = 4) {
             if (!Number.isFinite(value)) return '--';
-            return value.toFixed(digits).replace(/\.?0+$/, '');
+            return value.toFixed(digits);
         }
 
         function formatResult(value) {
             if (!Number.isFinite(value)) return '--';
             return value.toFixed(3);
+        }
+
+        function concentrationToMolarity(solution, density, concentration) {
+            const molarMass = solution.molarMass;
+            if (!molarMass || !Number.isFinite(density) || !Number.isFinite(concentration)) return NaN;
+            return density * 10 * concentration / molarMass;
         }
 
         function interpolate(x0, y0, x1, y1, x) {
@@ -395,51 +450,103 @@
             return [sorted[sorted.length - 1], sorted[sorted.length - 1]];
         }
 
-        function buildAcidData(rows) {
-            const header = rows[0];
-            const index = Object.fromEntries(header.map((name, i) => [name.replace(/^\uFEFF/, ''), i]));
 
-            rows.slice(1).forEach(row => {
-                const id = row[index.acid_id];
-                if (!id) return;
-                if (!state.acids.has(id)) {
-                    state.acids.set(id, {
-                        id,
-                        name: row[index.acid_name],
-                        formula: row[index.formula],
-                        points: [],
-                        concentrations: new Set(),
-                        temperatures: new Set()
+        function waterDensityAt(temperature) {
+            if (WATER_DENSITY_TABLE.has(temperature)) return WATER_DENSITY_TABLE.get(temperature);
+            return null;
+        }
+
+        function addPointToSeries(series, concentration, temperature, density) {
+            series.points.push({ concentration, temperature, density });
+            series.concentrations.add(concentration);
+            series.temperatures.add(temperature);
+        }
+
+        function applyWaterDensityPoints() {
+            for (const solution of state.solutions.values()) {
+                Object.values(solution.series).forEach(series => {
+                    const temps = [...series.temperatures];
+                    temps.forEach(temperature => {
+                        const density = waterDensityAt(temperature);
+                        if (density == null) return;
+                        const existing = series.points.find(point => point.concentration === 0 && point.temperature === temperature);
+                        if (existing) {
+                            existing.density = density;
+                        } else {
+                            addPointToSeries(series, 0, temperature, density);
+                        }
                     });
-                }
-                const acid = state.acids.get(id);
-                const concentration = Number(row[index.concentration_pct]);
-                const temperature = Number(row[index.temperature_c]);
-                const density = Number(row[index.density_kg_l]);
-                if ([concentration, temperature, density].every(Number.isFinite)) {
-                    acid.points.push({ concentration, temperature, density });
-                    acid.concentrations.add(concentration);
-                    acid.temperatures.add(temperature);
-                }
-            });
-
-            for (const acid of state.acids.values()) {
-                acid.concentrations = [...acid.concentrations].sort((a, b) => a - b);
-                acid.temperatures = [...acid.temperatures].sort((a, b) => a - b);
-                acid.byConcentration = new Map();
-                acid.points.forEach(point => {
-                    if (!acid.byConcentration.has(point.concentration)) {
-                        acid.byConcentration.set(point.concentration, new Map());
-                    }
-                    acid.byConcentration.get(point.concentration).set(point.temperature, point.density);
                 });
             }
         }
 
-        function interpolateDensityAtTemperature(acid, temperature) {
+        function buildSolutionData(rows) {
+            const header = rows[0];
+            const index = Object.fromEntries(header.map((name, i) => [name.replace(/^\uFEFF/, ''), i]));
+
+            rows.slice(1).forEach(row => {
+                const id = row[index.item_id];
+                if (!id) return;
+                if (!state.solutions.has(id)) {
+                    const category = row[index.category];
+                    state.solutions.set(id, {
+                        id,
+                        category,
+                        categoryName: row[index.category_name],
+                        name: row[index.item_name],
+                        formula: row[index.formula],
+                        molarMass: Number(row[index.molar_mass_g_mol]),
+                        series: {
+                            weight: { points: [], concentrations: new Set(), temperatures: new Set(), byConcentration: new Map() },
+                            volume: { points: [], concentrations: new Set(), temperatures: new Set(), byConcentration: new Map() }
+                        }
+                    });
+                    if (!state.categories.has(category)) {
+                        state.categories.set(category, row[index.category_name]);
+                    }
+                }
+                const solution = state.solutions.get(id);
+                const basis = row[index.basis] || 'weight';
+                const concentration = Number(row[index.concentration_pct]);
+                const temperature = Number(row[index.temperature_c]);
+                const density = Number(row[index.density_kg_l]);
+                const series = solution.series[basis];
+                if (series && [concentration, temperature, density].every(Number.isFinite)) {
+                    addPointToSeries(series, concentration, temperature, density);
+                }
+            });
+
+            applyWaterDensityPoints();
+
+            for (const solution of state.solutions.values()) {
+                Object.values(solution.series).forEach(series => {
+                    series.concentrations = [...series.concentrations].sort((a, b) => a - b);
+                    series.temperatures = [...series.temperatures].sort((a, b) => a - b);
+                    series.byConcentration = new Map();
+                    series.points.forEach(point => {
+                        if (!series.byConcentration.has(point.concentration)) {
+                            series.byConcentration.set(point.concentration, new Map());
+                        }
+                        series.byConcentration.get(point.concentration).set(point.temperature, point.density);
+                    });
+                });
+            }
+        }
+
+        function primaryBasis(solution) {
+            return solution.category === 'alcohol' && solution.series.volume?.points.length ? 'volume' : 'weight';
+        }
+
+        function primarySeries(solution) {
+            return solution.series[primaryBasis(solution)] || solution.series.weight;
+        }
+
+        function interpolateDensityAtTemperature(solution, temperature, basis = 'weight') {
+            const series = solution.series[basis];
+            if (!series) return [];
             const samples = [];
-            acid.concentrations.forEach(concentration => {
-                const tempMap = acid.byConcentration.get(concentration);
+            series.concentrations.forEach(concentration => {
+                const tempMap = series.byConcentration.get(concentration);
                 const availableTemps = [...tempMap.keys()].sort((a, b) => a - b);
                 const bounds = findBounds(availableTemps, temperature);
                 if (!bounds) return;
@@ -456,51 +563,7 @@
             return samples.sort((a, b) => a.concentration - b.concentration);
         }
 
-        function calculate() {
-            const acid = state.acids.get(state.selectedAcidId);
-            const densityText = document.getElementById('densityInput').value.trim();
-            const temperatureText = document.getElementById('temperatureInput').value.trim();
-            const density = Number(densityText);
-            const temperature = Number(temperatureText);
-            const message = document.getElementById('message');
-            message.className = 'message';
-            message.textContent = '';
-            state.currentResult = null;
-
-            if (!acid || !densityText || !temperatureText || !Number.isFinite(density) || !Number.isFinite(temperature)) {
-                setResult('--', '请输入有效的密度和温度。');
-                renderSamples([]);
-                return;
-            }
-
-            const tempMin = acid.temperatures[0];
-            const tempMax = acid.temperatures[acid.temperatures.length - 1];
-            if (temperature < tempMin || temperature > tempMax) {
-                setResult('--', `${acid.name}（${acid.formula}）数据温度范围为 ${tempMin} 到 ${tempMax} °C。`);
-                message.className = 'message bad';
-                message.textContent = '当前页面不做外推，请输入表格范围内的温度。';
-                renderSamples([]);
-                return;
-            }
-
-            const samples = interpolateDensityAtTemperature(acid, temperature);
-            if (samples.length < 2) {
-                setResult('--', '该温度下可用于插值的数据不足。');
-                renderSamples(samples);
-                return;
-            }
-
-            const densities = samples.map(sample => sample.density);
-            const dMin = Math.min(...densities);
-            const dMax = Math.max(...densities);
-            if (density < dMin || density > dMax) {
-                setResult('--', `${temperature} °C 下，${acid.name}可计算密度范围约为 ${formatNumber(dMin, 5)} 到 ${formatNumber(dMax, 5)} kg/L。`);
-                message.className = 'message bad';
-                message.textContent = '当前页面不做浓度外推，请输入表格范围内的密度。';
-                renderSamples(samples, density);
-                return;
-            }
-
+        function solveConcentrationFromDensity(samples, density) {
             const brackets = [];
             for (let i = 0; i < samples.length - 1; i++) {
                 const a = samples[i];
@@ -510,12 +573,6 @@
                 if (density >= lo && density <= hi) {
                     brackets.push([a, b]);
                 }
-            }
-
-            if (brackets.length === 0) {
-                setResult('--', '没有找到可包围该密度的相邻浓度点。');
-                renderSamples(samples, density);
-                return;
             }
 
             const rawResults = brackets.map(([lower, upper]) => ({
@@ -528,34 +585,126 @@
                 const duplicate = results.some(existing => Math.abs(existing.concentration - result.concentration) < 1e-9);
                 if (!duplicate) results.push(result);
             });
-            const resultText = results.map(result => formatResult(result.concentration)).join(' / ');
-            setResult(resultText, `${acid.name}（${acid.formula}），温度 ${formatNumber(temperature, 2)} °C，密度 ${formatNumber(density, 5)} kg/L。`);
-
-            state.currentResult = {
-                acid,
-                density,
-                temperature,
-                results
-            };
-
-            const bracketConcentrations = new Set();
-            results.forEach(result => {
-                bracketConcentrations.add(result.lower.concentration);
-                bracketConcentrations.add(result.upper.concentration);
-            });
-
-            const exactMatch = results.some(result => Math.abs(result.lower.density - density) < 1e-10 || Math.abs(result.upper.density - density) < 1e-10);
-            message.className = results.length > 1 ? 'message warn' : 'message good';
-            message.textContent = results.length > 1
-                ? `该密度对应 ${results.length} 个可能浓度，请结合样品实际浓度范围判断。`
-                : (exactMatch
-                    ? '输入密度与表格插值后的数据点完全一致。'
-                    : `使用 ${results[0].lower.concentration}% 和 ${results[0].upper.concentration}% 两个相邻浓度点进行线性插值。`);
-            renderSamples(samples, density, bracketConcentrations);
+            return results;
         }
 
-        function setResult(value, detail) {
-            document.getElementById('concentrationValue').textContent = value;
+        function densityRange(samples) {
+            const densities = samples.map(sample => sample.density);
+            return {
+                min: Math.min(...densities),
+                max: Math.max(...densities)
+            };
+        }
+
+        function exactMatchMessage(results, density) {
+            return results.some(result => Math.abs(result.lower.density - density) < 1e-10 || Math.abs(result.upper.density - density) < 1e-10);
+        }
+
+        function bracketConcentrationSet(results) {
+            const set = new Set();
+            results.forEach(result => {
+                set.add(result.lower.concentration);
+                set.add(result.upper.concentration);
+            });
+            return set;
+        }
+
+        function resultText(results) {
+            return results.map(result => formatResult(result.concentration)).join(' / ');
+        }
+
+        function applyResultUnits(solution) {
+            document.getElementById('primaryUnit').textContent = solution.category === 'alcohol' ? 'v/v' : 'w/w';
+        }
+
+        function calculate() {
+            const solution = state.solutions.get(state.selectedItemId);
+            const densityText = document.getElementById('densityInput').value.trim();
+            const temperatureText = document.getElementById('temperatureInput').value.trim();
+            const density = Number(densityText);
+            const temperature = Number(temperatureText);
+            const message = document.getElementById('message');
+            message.className = 'message';
+            message.textContent = '';
+            state.currentResult = null;
+
+            if (!solution || !densityText || !temperatureText || !Number.isFinite(density) || !Number.isFinite(temperature)) {
+                setResult('--', '请输入有效的密度和温度。', '--');
+                renderSamples([]);
+                return;
+            }
+
+            applyResultUnits(solution);
+            const series = primarySeries(solution);
+            const basis = primaryBasis(solution);
+            const tempMin = series.temperatures[0];
+            const tempMax = series.temperatures[series.temperatures.length - 1];
+            if (temperature < tempMin || temperature > tempMax) {
+                setResult('--', `${solution.name}（${solution.formula}）数据温度范围为 ${tempMin} 到 ${tempMax} °C。`, '--');
+                message.className = 'message bad';
+                message.textContent = '当前页面不做外推，请输入表格范围内的温度。';
+                renderSamples([]);
+                return;
+            }
+
+            const samples = interpolateDensityAtTemperature(solution, temperature, basis);
+            if (samples.length < 2) {
+                setResult('--', '该温度下可用于插值的数据不足。', '--');
+                renderSamples(samples);
+                return;
+            }
+
+            const { min: dMin, max: dMax } = densityRange(samples);
+            if (density < dMin || density > dMax) {
+                setResult('--', `${temperature} °C 下，${solution.name}可计算密度范围约为 ${formatNumber(dMin, 5)} 到 ${formatNumber(dMax, 5)} kg/L。`, '--');
+                message.className = 'message bad';
+                message.textContent = '当前页面不做浓度外推，请输入表格范围内的密度。';
+                renderSamples(samples, density);
+                return;
+            }
+
+            const primaryResults = solveConcentrationFromDensity(samples, density);
+            if (primaryResults.length === 0) {
+                setResult('--', '没有找到可包围该密度的相邻浓度点。', '--');
+                renderSamples(samples, density);
+                return;
+            }
+
+            const weightSamples = basis === 'weight' ? samples : interpolateDensityAtTemperature(solution, temperature, 'weight');
+            const weightResults = weightSamples.length >= 2 ? solveConcentrationFromDensity(weightSamples, density) : [];
+            let molarityText = weightResults
+                .map(result => formatResult(concentrationToMolarity(solution, density, result.concentration)))
+                .join(' / ');
+
+            if (!molarityText) molarityText = '--';
+
+            setResult(
+                resultText(primaryResults),
+                `${solution.name}（${solution.formula}），温度 ${formatNumber(temperature, 2)} °C，密度 ${formatNumber(density, 5)} kg/L。`,
+                molarityText
+            );
+
+            state.currentResult = {
+                solution,
+                density,
+                temperature,
+                weightResults,
+                primaryResults
+            };
+
+            const exactMatch = exactMatchMessage(primaryResults, density);
+            message.className = primaryResults.length > 1 ? 'message warn' : 'message good';
+            message.textContent = primaryResults.length > 1
+                ? `该密度对应 ${primaryResults.length} 个可能浓度，请结合样品实际浓度范围判断。`
+                : (exactMatch
+                    ? '输入密度与表格插值后的数据点完全一致。'
+                    : `使用 ${primaryResults[0].lower.concentration}% 和 ${primaryResults[0].upper.concentration}% 两个相邻浓度点进行线性插值。`);
+            renderSamples(samples, density, bracketConcentrationSet(primaryResults));
+        }
+
+        function setResult(primary, detail, molarity = '--') {
+            document.getElementById('primaryValue').textContent = primary;
+            document.getElementById('molarityValue').textContent = molarity;
             document.getElementById('resultDetail').textContent = detail;
         }
 
@@ -594,31 +743,75 @@
             });
         }
 
-        function renderAcidOptions() {
-            const container = document.getElementById('acidButtons');
+        function orderedCategoryIds() {
+            const known = CATEGORY_ORDER.filter(id => state.categories.has(id));
+            const extra = [...state.categories.keys()].filter(id => !known.includes(id)).sort();
+            return [...known, ...extra];
+        }
+
+        function orderedItemsForCategory(category) {
+            const preferred = ITEM_ORDER[category] || [];
+            const items = [...state.solutions.values()].filter(solution => solution.category === category);
+            const byId = new Map(items.map(item => [item.id, item]));
+            const known = preferred.map(id => byId.get(id)).filter(Boolean);
+            const extra = items.filter(item => !preferred.includes(item.id)).sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+            return [...known, ...extra];
+        }
+
+        function renderCategoryOptions() {
+            const container = document.getElementById('categoryButtons');
             container.innerHTML = '';
-            ACID_ORDER
-                .map(id => state.acids.get(id))
-                .filter(Boolean)
-                .forEach(acid => {
+            orderedCategoryIds().forEach(category => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'global-btn';
+                button.dataset.category = category;
+                button.textContent = state.categories.get(category);
+                button.addEventListener('click', () => {
+                    state.selectedCategory = category;
+                    const firstItem = orderedItemsForCategory(category)[0];
+                    if (firstItem) state.selectedItemId = firstItem.id;
+                    updateCategoryButtons();
+                    renderItemOptions();
+                    calculate();
+                });
+                container.appendChild(button);
+            });
+            updateCategoryButtons();
+        }
+
+        function renderItemOptions() {
+            const container = document.getElementById('itemButtons');
+            container.innerHTML = '';
+            const items = orderedItemsForCategory(state.selectedCategory);
+            if (!items.some(item => item.id === state.selectedItemId) && items[0]) {
+                state.selectedItemId = items[0].id;
+            }
+            items.forEach(solution => {
                     const button = document.createElement('button');
                     button.type = 'button';
                     button.className = 'global-btn';
-                    button.dataset.acidId = acid.id;
-                    button.textContent = acid.name;
+                    button.dataset.itemId = solution.id;
+                    button.textContent = solution.name;
                     button.addEventListener('click', () => {
-                        state.selectedAcidId = acid.id;
-                        updateAcidButtons();
+                        state.selectedItemId = solution.id;
+                        updateItemButtons();
                         calculate();
                     });
                     container.appendChild(button);
                 });
-            updateAcidButtons();
+            updateItemButtons();
         }
 
-        function updateAcidButtons() {
-            document.querySelectorAll('#acidButtons .global-btn').forEach(button => {
-                button.classList.toggle('active', button.dataset.acidId === state.selectedAcidId);
+        function updateCategoryButtons() {
+            document.querySelectorAll('#categoryButtons .global-btn').forEach(button => {
+                button.classList.toggle('active', button.dataset.category === state.selectedCategory);
+            });
+        }
+
+        function updateItemButtons() {
+            document.querySelectorAll('#itemButtons .global-btn').forEach(button => {
+                button.classList.toggle('active', button.dataset.itemId === state.selectedItemId);
             });
         }
 
@@ -629,14 +822,15 @@
                     return response.text();
                 })
                 .then(text => {
-                    buildAcidData(parseCsv(text));
-                    renderAcidOptions();
+                    buildSolutionData(parseCsv(text));
+                    renderCategoryOptions();
+                    renderItemOptions();
                     calculate();
                 })
                 .catch(error => {
                     setResult('--', error.message);
                     document.getElementById('message').className = 'message bad';
-                    document.getElementById('message').textContent = '请确认 acid.csv 与本页面位于同一目录。';
+                    document.getElementById('message').textContent = '请确认 concentration.csv 与本页面位于同一目录。';
                 });
 
             document.getElementById('densityInput').addEventListener('input', calculate);
