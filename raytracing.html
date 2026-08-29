@@ -1052,29 +1052,80 @@
             
             let isDragging = false, lastX = 0, lastY = 0, pinchDist = 0, pinchZoom = 1;
             const handleDrag = (dx, dy) => { state.yaw -= dx * 0.005; state.pitch -= dy * 0.005; };
+            const isUIEvent = (event) => event.target instanceof Element && Boolean(event.target.closest('#ui'));
+            const stopCameraInteraction = () => {
+                isDragging = false;
+                pinchDist = 0;
+                pinchZoom = state.targetZoom;
+            };
 
             const sharedCanvasEvents = (canvas) => {
                 canvas.addEventListener('wheel', e => { e.preventDefault(); state.targetZoom = Math.max(0.5, Math.min(20.0, state.targetZoom - e.deltaY * 0.002)); }, {passive:false});
             };
 
-            window.addEventListener('mousedown', e => { if(!e.target.closest('#ui')){ isDragging=true; lastX=e.clientX; lastY=e.clientY; }});
-            window.addEventListener('mousemove', e => { if(isDragging) { handleDrag(e.clientX-lastX, e.clientY-lastY); lastX=e.clientX; lastY=e.clientY; }});
-            window.addEventListener('mouseup', () => isDragging=false);
-            
+            window.addEventListener('mousedown', e => {
+                if (isUIEvent(e)) {
+                    stopCameraInteraction();
+                    return;
+                }
+                isDragging = true;
+                lastX = e.clientX;
+                lastY = e.clientY;
+            });
+            window.addEventListener('mousemove', e => {
+                if (!isDragging) return;
+                if (isUIEvent(e)) {
+                    stopCameraInteraction();
+                    return;
+                }
+                handleDrag(e.clientX-lastX, e.clientY-lastY);
+                lastX = e.clientX;
+                lastY = e.clientY;
+            });
+            window.addEventListener('mouseup', stopCameraInteraction);
+            window.addEventListener('blur', stopCameraInteraction);
+
             window.addEventListener('touchstart', e => {
-                if(!e.target.closest('#ui')){
-                    if(e.touches.length===1) { isDragging=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; }
-                    else if(e.touches.length===2) { isDragging=false; pinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); pinchZoom=state.targetZoom; }
+                if (isUIEvent(e)) {
+                    stopCameraInteraction();
+                    return;
+                }
+                if(e.touches.length===1) {
+                    isDragging = true;
+                    pinchDist = 0;
+                    lastX = e.touches[0].clientX;
+                    lastY = e.touches[0].clientY;
+                } else if(e.touches.length===2) {
+                    isDragging = false;
+                    pinchDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+                    pinchZoom = state.targetZoom;
                 }
             }, {passive:false});
             window.addEventListener('touchmove', e => {
+                if (isUIEvent(e)) {
+                    stopCameraInteraction();
+                    return;
+                }
                 if(isDragging || pinchDist>0) e.preventDefault();
                 if(e.touches.length===1 && isDragging) { handleDrag(e.touches[0].clientX-lastX, e.touches[0].clientY-lastY); lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; }
-                else if(e.touches.length===2 && pinchDist>0) { 
+                else if(e.touches.length===2 && pinchDist>0) {
                     let d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
                     state.targetZoom = Math.max(0.5, Math.min(20.0, pinchZoom * (d/pinchDist)));
                 }
             }, {passive:false});
+            window.addEventListener('touchend', e => {
+                if (isUIEvent(e) || e.touches.length === 0) {
+                    stopCameraInteraction();
+                    return;
+                }
+                if (e.touches.length === 1) {
+                    pinchDist = 0;
+                    isDragging = true;
+                    lastX = e.touches[0].clientX;
+                    lastY = e.touches[0].clientY;
+                }
+            }, {passive:false});
+            window.addEventListener('touchcancel', stopCameraInteraction, {passive:false});
 
             // --- Reset Canvas ---
             const resetCanvas = () => {
