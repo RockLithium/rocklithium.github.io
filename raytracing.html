@@ -578,25 +578,45 @@
             col = mix(vec3(lum), col, 1.2);
             
             ${isHDR ? `
-            col = max(col, vec3(0.0)); 
-            col = col * 2.0;
+            // WebGPU's extended canvas is not an HLG/PQ target. Keep the
+            // scene in linear light, apply a soft HDR shoulder, convert to
+            // Display-P3, then apply the Display-P3 (sRGB-compatible)
+            // transfer curve. Values above 1.0 are intentionally preserved
+            // for the rgba16float canvas.
+            col = max(col, vec3(0.0));
+            // This is the original soft highlight look, used as a creative
+            // shoulder rather than as an HLG transport encoding.
+            col = col * 1.8;
             col = col + max(col - vec3(0.6), vec3(0.0)) * 0.5;
 
-            float a = 0.17883277; 
-            float b = 0.28466892; 
+            float a = 0.17883277;
+            float b = 0.28466892;
             float c = 0.55991073;
             float thr = 0.08333333;
-            vec3 val_dark = sqrt(3.0 * col);
-            vec3 val_bright = a * log(12.0 * col - b) + c;
-            
-            // Vectorized select
-            col = vec3(
-                (col.r <= thr) ? val_dark.r : val_bright.r,
-                (col.g <= thr) ? val_dark.g : val_bright.g,
-                (col.b <= thr) ? val_dark.b : val_bright.b
+            vec3 softSignal = vec3(
+                (col.r <= thr) ? sqrt(3.0 * col.r) : a * log(max(12.0 * col.r - b, 1e-6)) + c,
+                (col.g <= thr) ? sqrt(3.0 * col.g) : a * log(max(12.0 * col.g - b, 1e-6)) + c,
+                (col.b <= thr) ? sqrt(3.0 * col.b) : a * log(max(12.0 * col.b - b, 1e-6)) + c
             );
+            softSignal = pow(max(softSignal, vec3(0.0)), vec3(1.8));
 
-            col = pow(col, vec3(1.8));
+            // Treat the soft signal as extended sRGB, convert its linear
+            // values to Display-P3, and encode the final canvas signal once.
+            vec3 linearSrgb = mix(softSignal / 12.92,
+                                   pow(max((softSignal + 0.055) / 1.055, vec3(0.0)), vec3(2.4)),
+                                   step(vec3(0.04045), softSignal));
+
+            // Linear sRGB -> linear Display-P3 (GLSL matrices are column-major).
+            col = mat3(
+                0.82259273, 0.03319955, 0.01708535,
+                0.17753363, 0.96678350, 0.07239574,
+                0.00000000, 0.00000000, 0.91030148
+            ) * linearSrgb;
+
+            vec3 p3 = max(col, vec3(0.0));
+            col = mix(12.92 * p3,
+                      1.055 * pow(p3, vec3(1.0 / 2.4)) - 0.055,
+                      step(vec3(0.0031308), p3));
             fragColor = vec4(col, 1.0);
             ` : `
             col = clamp((col * (2.51 * col + .03)) / (col * (2.43 * col + .59) + .14), vec3(0.), vec3(1.));
@@ -758,19 +778,47 @@
             col = mix(vec3f(lum), col, 1.2);
             
             ${isHDR ? `
-            col = max(col, vec3f(0.0)); 
-            col = col * 2.0;
+            // WebGPU's extended canvas is not an HLG/PQ target. Keep the
+            // scene in linear light, apply a soft HDR shoulder, convert to
+            // Display-P3, then apply the Display-P3 (sRGB-compatible)
+            // transfer curve. Values above 1.0 are intentionally preserved
+            // for the rgba16float canvas.
+            col = max(col, vec3f(0.0));
+            // This is the original soft highlight look, used as a creative
+            // shoulder rather than as an HLG transport encoding.
+            col = col * 1.8;
             col = col + max(col - vec3f(0.6), vec3f(0.0)) * 0.5;
 
-            let a = 0.17883277; 
-            let b = 0.28466892; 
+            let a = 0.17883277;
+            let b = 0.28466892;
             let c = 0.55991073;
             let thr = 0.08333333;
-            let val_dark = sqrt(3.0 * col);
-            let val_bright = a * log(12.0 * col - b) + c;
-            col = select(val_bright, val_dark, col <= vec3f(thr));
+            let softSignal = pow(max(
+                select(
+                    a * log(max(12.0 * col - b, vec3f(1e-6))) + c,
+                    sqrt(3.0 * col),
+                    col <= vec3f(thr)
+                ),
+                vec3f(0.0)
+            ), vec3f(1.8));
 
-            col = pow(col, vec3f(1.8));
+            // Treat the soft signal as extended sRGB, convert its linear
+            // values to Display-P3, and encode the final canvas signal once.
+            let linearSrgb = mix(softSignal / 12.92,
+                                 pow(max((softSignal + 0.055) / 1.055, vec3f(0.0)), vec3f(2.4)),
+                                 step(vec3f(0.04045), softSignal));
+
+            // Linear sRGB -> linear Display-P3 (WGSL matrices are column-major).
+            col = mat3x3f(
+                vec3f(0.82259273, 0.03319955, 0.01708535),
+                vec3f(0.17753363, 0.96678350, 0.07239574),
+                vec3f(0.00000000, 0.00000000, 0.91030148)
+            ) * linearSrgb;
+
+            let p3 = max(col, vec3f(0.0));
+            col = mix(12.92 * p3,
+                      1.055 * pow(p3, vec3f(1.0 / 2.4)) - 0.055,
+                      step(vec3f(0.0031308), p3));
             textureStore(outputTex, id.xy, vec4f(col, 1.0));
             ` : `
             col = clamp((col*(2.51*col+.03))/(col*(2.43*col+.59)+.14), vec3f(0.), vec3f(1.));
@@ -835,6 +883,7 @@
             
             let activeCleanup = null;
             let activeConfigUpdate = null; 
+            let canUseGLHDR = false;
 
             const toastEl = document.getElementById('custom_toast');
             const toastText = document.getElementById('toast_text');
@@ -944,8 +993,8 @@
             btnCloud.onclick = () => toggle(btnCloud, 'cloud'); 
             btnBloom.onclick = () => toggle(btnBloom, 'bloom');
             btnHdr.onclick = () => {
-                if (!isWebGPU) {
-                    showToast("HDR is only available in WebGPU mode");
+                if (!isWebGPU && !canUseGLHDR) {
+                    showToast("HDR is unavailable in this WebGL/browser");
                     return;
                 }
                 toggle(btnHdr, 'hdr');
@@ -1048,6 +1097,58 @@
                 if (!adapter) return;
                 const device = await adapter.requestDevice();
                 const context = gpuCanvas.getContext('webgpu');
+                let effectiveHDR = false;
+                const hdrDisplayQuery = window.matchMedia('(dynamic-range: high)');
+                const sdrCanvasConfig = {
+                    device,
+                    format: 'rgba8unorm',
+                    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
+                    alphaMode: 'premultiplied',
+                    colorSpace: 'srgb',
+                    presentMode: 'immediate'
+                };
+
+                // A successful configure() call does not prove that extended
+                // tone mapping was accepted. Some implementations accept the
+                // dictionary member but keep the default "standard" mode.
+                const configurePresentation = (wantHDR) => {
+                    if (!wantHDR) {
+                        context.configure(sdrCanvasConfig);
+                        return false;
+                    }
+
+                    try {
+                        context.configure({
+                            device,
+                            format: 'rgba16float',
+                            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
+                            alphaMode: 'premultiplied',
+                            colorSpace: 'display-p3',
+                            toneMapping: { mode: 'extended' },
+                            presentMode: 'immediate'
+                        });
+                    } catch (e) {
+                        console.warn('HDR configure failed; using SDR', e);
+                        context.configure(sdrCanvasConfig);
+                        return false;
+                    }
+
+                    const applied = typeof context.getConfiguration === 'function'
+                        ? context.getConfiguration()
+                        : null;
+                    const active = Boolean(
+                        hdrDisplayQuery.matches &&
+                        applied &&
+                        applied.format === 'rgba16float' &&
+                        applied.toneMapping &&
+                        applied.toneMapping.mode === 'extended'
+                    );
+
+                    if (!active) {
+                        context.configure(sdrCanvasConfig);
+                    }
+                    return active;
+                };
                 
                 const updateResolution = () => {
                     const dpr = window.devicePixelRatio || 1;
@@ -1102,32 +1203,8 @@
                     gpuCanvas.width = targetW;
                     gpuCanvas.height = targetH;
                     resElem.textContent = `${targetW}x${targetH}`;
-                    
-                    try {
-                        const config = {
-                            device, 
-                            format: flags.hdr ? 'rgba16float' : 'rgba8unorm',
-                            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
-                            alphaMode: 'premultiplied',
-                            colorSpace: flags.hdr ? 'display-p3' : 'srgb',
-                            presentMode: 'immediate'
-                        };
-                        if (flags.hdr && 'toneMapping' in GPUCanvasContext.prototype) {
-                            // @ts-ignore
-                            config.toneMapping = { mode: 'extended' }; 
-                        }
-                        context.configure(config);
-                    } catch(e) {
-                        console.warn("HDR Config failed", e);
-                        context.configure({
-                            device, 
-                            format: 'rgba8unorm', 
-                            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
-                            alphaMode: 'premultiplied',
-                            colorSpace: 'srgb',
-                            presentMode: 'immediate'
-                        });
-                    }
+
+                    effectiveHDR = configurePresentation(flags.hdr);
 
                     requestAnimationFrame(updateUIScale);
                     return { width: targetW, height: targetH };
@@ -1137,7 +1214,7 @@
                 let module, pipeline;
                 
                 const rebuildPipeline = () => {
-                    module = device.createShaderModule({ code: getShaderCodeWGSL(flags.hdr) });
+                    module = device.createShaderModule({ code: getShaderCodeWGSL(effectiveHDR) });
                     pipeline = device.createComputePipeline({
                         layout: 'auto', compute: { module, entryPoint: 'main' }
                     });
@@ -1151,7 +1228,7 @@
                     if(outputTexture) outputTexture.destroy();
                     outputTexture = device.createTexture({
                         size: [canvasSize.width, canvasSize.height],
-                        format: flags.hdr ? 'rgba16float' : 'rgba8unorm',
+                        format: effectiveHDR ? 'rgba16float' : 'rgba8unorm',
                         usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC
                     });
                     bindGroup = device.createBindGroup({
@@ -1165,12 +1242,27 @@
                 createResources();
                 
                 const onConfigChange = (isHdrChange) => {
-                    if(isHdrChange) rebuildPipeline();
+                    const previousHDR = effectiveHDR;
                     canvasSize = updateResolution();
+                    if (previousHDR !== effectiveHDR) rebuildPipeline();
                     createResources();
+
+                    if (flags.hdr && !effectiveHDR) {
+                        flags.hdr = false;
+                        btnHdr.classList.remove('active');
+                        if (isHdrChange) {
+                            showToast('HDR unavailable on this display; using SDR');
+                        }
+                    }
                 };
                 activeConfigUpdate = onConfigChange;
                 window.onresize = () => onConfigChange(false);
+                const onDynamicRangeChange = () => onConfigChange(false);
+                if (typeof hdrDisplayQuery.addEventListener === 'function') {
+                    hdrDisplayQuery.addEventListener('change', onDynamicRangeChange);
+                } else if (typeof hdrDisplayQuery.addListener === 'function') {
+                    hdrDisplayQuery.addListener(onDynamicRangeChange);
+                }
 
                 let frames = 0, lastTime = performance.now(), lastDt = performance.now();
                 let isRunning = true;
@@ -1247,6 +1339,11 @@
 
                 activeCleanup = () => {
                     isRunning = false;
+                    if (typeof hdrDisplayQuery.removeEventListener === 'function') {
+                        hdrDisplayQuery.removeEventListener('change', onDynamicRangeChange);
+                    } else if (typeof hdrDisplayQuery.removeListener === 'function') {
+                        hdrDisplayQuery.removeListener(onDynamicRangeChange);
+                    }
                     window.onresize = null;
                 };
             };
@@ -1254,11 +1351,67 @@
             // --- WebGL Implementation ---
             const launchWebGL = () => {
                 fpsLabel.textContent = "FPS (WebGL)";
+                flags.hdr = false;
+                btnHdr.classList.remove('active');
                 const gpuCanvas = resetCanvas();
                 sharedCanvasEvents(gpuCanvas);
 
                 const gl = gpuCanvas.getContext('webgl2', { powerPreference: "high-performance", desynchronized: true });
                 if (!gl) { alert("WebGL 2.0 Not Supported"); return; }
+
+                let effectiveHDR = false;
+                let glHDRBackbuffer = false;
+                const hdrDisplayQuery = window.matchMedia('(dynamic-range: high)');
+                const glFloatColorBuffer = gl.getExtension('EXT_color_buffer_float');
+                canUseGLHDR = Boolean(
+                    typeof gl.drawingBufferStorage === 'function' &&
+                    glFloatColorBuffer &&
+                    'drawingBufferToneMapping' in gl
+                );
+
+                // WebGL can render to RGBA16F, but HDR presentation needs the
+                // still-proposed drawingBufferToneMapping contract as well.
+                // Use it opportunistically; otherwise keep the original SDR
+                // default framebuffer untouched.
+                const configurePresentation = (wantHDR, width, height) => {
+                    const previousHDR = glHDRBackbuffer;
+                    let hdrAttempted = false;
+                    let active = false;
+
+                    if (wantHDR && canUseGLHDR && hdrDisplayQuery.matches) {
+                        try {
+                            hdrAttempted = true;
+                            gl.drawingBufferStorage(gl.RGBA16F, width, height);
+                            gl.drawingBufferColorSpace = 'display-p3';
+                            gl.drawingBufferToneMapping = { mode: 'extended' };
+                            const toneMapping = gl.drawingBufferToneMapping;
+                            active = Boolean(
+                                gl.drawingBufferFormat === gl.RGBA16F &&
+                                gl.drawingBufferColorSpace === 'display-p3' &&
+                                toneMapping &&
+                                toneMapping.mode === 'extended'
+                            );
+                        } catch (e) {
+                            console.warn('WebGL HDR configure failed; using SDR', e);
+                        }
+                    }
+
+                    if (!active && (previousHDR || hdrAttempted)) {
+                        try {
+                            gl.drawingBufferStorage(gl.RGBA8, width, height);
+                            gl.drawingBufferColorSpace = 'srgb';
+                            if ('drawingBufferToneMapping' in gl) {
+                                gl.drawingBufferToneMapping = { mode: 'standard' };
+                            }
+                        } catch (e) {
+                            console.warn('WebGL SDR restore failed', e);
+                        }
+                    }
+
+                    glHDRBackbuffer = active;
+                    effectiveHDR = active;
+                    return active;
+                };
 
                 const quadBuffer = gl.createBuffer();
                 gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
@@ -1289,7 +1442,7 @@
                 const rebuildPipeline = () => {
                     if(program) gl.deleteProgram(program);
                     const vs = createShader(gl, gl.VERTEX_SHADER, getVertexShaderCodeGLSL());
-                    const fs = createShader(gl, gl.FRAGMENT_SHADER, getFragmentShaderCodeGLSL(flags.hdr));
+                    const fs = createShader(gl, gl.FRAGMENT_SHADER, getFragmentShaderCodeGLSL(effectiveHDR));
                     program = gl.createProgram();
                     gl.attachShader(program, vs);
                     gl.attachShader(program, fs);
@@ -1359,6 +1512,8 @@
                     gpuCanvas.width = targetW;
                     gpuCanvas.height = targetH;
                     resElem.textContent = `${targetW}x${targetH}`;
+
+                    effectiveHDR = configurePresentation(flags.hdr, targetW, targetH);
                     
                     gl.viewport(0, 0, targetW, targetH);
                     
@@ -1370,11 +1525,26 @@
                 rebuildPipeline();
 
                 const onConfigChange = (isHdrChange) => {
-                    if(isHdrChange) rebuildPipeline();
+                    const previousHDR = effectiveHDR;
                     canvasSize = updateResolution();
+                    if (previousHDR !== effectiveHDR) rebuildPipeline();
+
+                    if (flags.hdr && !effectiveHDR) {
+                        flags.hdr = false;
+                        btnHdr.classList.remove('active');
+                        if (isHdrChange) {
+                            showToast('HDR unavailable on this WebGL/display; using SDR');
+                        }
+                    }
                 };
                 activeConfigUpdate = onConfigChange;
                 window.onresize = () => onConfigChange(false);
+                const onDynamicRangeChange = () => onConfigChange(false);
+                if (typeof hdrDisplayQuery.addEventListener === 'function') {
+                    hdrDisplayQuery.addEventListener('change', onDynamicRangeChange);
+                } else if (typeof hdrDisplayQuery.addListener === 'function') {
+                    hdrDisplayQuery.addListener(onDynamicRangeChange);
+                }
 
                 let frames = 0, lastTime = performance.now(), lastDt = performance.now();
                 let isRunning = true;
@@ -1467,6 +1637,12 @@
                 activeCleanup = () => {
                     isRunning = false;
                     syncs.forEach(s => gl.deleteSync(s));
+                    if (typeof hdrDisplayQuery.removeEventListener === 'function') {
+                        hdrDisplayQuery.removeEventListener('change', onDynamicRangeChange);
+                    } else if (typeof hdrDisplayQuery.removeListener === 'function') {
+                        hdrDisplayQuery.removeListener(onDynamicRangeChange);
+                    }
+                    canUseGLHDR = false;
                     window.onresize = null;
                 };
             };
