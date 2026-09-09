@@ -402,7 +402,7 @@
                 return `
                     let isWorkerRunning = false;
                     let workerId = -1;
-                    let PROGRESS_BATCH_SIZE = 1n; 
+                    let PROGRESS_BATCH_SIZE = 1;
 
                     self.onmessage = function(e) {
                         if (e.data.command === 'stop') {
@@ -410,7 +410,7 @@
                         } else if (e.data.command === 'start_sieve_step') {
                             isWorkerRunning = true;
                             workerId = e.data.workerId;
-                            PROGRESS_BATCH_SIZE = BigInt(e.data.batch_size); 
+                            PROGRESS_BATCH_SIZE = Number(e.data.batch_size);
                             runSegmentedSieveStep(
                                 BigInt(e.data.start_num), 
                                 BigInt(e.data.max_num), 
@@ -438,7 +438,7 @@
                     }
 
                     function runSegmentedSieveStep(startNum, maxNum, workerIdx, totalWorkers, blockSizeOdds) {
-                        let checksInBatch = 0n;
+                        let checksInBatch = 0;
                         let totalPrimesFound = 0;
 
                         const startNumNumber = Number(startNum);
@@ -474,15 +474,15 @@
                             }
                             if (!isWorkerRunning) break;
 
-                            let blockBuffer = new BigUint64Array(4096);
+                            let blockBuffer = new Float64Array(4096);
                             let blockCount = 0;
                             const pushPrime = (n) => {
                                 if (blockCount >= blockBuffer.length) {
-                                    let newBuffer = new BigUint64Array(blockBuffer.length * 2);
+                                    let newBuffer = new Float64Array(blockBuffer.length * 2);
                                     newBuffer.set(blockBuffer);
                                     blockBuffer = newBuffer;
                                 }
-                                blockBuffer[blockCount++] = BigInt(n);
+                                blockBuffer[blockCount++] = n;
                             };
                             if (blockStart <= 3 && 3 <= blockEnd) pushPrime(3);
                             if (blockStart <= 5 && 5 <= blockEnd) pushPrime(5);
@@ -494,13 +494,13 @@
                                     const n = wheelBase + residues[rIdx];
                                     if (n < blockStart || n > blockEnd || n < 7) continue;
                                     const i = (n - blockStart) >> 1;
-                                checksInBatch += 1n;
+                                checksInBatch += 1;
                                 if (composite[i] === 0 && n >= 3) {
                                     pushPrime(n);
                                 }
                                 if (checksInBatch >= PROGRESS_BATCH_SIZE) {
                                     self.postMessage({ command: 'progress_sieve', workerId, current_num: n.toString(), checks_done: checksInBatch.toString() });
-                                    checksInBatch = 0n;
+                                    checksInBatch = 0;
                                 }
                                 }
                             }
@@ -887,9 +887,9 @@
                         const CHUNK_SIZE = 500000;
                         let chunk = [];
                         for (const item of items) {
-                            const arr = new BigUint64Array(item.buffer, 0, item.count);
+                            const arr = new Float64Array(item.buffer, 0, item.count);
                             for (let i = 0; i < arr.length; i++) {
-                                chunk.push(Number(arr[i]).toString());
+                                chunk.push(arr[i].toString());
                                 count++;
                                 if (chunk.length >= CHUNK_SIZE) { strParts.push(chunk.join(' ')); chunk = []; }
                             }

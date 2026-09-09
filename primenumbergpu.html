@@ -315,6 +315,7 @@
             
             let n_prime = ~modInverse32(n) + 1u;
             let one_mont = shift_mod_32(1u, 32u, n);
+            let minus_one_mont = n - one_mont;
             let bases = array<u32, 3>(2u, 7u, 61u);
             
             for (var i = 0; i < 3; i++) {
@@ -332,14 +333,12 @@
                     e >>= 1u;
                 }
                 
-                var x = mont_mul_32(x_mont, 1u, n, n_prime);
-                if (x == 1u || x == n - 1u) { continue; }
+                if (x_mont == one_mont || x_mont == minus_one_mont) { continue; }
                 
                 var composite = true;
                 for (var r = 1u; r < s; r++) {
                     x_mont = mont_mul_32(x_mont, x_mont, n, n_prime);
-                    x = mont_mul_32(x_mont, 1u, n, n_prime);
-                    if (x == n - 1u) {
+                    if (x_mont == minus_one_mont) {
                         composite = false;
                         break;
                     }
@@ -533,9 +532,9 @@
             }
             
             let bases = array<u32, 4>(2u, 13u, 23u, 1662803u);
-            let n_minus_1 = sub64(n, U64(1u, 0u));
             let n_prime = modInverse64(n);
             let one_mont = shift_mod(U64(1u, 0u), 64u, n);
+            let minus_one_mont = sub64(n, one_mont);
             
             for (var i = 0; i < 4; i++) {
                 let a = U64(bases[i], 0u);
@@ -552,15 +551,12 @@
                     e = shr1(e);
                 }
                 
-                var x = mont_mul(x_mont, U64(1u, 0u), n, n_prime);
-                
-                if ((x.lo == 1u && x.hi == 0u) || (x.lo == n_minus_1.lo && x.hi == n_minus_1.hi)) { continue; }
+                if (cmp(x_mont, one_mont) == 0 || cmp(x_mont, minus_one_mont) == 0) { continue; }
                 
                 var composite = true;
                 for (var r = 1u; r < s; r++) {
                     x_mont = mont_mul(x_mont, x_mont, n, n_prime);
-                    x = mont_mul(x_mont, U64(1u, 0u), n, n_prime);
-                    if (x.lo == n_minus_1.lo && x.hi == n_minus_1.hi) {
+                    if (cmp(x_mont, minus_one_mont) == 0) {
                         composite = false;
                         break;
                     }
@@ -624,16 +620,15 @@
                 const { batches, index } = e.data;
                 let arr = [];
                 for (let b of batches) {
-                    if (b.type === '32') {
-                        for(let i = 0; i < b.data.length; i++) {
-                            if(b.data[i] !== 0) arr.push(b.data[i]);
-                        }
-                    } else {
-                        for(let i = 0, len = b.data.length; i < len; i+=2) {
-                            const lo = b.data[i];
-                            const hi = b.data[i+1];
-                            if(lo !== 0 || hi !== 0) {
-                                arr.push(hi * 4294967296 + lo);
+                    const offsets = [1, 7, 11, 13, 17, 19, 23, 29];
+                    for (let word = 0; word < b.data.length; word++) {
+                        const mask = b.data[word];
+                        if (mask === 0) continue;
+                        for (let bit = 0; bit < 32; bit++) {
+                            const index = word * 32 + bit;
+                            if (index >= b.count) break;
+                            if ((mask & (1 << bit)) !== 0) {
+                                arr.push(b.start + Math.floor(index / 8) * 30 + offsets[index % 8]);
                             }
                         }
                     }
@@ -812,6 +807,45 @@
             const shader64 = device.createShaderModule({ code: document.getElementById('webgpu-shader-64').textContent });
             const pipeline64 = device.createComputePipeline({ layout: 'auto', compute: { module: shader64, entryPoint: 'main' } });
 
+            const packModule = device.createShaderModule({ code: `
+                struct PackParams { count: u32, stride: u32 };
+                @group(0) @binding(0) var<storage, read> source: array<u32>;
+                @group(0) @binding(1) var<storage, read_write> bits: array<u32>;
+                @group(0) @binding(2) var<uniform> config: PackParams;
+                @compute @workgroup_size(64)
+                fn main(@builtin(global_invocation_id) id: vec3<u32>) {
+                    let first = id.x * 32u;
+                    if (first >= config.count) { return; }
+                    var mask = 0u;
+                    for (var bit = 0u; bit < 32u; bit++) {
+                        let candidate = first + bit;
+                        if (candidate >= config.count) { break; }
+                        let index = candidate * config.stride;
+                        var value = source[index];
+                        if (config.stride == 2u) { value |= source[index + 1u]; }
+                        if (value != 0u) { mask |= 1u << bit; }
+                    }
+                    bits[id.x] = mask;
+                }
+            ` });
+            const packPipeline = device.createComputePipeline({ layout: 'auto', compute: { module: packModule, entryPoint: 'main' } });
+            const bitBuffer = device.createBuffer({ size: GPU_BATCH_SIZE / 8, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
+            const packUniform = device.createBuffer({ size: 8, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+            function packAndCopy(encoder, source, target, count, stride) {
+                device.queue.writeBuffer(packUniform, 0, new Uint32Array([count, stride]));
+                const bind = device.createBindGroup({ layout: packPipeline.getBindGroupLayout(0), entries: [
+                    { binding: 0, resource: { buffer: source } },
+                    { binding: 1, resource: { buffer: bitBuffer } },
+                    { binding: 2, resource: { buffer: packUniform } }
+                ] });
+                const pack = encoder.beginComputePass();
+                pack.setPipeline(packPipeline);
+                pack.setBindGroup(0, bind);
+                pack.dispatchWorkgroups(Math.ceil(count / (32 * 64)));
+                pack.end();
+                encoder.copyBufferToBuffer(bitBuffer, 0, target, 0, Math.ceil(count / 32) * 4);
+            }
+
             let current = 0n;
             const max = STAGE_MAX_NUMBER;
 
@@ -831,15 +865,15 @@
 
             const outputBuf32 = device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
             const readBuf32 = [
-                device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }),
-                device.createBuffer({ size: GPU_BATCH_SIZE * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST })
+                device.createBuffer({ size: GPU_BATCH_SIZE / 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }),
+                device.createBuffer({ size: GPU_BATCH_SIZE / 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST })
             ];
             const uniformBuf32 = device.createBuffer({ size: 8, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
             const outputBuf64 = device.createBuffer({ size: GPU_BATCH_SIZE * 8, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
             const readBuf64 = [
-                device.createBuffer({ size: GPU_BATCH_SIZE * 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }),
-                device.createBuffer({ size: GPU_BATCH_SIZE * 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST })
+                device.createBuffer({ size: GPU_BATCH_SIZE / 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }),
+                device.createBuffer({ size: GPU_BATCH_SIZE / 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST })
             ];
             const uniformBuf64 = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
@@ -858,12 +892,12 @@
             let readbackSlot32 = 0;
             let readbackSlot64 = 0;
 
-            function beginMappedReadback(buffer, byteLength, type) {
+            function beginMappedReadback(buffer, byteLength, type, start, count) {
                 return buffer.mapAsync(GPUMapMode.READ).then(() => {
                     const mapped = buffer.getMappedRange(0, byteLength);
                     const res = new Uint32Array(mapped.slice(0));
                     buffer.unmap();
-                    return { type, data: res };
+                    return { type, data: res, start, count };
                 });
             }
 
@@ -915,9 +949,9 @@
                     pass.setBindGroup(0, bindGroup32);
                     pass.dispatchWorkgroups(Math.ceil(processNow / 64));
                     pass.end();
-                    encoder.copyBufferToBuffer(outputBuf32, 0, readBuffer, 0, processNow * 4);
+                    packAndCopy(encoder, outputBuf32, readBuffer, processNow, 1);
                     device.queue.submit([encoder.finish()]);
-                    pendingReadbacks.push(beginMappedReadback(readBuffer, processNow * 4, '32'));
+                    pendingReadbacks.push(beginMappedReadback(readBuffer, Math.ceil(processNow / 32) * 4, 'bits', Number(current), processNow));
                 } else {
                     const startLo = Number(current & 0xFFFFFFFFn);
                     const startHi = Number(current >> 32n);
@@ -933,9 +967,9 @@
                     pass.setBindGroup(0, bindGroup64);
                     pass.dispatchWorkgroups(Math.ceil(processNow / 64));
                     pass.end();
-                    encoder.copyBufferToBuffer(outputBuf64, 0, readBuffer, 0, processNow * 8);
+                    packAndCopy(encoder, outputBuf64, readBuffer, processNow, 2);
                     device.queue.submit([encoder.finish()]);
-                    pendingReadbacks.push(beginMappedReadback(readBuffer, processNow * 8, '64'));
+                    pendingReadbacks.push(beginMappedReadback(readBuffer, Math.ceil(processNow / 32) * 4, 'bits', Number(current), processNow));
                 }
 
                 totalSearchTime += (performance.now() - searchStepStart);

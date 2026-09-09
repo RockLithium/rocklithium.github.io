@@ -401,7 +401,7 @@
                 return `
                     let isWorkerRunning = false;
                     let workerId = -1;
-                    let BATCH_SIZE_N = 1n; 
+                    let BATCH_SIZE_N = 1;
 
                     self.onmessage = function(e) {
                         if (e.data.command === 'stop') {
@@ -409,7 +409,7 @@
                         } else if (e.data.command === 'start_miller_rabin_step') {
                             isWorkerRunning = true;
                             workerId = e.data.workerId;
-                            BATCH_SIZE_N = BigInt(e.data.batch_size); 
+                            BATCH_SIZE_N = Number(e.data.batch_size);
                             runMillerRabinStep(
                                 BigInt(e.data.start_num), 
                                 BigInt(e.data.max_num), 
@@ -431,11 +431,9 @@
                         return res;
                     }
 
-                    function millerRabin(n, a) {
+                    function millerRabin(n, a, d) {
                         if (n === a) return true;
                         if (n % a === 0n) return false;
-                        let d = n - 1n;
-                        while (d % 2n === 0n) d /= 2n;
                         let x = power(a, d, n);
                         if (x === 1n || x === n - 1n) return true;
                         while (d !== n - 1n) {
@@ -460,18 +458,20 @@
                             if (n % p === 0n) return false;
                         }
                         
+                        let d = n - 1n;
+                        while (d % 2n === 0n) d /= 2n;
                         const bases = n <= THRESHOLD_32 ? bases_small : bases_large;
                         
                         for (let i = 0; i < bases.length; i++) {
                             const a = bases[i];
                             if (n === a) return true;
-                            if (!millerRabin(n, a)) return false;
+                            if (!millerRabin(n, a, d)) return false;
                         }
                         return true;
                     }
 
                     function runMillerRabinStep(startNum, maxNum, workerIdx, totalWorkers, blockSizeOdds) {
-                        let checksInBatch = 0n;
+                        let checksInBatch = 0;
                         let totalPrimesFound = 0;
                         let blockIdx = workerIdx;
                         while (isWorkerRunning) {
@@ -484,7 +484,7 @@
                             let blockBuffer = new BigUint64Array(4096);
                             let blockCount = 0;
                             for (let n = blockStart; n <= blockEnd && isWorkerRunning; n += 2n) {
-                                checksInBatch += 1n;
+                                checksInBatch += 1;
                                 if (isBigIntPrime(n)) {
                                     if (blockCount >= blockBuffer.length) {
                                         let newBuffer = new BigUint64Array(blockBuffer.length * 2);
@@ -495,7 +495,7 @@
                                 }
                                 if (checksInBatch >= BATCH_SIZE_N) {
                                     self.postMessage({ command: 'progress_miller_rabin', workerId, current_num: n.toString(), checks_done: checksInBatch.toString() });
-                                    checksInBatch = 0n;
+                                    checksInBatch = 0;
                                 }
                             }
                             if (isWorkerRunning && blockCount > 0) {
