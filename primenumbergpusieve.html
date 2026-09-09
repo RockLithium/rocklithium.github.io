@@ -249,17 +249,18 @@ struct Params { start_num:u32, limit:u32 };
 @group(0) @binding(0) var<uniform> params:Params;
 @group(0) @binding(1) var<storage,read_write> output_data:array<u32>;
 @group(0) @binding(2) var<storage,read> primes:array<vec4<u32>>;
+@group(0) @binding(3) var<storage,read_write> marks:array<atomic<u32>>;
 struct U64 { lo:u32, hi:u32 };
 fn add(a:U64,b:u32)->U64 {let lo=a.lo+b;return U64(lo,a.hi+select(0u,1u,lo<a.lo));}
 fn le(a:U64,b:U64)->bool {return a.hi<b.hi||(a.hi==b.hi&&a.lo<=b.lo);}
-var<workgroup> marks:array<atomic<u32>,240>;
 @compute @workgroup_size(64)
 fn main(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_invocation_index) lane:u32) {
+    let markBase=group.x*240u;
     let origin=add(U64(params.start_num,0u),group.x*15360u);
     let oddStart=add(origin,1u);
     let end=add(origin,15359u);
-    for(var w=lane;w<240u;w+=64u) {atomicStore(&marks[w],0u);}
-    workgroupBarrier();
+    for(var w=lane;w<240u;w+=64u) {atomicStore(&marks[markBase+w],0u);}
+    storageBarrier();
     for(var j=lane;j<arrayLength(&primes);j+=64u) {
         let record=primes[j];let p=record.x;let square=U64(record.z,record.w);
         if (!le(square,end)) {continue;}
@@ -268,15 +269,15 @@ fn main(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_invocation_index) 
         var delta=(p-rem)%p;
         if((delta&1u)!=0u) {delta+=p;}
         if(le(oddStart,square)) {delta=square.lo-oddStart.lo;}
-        for(var idx=delta/2u;idx<7680u;idx+=p) {atomicOr(&marks[idx/32u],1u<<(idx%32u));}
+        for(var idx=delta/2u;idx<7680u;idx+=p) {atomicOr(&marks[markBase+idx/32u],1u<<(idx%32u));}
     }
-    workgroupBarrier();
+    storageBarrier();
     let offsets=array<u32,8>(1u,7u,11u,13u,17u,19u,23u,29u);
     for(var local=lane;local<4096u;local+=64u) {
         let offset=(local/8u)*30u+offsets[local%8u];
         let n=add(origin,offset);let idx=(offset-1u)/2u;
         let valid=le(n,U64(params.limit,0u))&&le(U64(params.start_num,0u),n)&&(n.hi!=0u||n.lo>=7u);
-        let prime=valid&&((atomicLoad(&marks[idx/32u])&(1u<<(idx%32u)))==0u);
+        let prime=valid&&((atomicLoad(&marks[markBase+idx/32u])&(1u<<(idx%32u)))==0u);
         output_data[group.x*4096u+local]=select(0u,n.lo,prime);
     }
 }
@@ -288,17 +289,18 @@ struct Params { start_num_lo:u32, start_num_hi:u32, limit_lo:u32, limit_hi:u32 }
 @group(0) @binding(0) var<uniform> params:Params;
 @group(0) @binding(1) var<storage,read_write> output_data:array<vec2<u32>>;
 @group(0) @binding(2) var<storage,read> primes:array<vec4<u32>>;
+@group(0) @binding(3) var<storage,read_write> marks:array<atomic<u32>>;
 struct U64 { lo:u32, hi:u32 };
 fn add(a:U64,b:u32)->U64 {let lo=a.lo+b;return U64(lo,a.hi+select(0u,1u,lo<a.lo));}
 fn le(a:U64,b:U64)->bool {return a.hi<b.hi||(a.hi==b.hi&&a.lo<=b.lo);}
-var<workgroup> marks:array<atomic<u32>,240>;
 @compute @workgroup_size(64)
 fn main(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_invocation_index) lane:u32) {
+    let markBase=group.x*240u;
     let origin=add(U64(params.start_num_lo,params.start_num_hi),group.x*15360u);
     let oddStart=add(origin,1u);
     let end=add(origin,15359u);
-    for(var w=lane;w<240u;w+=64u) {atomicStore(&marks[w],0u);}
-    workgroupBarrier();
+    for(var w=lane;w<240u;w+=64u) {atomicStore(&marks[markBase+w],0u);}
+    storageBarrier();
     for(var j=lane;j<arrayLength(&primes);j+=64u) {
         let record=primes[j];let p=record.x;let square=U64(record.z,record.w);
         if (!le(square,end)) {continue;}
@@ -307,15 +309,15 @@ fn main(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_invocation_index) 
         var delta=(p-rem)%p;
         if((delta&1u)!=0u) {delta+=p;}
         if(le(oddStart,square)) {delta=square.lo-oddStart.lo;}
-        for(var idx=delta/2u;idx<7680u;idx+=p) {atomicOr(&marks[idx/32u],1u<<(idx%32u));}
+        for(var idx=delta/2u;idx<7680u;idx+=p) {atomicOr(&marks[markBase+idx/32u],1u<<(idx%32u));}
     }
-    workgroupBarrier();
+    storageBarrier();
     let offsets=array<u32,8>(1u,7u,11u,13u,17u,19u,23u,29u);
     for(var local=lane;local<4096u;local+=64u) {
         let offset=(local/8u)*30u+offsets[local%8u];
         let n=add(origin,offset);let idx=(offset-1u)/2u;
         let valid=le(n,U64(params.limit_lo,params.limit_hi))&&le(U64(params.start_num_lo,params.start_num_hi),n)&&(n.hi!=0u||n.lo>=7u);
-        let prime=valid&&((atomicLoad(&marks[idx/32u])&(1u<<(idx%32u)))==0u);
+        let prime=valid&&((atomicLoad(&marks[markBase+idx/32u])&(1u<<(idx%32u)))==0u);
         output_data[group.x*4096u+local]=select(vec2<u32>(0u,0u),vec2<u32>(n.lo,n.hi),prime);
     }
 }
@@ -612,6 +614,10 @@ fn main(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_invocation_index) 
             const baseData = baseRecords(Math.max(7,Math.floor(Math.sqrt(Number(STAGE_MAX_NUMBER)))));
             const baseBuffer = device.createBuffer({size: Math.max(16,baseData.byteLength),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
             if (baseData.length) device.queue.writeBuffer(baseBuffer,0,baseData);
+            const markBuffer = device.createBuffer({
+                size: Math.ceil(GPU_BATCH_SIZE / 4096) * 240 * 4,
+                usage: GPUBufferUsage.STORAGE
+            });
 
             let current = 0n;
             const max = STAGE_MAX_NUMBER;
@@ -646,11 +652,11 @@ fn main(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_invocation_index) 
 
             const bindGroup32 = device.createBindGroup({
                 layout: pipeline32.getBindGroupLayout(0),
-                entries: [{ binding: 0, resource: { buffer: uniformBuf32 } }, { binding: 1, resource: { buffer: outputBuf32 } }, { binding: 2, resource: { buffer: baseBuffer } }]
+                entries: [{ binding: 0, resource: { buffer: uniformBuf32 } }, { binding: 1, resource: { buffer: outputBuf32 } }, { binding: 2, resource: { buffer: baseBuffer } }, { binding: 3, resource: { buffer: markBuffer } }]
             });
             const bindGroup64 = device.createBindGroup({
                 layout: pipeline64.getBindGroupLayout(0),
-                entries: [{ binding: 0, resource: { buffer: uniformBuf64 } }, { binding: 1, resource: { buffer: outputBuf64 } }, { binding: 2, resource: { buffer: baseBuffer } }]
+                entries: [{ binding: 0, resource: { buffer: uniformBuf64 } }, { binding: 1, resource: { buffer: outputBuf64 } }, { binding: 2, resource: { buffer: baseBuffer } }, { binding: 3, resource: { buffer: markBuffer } }]
             });
 
             let formatting = Promise.resolve();
