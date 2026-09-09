@@ -6,7 +6,7 @@
     <title>Test list</title>
     <link rel="stylesheet" href="./shared/nav-cards.css">
 </head>
-<body>
+<body class="card-list-page">
 
     <a href="../" id="homeButton" class="home-button-interactive">← 返回主页</a>
 
@@ -14,11 +14,11 @@
         <h1>选择项目</h1> 
 
         <div id="button-container" class="card-grid">
-            <div class="tool-button" data-href="../llt" data-desc="采用主从架构的 CPU 稳定性测试工具。使用 LLT 算法验证梅森素数，以对多核处理器整数单元进行持续满载施压。配备实时折线图监控每一轮计算耗时，能有效检测处理器在长时间高负载下的稳定性。">
+            <div class="tool-button" data-href="../llt" data-desc="采用主从架构的 CPU 稳定性测试工具。使用 LLT 算法验证梅森素数，以对多核处理器整数单元进行持续满载施压。">
                 梅森素数检验
             </div>
 
-            <div class="tool-button" data-href="../primenumber" data-desc="侧重于并发吞吐量的 CPU 性能测试工具。使用 Miller-Rabin 概率算法在指定的大范围内并行查找质数，以压榨处理器的整数运算能力与多线程通信效率。具备自动分块搜索及结果同步排序功能，适合评估 CPU 在混合高并发负载下的综合表现。">
+            <div class="tool-button" data-href="../primenumber" data-desc="侧重于并发吞吐量的 CPU 性能测试工具。使用 Miller-Rabin 概率算法在指定的大范围内并行查找质数，以压榨处理器的整数运算能力与多线程通信效率。">
                 质数查找器
             </div>
 
@@ -26,11 +26,11 @@
                 软件光线追踪
             </div>
 
-            <div class="tool-button" data-href="../throughputtest" data-desc="评估 GPU 理论峰值算力的基准测试。使用 WebGPU 计算着色器执行超大规模的 FMA 及整数位运算，分别测量并计算出显卡在 FP16、FP32 和 INT32 数据类型下的极限吞吐量表现。（需要 WebGPU 支持）">
+            <div class="tool-button" data-href="../throughputtest" data-desc="评估 GPU 理论峰值算力的基准测试。使用 WebGPU 计算着色器执行超大规模的 FMA 及整数位运算，分别测试显卡在 FP16、FP32 和 INT32 数据类型下的极限吞吐量表现。（需要 WebGPU 支持）">
                 GPU 算力测试
             </div>
 
-            <div class="tool-button" data-href="../primenumbergpu" data-desc="基于 WebGPU 的大范围质数查找工具。将 Miller-Rabin 素性检验算法下放至 GPU 并行执行，实现远超 CPU 版本的运算吞吐量。具备自动分块搜索及多线程 Web Worker 异步管线处理功能，适合评估 GPU 的 INT32 算力。（需要 WebGPU 支持）">
+            <div class="tool-button" data-href="../primenumbergpu" data-desc="基于 WebGPU 的大范围质数查找工具。使用 GPU 并行执行 Miller–Rabin 素性检验，并通过位图回读、多线程 Web Worker 整理和异步流水线提高整体吞吐量。（需要 WebGPU 支持）">
                 GPU 质数查找器
             </div>
             
@@ -38,15 +38,20 @@
                 着色器光线追踪
             </div>
 
-            <div class="tool-button" data-href="../bandwidthtest" data-desc="评估 GPU 显存带宽的基准测试。使用 WebGPU 直接对显存执行大规模的高强度读写拷贝操作，以衡量显存峰值带宽。包含自动预热、速率校准与分批峰值采样机制，以排除系统干扰。（需要 WebGPU 支持）">
+            <div class="tool-button" data-href="../bandwidthtest" data-desc="评估 GPU 显存带宽的基准测试。使用 WebGPU 直接对显存执行大规模的高强度读写拷贝操作，以衡量显存峰值带宽。（需要 WebGPU 支持）">
                 显存带宽测试
+            </div>
+
+            <div class="tool-button" data-href="../primenumbersieve" data-desc="使用分段筛法的 CPU 质数枚举工具。相比 Miller-Rabin 算法，更适合快速列出大范围内的全部质数，且 CPU 压力更小。">
+                筛法质数查找器
+            </div>
+
+            <div class="tool-button" data-href="../primenumbergpusieve" data-desc="使用 WebGPU 分段筛法的质数枚举工具。（需要 WebGPU 支持）">
+                GPU 筛法质数
             </div>
 
             <div class="tool-button" data-href="../burntest" data-desc="一个双烤测试。通过同时压榨 CPU 的整数和浮点算力，并给予 GPU 极高负载，以将功耗推向功耗墙。">
                 极限双烤测试
-            </div>
-            <div class="tool-button" data-href="../primenumbersieve" data-desc="使用分段筛法的 CPU 质数枚举工具。相比 Miller-Rabin 算法，更适合快速列出大范围内的全部质数，且 CPU 压力更小。">
-                筛法质数查找器
             </div>
         </div>
     </div>

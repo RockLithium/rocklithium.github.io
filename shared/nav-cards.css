@@ -259,6 +259,18 @@ p {
 }
 
 @media (max-width: 768px) {
+    body.card-list-page {
+        justify-content: flex-start;
+    }
+
+    .card-list-page .main-wrapper {
+        transform: none;
+        flex-shrink: 0;
+        box-sizing: border-box;
+        margin-block: auto;
+        padding: 80px 0;
+    }
+
     h1 {
         font-size: 2em;
         margin-bottom: 30px;
