@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="data:,">
+  <title>World Trade Center — Interactive Reconstruction</title>
+  <link rel="stylesheet" href="./styles.css?v=20261007-runtime-3">
+  <script type="importmap">
+    {
+      "imports": {
+        "three/webgpu": "./vendor/three.webgpu.js",
+        "three/tsl": "./vendor/three.tsl.js",
+        "three": "./vendor/three.core.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main id="viewport" aria-label="World Trade Center 3D visualization"></main>
+
+  <section id="ui" aria-label="Graphics settings">
+    <div class="top-bar-row">
+      <a href="../perftests" class="back-btn" style="flex: 1; margin-bottom: 0;">← BACK</a>
+    </div>
+    <div class="header">
+      <div class="title-text">GRAPHICS SETTINGS</div>
+      <button id="btn_min" class="min-btn" type="button" aria-label="Collapse graphics settings" aria-expanded="true" aria-controls="ui_body">–</button>
+    </div>
+    <div id="ui_body">
+      <div class="control-group">
+        <div class="control-row"><span class="label">PRESETS</span></div>
+        <div class="preset-container" role="group" aria-label="Quality presets">
+          <button class="preset-btn active" type="button" data-preset="low">LOW</button>
+          <button class="preset-btn" type="button" data-preset="mid">MID</button>
+          <button class="preset-btn" type="button" data-preset="high">HIGH</button>
+          <button class="preset-btn" type="button" data-preset="ultra">ULTRA</button>
+          <button class="preset-btn" type="button" data-preset="extreme">EXTREME</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="control-row"><label class="label" for="in_bounces">REFLECTION BOUNCES</label><span id="val_bounces" class="value">1</span></div>
+        <input type="range" id="in_bounces" min="1" max="12" step="1" value="1" aria-label="Reflection bounces">
+      </div>
+      <div class="control-group">
+        <div class="control-row"><label class="label" for="in_shadow">SHADOW SAMPLES</label><span id="val_shadow" class="value">0</span></div>
+        <input type="range" id="in_shadow" min="0" max="8" step="1" value="0" aria-label="Soft shadow samples; zero keeps hard shadows" title="0: hard shadows; higher values sample the solar disc">
+      </div>
+      <div class="control-group">
+        <div class="control-row"><label class="label" for="in_scale">RENDER SCALE</label><span id="val_scale" class="value">0.33x</span></div>
+        <input type="range" id="in_scale" min="0" max="8" step="1" value="1" aria-label="Render scale">
+      </div>
+      <div class="control-group">
+        <div class="control-row"><label class="label" for="in_exposure">EXPOSURE</label><span id="val_exposure" class="value">1.00</span></div>
+        <input type="range" id="in_exposure" min="0.25" max="3" step="0.05" value="1" aria-label="Exposure">
+      </div>
+      <div id="limit_warning" class="warning-box" role="status"></div>
+
+      <div class="control-group">
+        <div class="control-row"><label class="label" for="in_time">TIME</label><span id="val_time" class="value">15:00</span></div>
+        <input id="in_time_slider" type="range" min="0" max="1439" step="1" value="900" aria-label="Time of day, minutes from midnight">
+        <div class="time-controls">
+          <input id="in_time" type="time" step="60" value="15:00" aria-label="Time of day">
+          <button id="btn_play" class="toggle-btn" type="button" aria-pressed="false">PLAY</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="control-row"><label class="label" for="in_day_seconds">DAY CYCLE</label><span id="val_day_seconds" class="value">180 s</span></div>
+        <input type="range" id="in_day_seconds" min="15" max="1800" step="15" value="180" aria-label="Day cycle duration in seconds">
+      </div>
+
+      <div class="switch-row">
+        <span class="label">SCENE</span>
+        <div class="toggle-container" role="group" aria-label="Scene effects">
+          <button class="toggle-btn active" type="button" data-toggle="fog" aria-pressed="true">FOG</button>
+          <button class="toggle-btn active" type="button" data-toggle="cloud" aria-pressed="true">CLOUD</button>
+        </div>
+      </div>
+      <div class="switch-row compact">
+        <span class="label">DISPLAY</span>
+        <div class="toggle-container" role="group" aria-label="Display options">
+          <button class="toggle-btn feature-btn" type="button" data-toggle="hdr" aria-pressed="false">HDR</button>
+          <button class="toggle-btn feature-btn" type="button" data-toggle="force16_9" aria-pressed="false">FORCE 16:9</button>
+          <button id="btn_full" class="toggle-btn feature-btn" type="button" aria-pressed="false">FULLSCREEN</button>
+        </div>
+      </div>
+      <div class="stats" aria-live="polite">
+        <span>RES: <span id="res_text">-</span></span>
+        <span>FOV: <span id="fov_text">84.1°</span></span>
+        <span>FPS: <span id="fps">0</span></span>
+      </div>
+    </div>
+  </section>
+
+  <section id="building_ui" aria-label="Building and view controls">
+    <div class="header">
+      <div class="title-text">BUILDING CONTROLS</div>
+      <button id="btn_build_min" class="min-btn" type="button" aria-label="Collapse building controls" aria-expanded="true" aria-controls="building_body">–</button>
+    </div>
+    <div id="building_body">
+      <div class="switch-row">
+        <span class="label">BUILDINGS</span>
+        <div id="tower_buttons" class="toggle-container" role="group" aria-label="Visible buildings">
+          <button class="toggle-btn active" type="button" data-towers="1" aria-pressed="true">WTC 1</button>
+          <button class="toggle-btn active" type="button" data-towers="2" aria-pressed="true">WTC 2</button>
+          <button class="toggle-btn active" type="button" data-towers="4" aria-pressed="true">WTC 3</button>
+          <button class="toggle-btn active" type="button" data-towers="8" aria-pressed="true">WTC 4</button>
+          <button class="toggle-btn active" type="button" data-towers="16" aria-pressed="true">WTC 5</button>
+          <button class="toggle-btn active" type="button" data-towers="32" aria-pressed="true">WTC 6</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="control-row"><span class="label">LAYERS</span></div>
+        <div id="layer_buttons" role="group" aria-label="Building layers">
+          <button class="toggle-btn active" type="button" data-layer="1" aria-pressed="true">FACADE</button>
+          <button class="toggle-btn active" type="button" data-layer="2" aria-pressed="true">STEEL</button>
+          <button class="toggle-btn active" type="button" data-layer="4" aria-pressed="true">CORE</button>
+          <button class="toggle-btn active" type="button" data-layer="8" aria-pressed="true">FLOORS</button>
+          <button class="toggle-btn active" type="button" data-layer="16" aria-pressed="true">TRUSSES</button>
+          <button class="toggle-btn active" type="button" data-layer="64" aria-pressed="true">ROOF</button>
+          <button class="toggle-btn active" type="button" data-layer="256" aria-pressed="true">STAIRS</button>
+          <button class="toggle-btn active" type="button" data-layer="512" aria-pressed="true">ELEVATORS</button>
+          <button class="toggle-btn active" type="button" data-layer="1024" aria-pressed="true">LIGHTS</button>
+          <button class="toggle-btn active" type="button" data-layer="2048" aria-pressed="true">INTERIOR</button>
+          <button class="toggle-btn active" type="button" data-layer="32" aria-pressed="true">BASEMENT</button>
+          <button class="toggle-btn active" type="button" data-layer="128" aria-pressed="true">SITE</button>
+        </div>
+      </div>
+
+      <div class="switch-row">
+        <span class="label">CUT</span>
+        <div class="toggle-container" role="group" aria-label="Cutaway mode">
+          <button class="toggle-btn active" type="button" data-cut="0" aria-pressed="true">NONE</button>
+          <button class="toggle-btn" type="button" data-cut="1" aria-pressed="false">HORIZONTAL</button>
+          <button class="toggle-btn" type="button" data-cut="2" aria-pressed="false">VERTICAL</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="control-row"><label class="label" for="in_cut_height">CUT HEIGHT</label><span id="val_cut_height" class="value">220</span></div>
+        <input type="range" id="in_cut_height" min="0" max="600" step="5" value="220" aria-label="Cut height">
+      </div>
+      <div class="switch-row compact">
+        <span class="label">KEEP SIDE</span>
+        <div id="cut_side_controls" class="toggle-container" role="group" aria-label="Side to keep in cutaway">
+          <button class="toggle-btn active" type="button" data-cut-side="0" aria-pressed="true">NORTH</button>
+          <button class="toggle-btn" type="button" data-cut-side="1" aria-pressed="false">SOUTH</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="control-row"><label class="label" for="in_floor">SINGLE FLOOR</label><span id="val_floor" class="value">ALL</span></div>
+        <input type="range" id="in_floor" min="0" max="110" step="1" value="0" aria-label="Single floor, zero shows all floors">
+      </div>
+
+      <div class="control-group">
+        <div class="control-row"><span class="label">CAMERA VIEW</span></div>
+        <div id="view_buttons" role="group" aria-label="Camera view">
+          <button class="toggle-btn active" type="button" data-view="overview" aria-pressed="true">OVERVIEW</button>
+          <button class="toggle-btn" type="button" data-view="north" aria-pressed="false">NORTH</button>
+          <button class="toggle-btn" type="button" data-view="south" aria-pressed="false">SOUTH</button>
+          <button class="toggle-btn" type="button" data-view="lobby" aria-pressed="false">LOBBY</button>
+          <button class="toggle-btn" type="button" data-view="floor" aria-pressed="false">FLOOR</button>
+          <button class="toggle-btn" type="button" data-view="top" aria-pressed="false">TOP</button>
+        </div>
+      </div>
+      <button id="btn_reset_view" class="back-btn" type="button" style="margin-top:7px;">RESET VIEW</button>
+      <div class="top-bar-row" style="margin-top:5px; margin-bottom:0;">
+        <button id="btn_sources" class="back-btn" type="button" aria-haspopup="dialog" aria-controls="sources_panel" style="flex:1; margin-bottom:0;">SOURCES</button>
+        <button id="btn_screenshot" class="back-btn" type="button" style="flex:1; margin-bottom:0;">SCREENSHOT</button>
+      </div>
+      <button id="btn_photo_mode" class="back-btn" type="button" aria-pressed="false" aria-controls="photo_ui" style="margin-top:5px; margin-bottom:0;">PHOTO MODE</button>
+    </div>
+  </section>
+
+  <section id="photo_ui" aria-label="Photo mode settings" hidden>
+    <div class="header">
+      <div class="title-text">PHOTO MODE</div>
+      <button id="btn_photo_close" class="min-btn" type="button" aria-label="Exit photo mode">×</button>
+    </div>
+    <div id="photo_tabs" class="preset-container" role="tablist" aria-label="Photo settings">
+      <button id="photo_tab_output" class="preset-btn active" type="button" role="tab" aria-selected="true" aria-controls="photo_output" data-photo-tab="output">OUTPUT</button>
+      <button id="photo_tab_lens" class="preset-btn" type="button" role="tab" aria-selected="false" aria-controls="photo_lens" data-photo-tab="lens" tabindex="-1">LENS</button>
+      <button id="photo_tab_shift" class="preset-btn" type="button" role="tab" aria-selected="false" aria-controls="photo_shift" data-photo-tab="shift" tabindex="-1">COMPOSE</button>
+      <button id="photo_tab_color" class="preset-btn" type="button" role="tab" aria-selected="false" aria-controls="photo_color" data-photo-tab="color" tabindex="-1">COLOR</button>
+      <button id="photo_tab_quality" class="preset-btn" type="button" role="tab" aria-selected="false" aria-controls="photo_quality" data-photo-tab="quality" tabindex="-1">QUALITY</button>
+    </div>
+    <div id="photo_body">
+      <div id="photo_output" class="photo-tab-panel" role="tabpanel" aria-labelledby="photo_tab_output"></div>
+      <div id="photo_lens" class="photo-tab-panel" role="tabpanel" aria-labelledby="photo_tab_lens" hidden></div>
+      <div id="photo_shift" class="photo-tab-panel" role="tabpanel" aria-labelledby="photo_tab_shift" hidden></div>
+      <div id="photo_color" class="photo-tab-panel" role="tabpanel" aria-labelledby="photo_tab_color" hidden></div>
+      <div id="photo_quality" class="photo-tab-panel" role="tabpanel" aria-labelledby="photo_tab_quality" hidden></div>
+    </div>
+    <footer id="photo_footer">
+      <div class="photo-resolutions"><span>PREVIEW <b id="photo_preview_res">—</b></span><span>OUTPUT <b id="photo_output_res">—</b></span></div>
+      <div id="photo_progress_row" hidden><progress id="photo_progress" max="1" value="0" aria-label="Photo capture progress"></progress><span id="photo_progress_text">0 / 0</span></div>
+      <p id="photo_status" role="status" aria-live="polite"></p>
+      <div class="photo-shutter-row">
+        <button id="btn_photo_capture" class="back-btn active" type="button">TAKE PHOTO</button>
+        <button id="btn_photo_cancel" class="back-btn" type="button" hidden>CANCEL</button>
+      </div>
+    </footer>
+  </section>
+
+  <div id="control_hints" aria-hidden="true">DRAG TO LOOK · WHEEL FOV · WASD FLY · Q/E WORLD Y</div>
+
+  <aside id="selection_info" aria-live="polite" aria-label="Selected object information">
+    <h2 id="selection_title">Selection</h2>
+    <table><tbody id="selection_rows"></tbody></table>
+  </aside>
+
+  <div id="loading" role="status" aria-live="polite">
+    <div class="load-mark" aria-hidden="true"></div>
+    <div id="loading_status">Preparing the WTC scene…</div>
+    <button id="loading_retry" class="back-btn" type="button">RELOAD</button>
+  </div>
+  <div id="status_notice" class="toast-msg wtc-notice" role="status" aria-live="polite">
+    <span aria-hidden="true">ℹ</span><span id="status_notice_text"></span>
+  </div>
+
+  <div id="sources_panel" role="dialog" aria-modal="true" aria-labelledby="sources_heading" aria-hidden="true">
+    <section id="sources_card" tabindex="-1">
+      <h2 id="sources_heading">SOURCES &amp; CONTROLS</h2>
+      <h3>Sources</h3>
+      <p><a href="https://www.nist.gov/world-trade-center-investigation" target="_blank" rel="noopener noreferrer">NIST World Trade Center Investigation</a></p>
+      <ul>
+        <li><a href="https://nvlpubs.nist.gov/nistpubs/Legacy/NCSTAR/ncstar1-1.pdf" target="_blank" rel="noopener noreferrer">NCSTAR 1-1 — Design, Construction, and Maintenance</a></li>
+        <li><a href="https://nvlpubs.nist.gov/nistpubs/Legacy/NCSTAR/ncstar1-2a.pdf" target="_blank" rel="noopener noreferrer">NCSTAR 1-2A — Reference Structural Models</a></li>
+        <li><a href="https://nvlpubs.nist.gov/nistpubs/Legacy/NCSTAR/ncstar1-2bv1.pdf" target="_blank" rel="noopener noreferrer">NCSTAR 1-2B, Volume 1 — Tower orientation</a></li>
+        <li><a href="https://nvlpubs.nist.gov/nistpubs/Legacy/NCSTAR/ncstar1-7.pdf" target="_blank" rel="noopener noreferrer">NCSTAR 1-7 — Lobby, elevators and stair transfers</a></li>
+        <li><a href="https://www.loc.gov/pictures/item/2020714989/" target="_blank" rel="noopener noreferrer">Library of Congress — 1976 plaza photograph</a></li>
+        <li><a href="https://pacorpredevblobstorage.blob.core.windows.net/board-documents/uploads/documents/freedom-of-information/foi-fulfilled-requests/18324-WTC.pdf" target="_blank" rel="noopener noreferrer">Port Authority original site, grade and low-building drawings</a></li>
+        <li><a href="https://publicintelligence.net/world-trade-center-north-tower-blueprints/" target="_blank" rel="noopener noreferrer">Original Tower A floor plans and elevator risers (public mirror)</a></li>
+        <li><a href="https://www.govinfo.gov/content/pkg/GOVPUB-FEM1-PURL-LPS18973/pdf/GOVPUB-FEM1-PURL-LPS18973.pdf" target="_blank" rel="noopener noreferrer">FEMA 403 — WTC 3, 4, 5 and 6</a></li>
+        <li><a href="./data/sources.json" target="_blank" rel="noopener noreferrer">Source pages and reconstruction notes</a></li>
+      </ul>
+      <h3>Methodology</h3>
+      <p>The model presents major structural systems and typical floors for visual exploration. It is not a set of construction drawings, a complete as-built BIM, or a structural analysis model. Regular floors repeat typical layouts; mechanical floors, sky lobbies, and the hat truss follow grouped report and drawing summaries.</p>
+      <p>Core columns and local lift cells are calibrated from original Tower A plans; WTC 2 uses a rotated reconstruction. Site outlines use one uniform tower-width scale. Street grades, facade curves, detailed interiors and partial shared basements include documented estimates; floor heights vary. Displayed component dimensions come from this reconstruction; decimal places do not imply surveyed or as-built accuracy. Tower structural north is about 29° clockwise from true north (NCSTAR 1-2B).</p>
+      <h3>Controls</h3>
+      <ul>
+        <li>Drag with the mouse to rotate the view from your current perspective; the scroll wheel adjusts FOV.</li>
+        <li>WASD moves horizontally in the viewing direction; Q/E moves along world vertical. Click a building component to inspect its available information.</li>
+        <li>Choose buildings, structure layers, cutaways, floors, or camera views in Building Controls.</li>
+        <li>Set a time with the clock field or slider; PLAY animates the day using the DAY CYCLE duration.</li>
+        <li>Presets adjust real-time ray-tracing quality; HDR and FORCE 16:9 affect display.</li>
+      </ul>
+      <button id="btn_sources_close" class="back-btn" type="button">CLOSE</button>
+    </section>
+  </div>
+
+  <script type="module" src="./app.js?v=20261007-runtime-3"></script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+[
+  {
+    "id": "nist-ncstar-1-1",
+    "title": "Final Report on the Collapse of the World Trade Center Towers — Design, Construction, and Maintenance of Structural and Life Safety Systems (NCSTAR 1-1)",
+    "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/NCSTAR/ncstar1-1.pdf",
+    "pages": [
+      7,
+      8,
+      9,
+      10,
+      11,
+      18,
+      19,
+      20,
+      21,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      165,
+      166,
+      167
+    ],
+    "facts": [
+      "p. 8: reference-line footprint 207 ft 2 in by 207 ft 2 in; chamfer 6 ft 11 in; service core approximately 135 ft by 87 ft; 59 exterior columns per face at 3 ft 4 in on center; WTC 1 core long axis east–west, WTC 2 north–south; WTC 1 roof 1,368 ft above Concourse and WTC 2 six feet shorter.",
+      "p. 9: 116 stories from foundation (110 above grade plus 6 below); story heights typically 12 ft.",
+      "p. 18, Figure 2-2: WTC 1 west elevation gives a detailed level schedule relative to the Concourse: F9 +104 ft; F9→40 31×12 ft; F40→41 14 ft; F41→43 28 ft; F43→44 and F44→45 each 14 ft; F45→67 22×12 ft; F67→68 16 ft; F68→74 6×12 ft; F74→75, 75→76, and 76→77 each 14 ft; F77→78 12 ft; F78→79 14 ft; F79→106 27×12 ft; F106→107 14 ft 4 in; F107→110 42 ft 8 in; F110→roof 21 ft. The roof is labeled +1,368 ft. This is a North Tower schedule; do not assume all stories are 12 ft.",
+      "p. 19, Figure 2-3: perimeter wall elevation from foundation to floor 9; floor 1 is EL 310 ft, floor 2 EL 332 ft, and the figure labels the exterior-column transitions, 6 ft 11 in chamfers, and lower-level grouped columns.",
+      "p. 7: WTC 1 roof is 1,368 ft above the Concourse and supported a 360 ft television/radio antenna; WTC 2 roof is 6 ft lower.",
+      "p. 12, Figure 2-18: the hat truss connects the core and perimeter between floors 107 and roof; it was intended to support antennas at both towers, but only the North Tower antenna was built. This plan/section is schematic, not an antenna fabrication drawing.",
+      "p. 19, Figure 2-3: elevation labels three upper exterior columns over each grouped base column and shows their tree-like transition, with the three-column pattern beginning above the lower transition. The figure is an elevation of one representative face, not a photo of lobby finishes or an exact entrance-door schedule.",
+      "p. 21, Figure 2-5: elevator riser is a schematic of the three elevator zones and the sky lobbies at floors 44 and 78; use the more detailed zone facts in NCSTAR 1-7 p. 32. The diagram does not define a dimensioned machine-room plan.",
+      "pp. 24–26, Figures 2-8 to 2-10: exterior wall tree/panel and staggered panel construction; use these for the repeated face-column/spandrel pattern and corner treatment.",
+      "p. 27, Figure 2-12: schematic core-column plan shared as a typical tower layout, with 47 columns in six rows (8, 8, 8, 7, 8, 8); labels 501–508, 601–608, 701–708, 801–807, 901–908, and 1001–1008; the number below each label is the floor where the section transitions from box to wide-flange, and symbols show section type at floor 84. It provides relative positions, not a complete dimension chain for every column spacing.",
+      "p. 28, Figure 2-13: typical floor-framing plan.",
+      "pp. 10–11, Figures 2-7 to 2-10: above floor 7 the exterior columns are approximately 14 in square, 59 per face at 3 ft 4 in centers; typical 52 in deep spandrel plates form prefabricated 10 ft wide × 36 ft tall panels, typically three columns by three stories. Below floor 7, 10 ft spaced base columns transition to three upper columns at elevation 363 ft. Aluminum sheets cover the steel columns and spandrels; glazing is fitted into aluminum frames and sealed with neoprene. At corners, face spandrels connect and the vertical corner members are discontinuous (p. 10). This supports the structural rib / horizontal band relationship, not the visible cap profile or exact aluminum extrusion shape.",
+      "p. 20, Figure 2-4: typical architectural floor plan identifies the core/service spaces, elevator groups and stairs inside the perimeter; it is a reproduced representative plan, not a complete dimensioned as-built plan for every floor.",
+      "p. 23, Figure 2-7: cross sections show the built-up perimeter box column and its spandrel connection. These are structural steel sections and do not dimension the aluminum cladding projection or window frame molding.",
+      "pp. 165–167, Sections 10.5.3–10.5.4, Figures 10-3–10-6: NIST states that elevator hoistways and other vertical shafts were enclosed with fire-rated gypsum partitions; the WTC1&2 shaft system used gypsum planks 2 in thick (1.5 in on 16 ft ceiling floors), 16 in wide, shown in details reproduced from PANYNJ drawings A*A*209 and A*A*50. This description does not support treating a permanently open fourth side as a documented historic shaft feature (inference from the enclosure requirement). It does not supply every shaft dimension, landing-door detail or plan coordinate."
+    ]
+  },
+  {
+    "id": "nist-ncstar-1-7",
+    "title": "Occupant Behavior, Egress, and Emergency Communications (NCSTAR 1-7)",
+    "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/NCSTAR/ncstar1-7.pdf",
+    "pages": [
+      12,
+      14,
+      15,
+      20,
+      21,
+      22,
+      23,
+      27,
+      28,
+      29,
+      30,
+      32,
+      33,
+      34
+    ],
+    "facts": [
+      "p. 12, Table 2-1: floor-use schedule distinguishes the towers at the top: F107 is Windows on the World in WTC 1 and the indoor observation deck in WTC 2; the roof includes WTC 2's outdoor observation deck. WTC 1 F110 is TV studios while WTC 2 F110 is mechanical; F108-109 are mechanical in both. This is an occupancy schedule, not a roof framing plan.",
+      "pp. 14-15, Figures 2-4 and 2-5: the labeled escalator banks connect the Concourse up to and down from the Plaza (EL 310 to EL 332); in Fig. 2-4 for WTC 1 they sit at the plan's east/right side, and in Fig. 2-5 for WTC 2 they sit at the north/top side. B stair is a separate core stair; the figures also distinguish West Street/Marriott connections for WTC 1 and Liberty Street/Marriott connections for WTC 2. These are diagrammatic lobby plans, not dimensioned site plans. Do not classify the repeated hatches in the site sheets as escalators without a matching label/detail.",
+      "pp. 20-23, Table 2-2: schematic isometric stair layouts by floor band. F9-19 identifies A as east in WTC 1 and north in WTC 2; F20-26 notes reclaimed tenant area at the northeast elevator-core quadrant. A/C are outside the structural core around F42 and back inside by F48; there is a slight A/C shift between F66-68; at F76 A, B, and C transfer, with A/C outside the core; A/C transfer back inside by F82. These schematics establish relative changes, not surveyed door center coordinates.",
+      "p. 27, Figure 2-10: photograph of a WTC 1 44 in. stair during evacuation on September 11, 2001; A/C are 44 in. wide and run from floor 2 to floor 110. B is 56 in. wide, extends from basement levels to floor 107 and the Concourse, and has no floor-2 plaza exit.",
+      "p. 28: B has a horizontal transfer only at F76 and otherwise remains vertically aligned. A/C transfer at F42, 48, 66, 68, 76, and 82. Reported transfer lengths range from several feet at F66/68 to over 100 ft (33 m); F42/48/76/82 include multiple right-angle turns and smoke doors. Mechanical floor bands include F41-42, 75-76, and 108-109. NIST defines the egress/service core by common non-leasable spaces; this can differ from the structural core, whose columns did not move between floors.",
+      "p. 29, Figure 2-11: overall stair shafts and transfer locations in section with enlarged schematic plans at F42, 48, 76, and 82. Use together with Table 2-2; it does not provide scaled route geometry.",
+      "p. 30, Figures 2-12 and 2-13: real photographs of a post-1993-bombing transfer hallway and stairwell A door signage. The photographs provide visual surface reference, not measured dimensions.",
+      "pp. 32-33, Figure 2-14: states 99 elevators served the above-ground levels in each tower, with 7 additional cars serving primarily sub-grade levels. Passenger banks are zoned at sky lobbies 44 and 78: 24 local cars from Concourse serve F9-40 in four named groups (9-16, 17-24, 25-31, 32-40); 8 express to F44 connect with 24 stacked locals serving F44-74; 10 express to F78 connect with 24 stacked locals serving F78-107. Dedicated express service served WTC 1 F106-107 restaurant spaces and WTC 2's observation deck. Only the lower-floor local group stop ranges are specified in this text; do not invent exact intermediate/upper bank boundaries from the schematic.",
+      "p. 34: the report separately describes seven freight elevators in each tower and five additional local elevator functions. NCSTAR 1-1 p. 8 instead reports 99 total core elevators including seven freight. Since the reports use inconsistent category/count wording, the reconstruction uses only the 99 above-ground plus 7 primarily sub-grade summary and treats detailed car totals as source-dependent."
+    ]
+  },
+  {
+    "id": "nist-ncstar-1-2a",
+    "title": "Reference Structural Models and Baseline Performance Analysis of the World Trade Center Towers (NCSTAR 1-2A)",
+    "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/NCSTAR/ncstar1-2a.pdf",
+    "pages": [
+      2,
+      4,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      47,
+      53,
+      54,
+      55
+    ],
+    "facts": [
+      "p. 2, Figure 1-1: reproduced typical architectural floor plan (floor 26, WTC 2); text gives roof heights of 1,368 ft (WTC 1) and 1,362 ft (WTC 2) above ground, typical story heights of 12 ft, and core dimensions of approximately 135 ft by 87 ft.",
+      "p. 4, Figure 1-3: typical hat-truss elevation from structural drawing SA 401.",
+      "pp. 41–43, Figures 3-10 and 3-11: modeled hat-truss plan and three-dimensional model; report describes the hat truss as connecting core columns and exterior walls between floor 107 and the roof.",
+      "pp. 36-40, Figures 3-6 to 3-9: NIST's structural reference model uses the drawing-book exterior-wall tree panel between EL 363 ft and EL 418 ft 11 1/2 in. (printed pp. 36-37), with three upper face columns transitioning to a grouped base column; the repeated exterior panel above is modeled three columns wide by three stories high (p. 38). The report notes special/corner panels (p. 40). These are modeling descriptions based on the available drawings, not a claim that every lower-story architectural finish or entrance bay has been recovered.",
+      "p. 43: NIST used flexible diaphragm models for floors 3-7 and 9 in the atrium region, and for selected mechanical, escalator and hat-truss floors. This supports treating lower 3-6 as atypical rather than copying the ordinary tenant-floor slab throughout.",
+      "p. 47, Figure 3-13: typical truss-framed floor panel arrangement. Floor 96A is representative of WTC 1 floors 89A–103A and the report’s stated WTC 2 expanded-region floors 74B–88B; within the latter range, 78B/79B are sky-lobby/upper-escalator floors, 80B–83B replace a short-span truss panel with beam framing, and 84B–88B are similar to 96A.",
+      "p. 53: floor 75B of WTC 2 is selected as the representative beam-framed floor.",
+      "p. 54, Figure 3-19: beam-framed floor arrangement identifies mechanical-equipment-room floors 7, 41, 75, and 108 and nearby special floors 9, 43, 77, 107, 110, and roof.",
+      "p. 55: describes modeled slab construction at mechanical floors; the detailed floor model is a structural idealization, not full tenant fit-out."
+    ]
+  },
+  {
+    "id": "nist-ncstar-1-2b-vol1",
+    "title": "Analysis of Aircraft Impacts into the World Trade Center Towers, Volume 1 (NCSTAR 1-2B)",
+    "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/NCSTAR/ncstar1-2bv1.pdf",
+    "pages": [
+      161,
+      162
+    ],
+    "facts": [
+      "p. 161: the tower structural north is approximately 29 degrees clockwise from true north; the local structural coordinate axes are orthogonal to the tower sides.",
+      "p. 162, Figure 7-4: shows plan-view chamfer reference locations and arrows for true north and structure north; it shows the relative placement/orientation but provides no scale for a surveyed center-to-center site distance."
+    ]
+  },
+  {
+    "id": "nist-ncstar-1-9",
+    "title": "Structural, Mechanical, and Other Systems (NCSTAR 1-9), Chapter 5: WTC 7 Visual Evidence",
+    "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/NCSTAR/ncstar1-9.pdf",
+    "pages": [
+      92,
+      93
+    ],
+    "facts": [
+      "p. 93, Figure 5-2: map of the Lower Manhattan streets and WTC complex as they existed on September 11, 2001; shows both tower footprints and a north arrow, supporting relative site placement and map orientation.",
+      "The figure has no labeled scale or surveyed center coordinates. Digital measurement of the tower footprints against the 207 ft 2 in tower reference width estimated WTC 2 minus WTC 1 at approximately [+230 ft east, -310 ft structure-north]. This is an unscaled image digitization, not a surveyed center-to-center distance; use only as a scene-placement estimate."
+    ]
+  },
+  {
+    "id": "loc-wtc-plaza-photo-1976",
+    "title": "World Trade Center, New York, New York. Exterior. View from plaza (1976)",
+    "url": "https://www.loc.gov/pictures/item/2020714989/",
+    "pages": [
+      "digital photograph LC-DIG-ppmsca-56813"
+    ],
+    "facts": [
+      "Library of Congress Prints and Photographs Division catalog record for a 1976 Balthazar Korab Studios color transparency showing the towers from the plaza. It is a useful real-photo reference for the overall plaza-facing massing, vertical face rhythm, corner chamfers, and roof silhouette; it is not a dimensioned architectural drawing. LOC records no known restrictions on publication, but users should check the linked collection rights information for their own publication use."
+    ]
+  },
+  {
+    "id": "wtc-photo-archive-visual-references",
+    "title": "World Trade Center Photo Archives, selected visual-reference entries",
+    "url": "https://www.wtc2.org/archive",
+    "pages": [
+      "gallery items: WTC Plaza Entrance; Observation Deck; The Front Hall"
+    ],
+    "facts": [
+      "The gallery labels photographs as WTC Plaza Entrance, Observation Deck, and The Front Hall. The Front Hall image carries a John Labriola / September 11, 2001 credit in the image; it is a real lobby visual reference. The other two can be used qualitatively for the plaza entrance and roof deck. The gallery does not identify these items as Port Authority-issued drawing records and does not publish dependable scales or complete metadata for each image; use as visual context only, not as measured or institution-verified architectural evidence."
+    ]
+  },
+  {
+    "id": "loc-world-trade-center-habs-ny2014",
+    "title": "World Trade Center Site, HABS NY-6369",
+    "url": "https://www.loc.gov/resource/hhh.ny2014.photos?st=gallery",
+    "pages": [
+      "HABS NY-6369 photo survey, Library of Congress"
+    ],
+    "facts": [
+      "Historic American Buildings Survey photographic documentation of the former WTC site; reference material for plaza, perimeter, tower bases and complex context. Use cataloged photographs for visual comparison only. They postdate the towers and cannot by themselves establish original dimensions or all 2001 conditions."
+    ]
+  },
+  {
+    "id": "nist-wtc-photo-video-repository",
+    "title": "NIST World Trade Center Investigation: Photos, Videos and Simulations",
+    "url": "https://www.nist.gov/world-trade-center-investigation/photos-videos-and-simulations",
+    "pages": [
+      "NIST collected and generated photo/video archive landing page"
+    ],
+    "facts": [
+      "NIST describes its repository as including collected photos/video from multiple creators as well as NIST-generated investigation materials. It is a good primary archive for visual corroboration; individual content can have third-party rights restrictions, and photos are not dimensional drawings."
+    ]
+  },
+  {
+    "id": "loc-korab-entrance-sphere-1976",
+    "title": "World Trade Center exterior entrance arches with Sphere at Plaza Fountain — Balthazar Korab",
+    "url": "https://www.loc.gov/pictures/item/2021636619/",
+    "pages": [
+      "LC-DIG-ppmsca-71339; 1976 photograph; KORAB F1713 no. 4"
+    ],
+    "facts": [
+      "Library of Congress catalog identifies Balthazar Korab as photographer, 1976, in the Korab Collection. The plaza-level view visibly documents the repeated lower tree/trident columns, curved branch transitions, pointed window/entrance openings and the continuous horizontal floor bands. It corroborates appearance only; there is no scale, complete facade elevation, or dependable basis for measuring member curvature or entrance dimensions."
+    ]
+  },
+  {
+    "id": "loc-korab-entrance-ideogram-1976",
+    "title": "World Trade Center exterior entrance arches with Ideogram sculpture — Balthazar Korab",
+    "url": "https://www.loc.gov/pictures/item/2021636623/",
+    "pages": [
+      "LC-DIG-ppmsca-71343; 1976 photograph; KORAB F1716 no. 3"
+    ],
+    "facts": [
+      "Library of Congress catalog identifies Balthazar Korab as photographer, 1976. The oblique plaza photograph shows how the aluminum-faced tree-column/arch shapes meet the lower glazing and door bays from another angle. It is a visual reference, not a dimensioned architectural elevation."
+    ]
+  },
+  {
+    "id": "loc-korab-interior-large-arched-windows-1976",
+    "title": "World Trade Center interior large arched windows — Balthazar Korab Studios",
+    "url": "https://www.loc.gov/pictures/item/2020714985/",
+    "pages": [
+      "LC-DIG-ppmsca-56809; 1976 photograph; KORAB F1713 no. 1"
+    ],
+    "facts": [
+      "Library of Congress metadata identifies a 1976 color-transparency photograph by Balthazar Korab Studios. It shows large pointed-arch window openings in two tiers divided by a broad horizontal band and a curved upper-level glass guard/gallery. Use it to corroborate the interior visual relationship only: the image does not identify a measured floor level, plan extent, window dimensions or gallery width."
+    ]
+  },
+  {
+    "id": "loc-highsmith-wtc-aerial-2001",
+    "title": "Aerial view of New York City with the World Trade Center Twin Towers prominent — Carol M. Highsmith",
+    "url": "https://www.loc.gov/pictures/item/2011632531/",
+    "pages": [
+      "LC-DIG-highsm-14337; 2001 aerial photograph"
+    ],
+    "facts": [
+      "Library of Congress catalog identifies Carol M. Highsmith as photographer and dates the aerial to 2001, a couple of months before September 11. From a distance it confirms the roof-level silhouette and North Tower antenna context but cannot resolve a shallow parapet cap, precise corner treatment, roof equipment or crown slope."
+    ]
+  },
+  {
+    "id": "skyscraper-museum-lera-wtc-construction-images",
+    "title": "Records of Leslie E. Robertson and Associates (LERA): World Trade Center Construction Images — The Skyscraper Museum finding aid",
+    "url": "https://old.skyscraper.org/viva2/collections/findingaids/lera_wtcb.html",
+    "pages": [
+      "collection scope and item captions: 2004.02.0166, .0230, .0359–.0367, .0405–.0418, .0504, .0514, .0528–.0540"
+    ],
+    "facts": [
+      "The Skyscraper Museum finding aid describes a selected digitized set of 534 WTC construction slides, mostly photographed by structural engineer Leslie E. Robertson, ca. 1969–1973. Captions include South Tower interior tree columns (.0166), lower North Tower with tree columns/cladding (.0230), mansard-level steelwork (.0359–.0364), South Tower roof from North Tower (.0365–.0367), North Tower roof perimeter/perimeter steelwork (.0415–.0417), North Tower roof (.0418), and antenna system (.0528–.0540). The finding aid provides captions/accession numbers but does not directly expose these item image bytes; construction-stage photos can document steel sequence and roof steelwork, not the finished 2001 metal cap, colors or dimensions."
+    ]
+  },
+  {
+    "id": "smithsonian-diniz-wtc-entrance-study",
+    "title": "Study for Entrance, World Trade Center — Carlos Diniz / Minoru Yamasaki & Associates, Cooper Hewitt, Smithsonian Design Museum",
+    "url": "https://collections.si.edu/search/detail/edanmdm%3Achndm_2021-23-47?print=yes",
+    "pages": [
+      "object 2021-23-47; drawing dated 1962–1968"
+    ],
+    "facts": [
+      "Smithsonian catalog identifies a Carlos Diniz pen-and-ink entrance perspective for the Port Authority, dated 1962–1968. It is a design study, not proof of the final as-built entrance configuration; use for design intent/visual context only."
+    ]
+  },
+  {
+    "id": "nist-ncstar-1-5a-curtain-wall",
+    "title": "Visual Evidence, Damage Estimates, and Timeline Analysis (Chapters 1–8), NIST NCSTAR 1-5A",
+    "url": "https://www.govinfo.gov/content/pkg/GOVPUB-C13-b797d5fa76a7b33ed8001bd3fe5c7450/pdf/GOVPUB-C13-b797d5fa76a7b33ed8001bd3fe5c7450.pdf",
+    "pages": [
+      33,
+      35,
+      36,
+      37,
+      38,
+      40
+    ],
+    "facts": [
+      "p. 33, §4.2.2: typical one-story aluminum column covers are nominally 18¾ in. wide; a recessed stainless-steel window-washer track runs down the center and is 1½ in. wide, with a distinct ⅜ in. opening. The report does not give a dimensioned extrusion cross-section, track-edge bevel, or exact cover curvature; do not model the whole 1½ in. track as an open slot.",
+      "p. 33, §4.2.2: the curtain-wall opening between column covers is 21¼ in. wide × 7 ft 5 in. high on typical floors. The glass is recessed 11½ in. from the outer edges of the column covers; a 1 in. aluminum frame holds ¼ in. bronze-tinted glass. The window height corresponds to typical 12 ft floor-slab spacing.",
+      "p. 33, §4.2.2: typical steel spandrels are 52 in. high; aluminum spandrel covers extend 1½ in. above and below the steel (4 ft 7 in. total), producing a 7 ft 5 in. vertical spacing between spandrel covers on typical 12 ft floors.",
+      "p. 35, §4.2.3: the 75th/76th mechanical-floor column covers are exceptional: 24½ in. wide between spandrels (40 in. column centers leave 15½ in. clear), with a 5 in. wide center fin projecting 7 in.; washer tracks run along the fin center. Do not carry this fin onto standard floors. The 78th-floor sky-lobby window opening is 8 ft 5 in. high, and its slab spacing is 14 ft.",
+      "p. 36, Figure 4-6: photograph of the northeast corner of WTC 2 at floors 74–79 shows mechanical-floor cover changes and one-story corner aluminum covering assembled from three sections. It is qualitative visual evidence, not a scaled drawing.",
+      "p. 37, Figure 4-7: oblique photograph of a typical WTC 2 facade; NIST identifies the standard cover/window relationship and visible window recess and horizontal expansion joints above window tops. The photograph is not a measured profile.",
+      "pp. 37–38: at floor 107, column covers narrow to 12 in., giving 28 in. window openings with 11 ft 7 in. high windows and 5/16 in. tempered glass; the lower spandrel cover is 7 ft 1 in. high. Floors 108/109 form a two-story upper mechanical opening, with alternating 17/7 in. covers and 6 ft 2 in./7 ft 2 in. lower/upper spandrel covers; covers return to 12 in. at the top. Figure 4-8 supports the upper-cover visual arrangement but does not supply the exact decorative curve or roof-crown geometry.",
+      "p. 40, §4.2.7: typical aluminum column covers are stated to be 18.75 in. wide and 16.5 in. deep; after accounting for the 1 in. window frame, the net open window width is 19.25 in. These dimensions establish cover massing and glazing setback, not the detailed metal extrusion section."
+    ]
+  },
+  {
+    "id": "panynj-tower-a-original-drawings",
+    "title": "Port Authority of New York and New Jersey, World Trade Center Tower A original architectural and elevator drawings — 210-page archive mirrored by Public Intelligence",
+    "url": "https://info.publicintelligence.net/wtcblueprints.zip",
+    "catalogueUrl": "https://publicintelligence.net/world-trade-center-north-tower-blueprints/",
+    "pageNumbering": "One-based PDF page numbers, not printed report pages or floor numbers; Tower A is WTC 1.",
+    "pages": [
+      35,
+      36,
+      70,
+      71,
+      78,
+      102,
+      106,
+      126,
+      127,
+      134,
+      150,
+      168,
+      176,
+      177,
+      178,
+      180,
+      181,
+      183,
+      185,
+      187,
+      189,
+      194,
+      195,
+      197,
+      198,
+      199
+    ],
+    "facts": [
+      "PDF126, A-A-132 (79th Floor Plan), registered using the 207 ft 2 in reference-column-line footprint: 5288 x 3924 raster, west/east reference lines x1035/x3665, origin [2350,1779], one uniform scale 63.1444/2630 m per pixel. The 47 core-column centres and Zone III local-shaft envelopes were digitized at approximately ±0.30 m reading accuracy. These are original design/revision drawings, not an as-built survey of September 2001 conditions.",
+      "PDF35/36 (9th/10th floor) and PDF70/71 (45th floor) place the Zone I/II local banks on the north side of the central core; PDF126/127 place Zone III local banks on its south side. Each zone is separately registered to the same structural-column frame; the 45th-floor scan has small translation/skew. The north and south shaft frameworks must not be copied to all zones indiscriminately.",
+      "PDF194/195 L-A-5: PE24–29 serve floors 9–16, PE30–35 floors 17–24, PE36–41 floors 25–32, PE42–47 floors 33–40. Secondary levels are 17/25/33/41; machine levels 18/26/34/42. This original drawing differs from the lower-bank shorthand in NCSTAR 1-7. SECONDARY FLOOR is kept as a maintenance landing, separate from ordinary passenger service. Low-zone pits and service/sublevel landings vary by car.",
+      "PDF197–199 L-A-7: PE51–56 serve floors 45–54; PE57–62 55–61; PE63–68 62–67; PE69–74 68–74. Secondary levels are 55/62/68/75, machine levels 56/63/69/76. PE66/67 pits reach floor 42; other middle-zone pits reach floor 43.",
+      "PDF176–178 L-A-11: PE75–80 serve floors 79–86; PE81–86 87–93; PE87–92 94–100; PE93–98 101–107. Secondary levels 87/94/101/108, machine levels 88/95/102/109. PE78/79 pits reach floor 76; other upper-zone pits reach floor 77. The L-A local details dimension a typical 6 ft 3 1/4 in clear-hoistway width; the digitized outer-wall envelope is wider.",
+      "PDF181 L-A-15 identifies the eleven south-side shuttle shafts PE1–11; PDF185 L-A-19 identifies the twelve north-side shafts PE12–23. PDF189 L-A-22 distinguishes ordinary Zone II shuttles PE1–4/8–11, Zone I service PE5, restaurant/upper service PE6/7, and upper/interzone PE12–23. PE16–19 also use the 44th-floor landing. The 23 physical shaft IDs are retained separately from NIST's 8/10 express-service category wording. Concourse and sky-lobby doors are through-landings on opposite sides where shown; additional service openings are not completely transcribed.",
+      "PDF183 L-A-17 shows the south shuttle secondary level at 46; PDF187 L-A-20 shows the north shuttle secondary level at 80. Machine levels 47/81 bound their modeled hoistway extent, so the closures occur at the floor above, 48/82. No additional opening is carried through floor 48/82 on the basis of an unverified overrun. PE6 has a 106th-floor destination landing, whereas PE7's destination landing is 107; per-car stop overrides preserve that distinction.",
+      "PDF180 L-A-14 places FE49 north of FE50 beside the west side of the central corridor: FE49 opens north and FE50 south. FE48 occupies the independent central south-side shaft beside column 905 and opens north. FE48 ends at 40 with secondary 41/machine 42; FE49 ends at 74 with secondary 75/machine 76; FE50 extends to 108 with secondary 109 and upper machine level. Basement labels and riser opening exceptions are retained as unresolved mapping data rather than claimed complete floor-index schedules.",
+      "PDF183 L-A-17 documents FE99 at the upper levels, with pit elevation at floor 105, regular openings at 106–110, opposite landing faces for 106–108 versus 109–110, and an overhead above 110. PDF168 A-A-175 provides its approximate plan placement; its registered coordinate has a larger ±0.60 m uncertainty.",
+      "Stair enclosure/flight centres were read from PDF35 (9th/10th), PDF70 (45th), PDF78 (49th), PDF102 (67th), PDF106 (69th), PDF126 (79th), and PDF134 (87th), with upper arrangement checked against PDF150 (102nd) and PDF168 (110th). PDF page 78 is not floor 78. At floors 48–65/68–75 A/C are north of the south shuttle row; at 82–110 they are south of the north shuttle row. Flight centres were registered against nearby row-6/7 or row-9 columns rather than mistaken for shuttle-cell centres. The plans confirm A/C changing position at the NIST transfer bands and B moving from the north to the south portion of the central corridor at 76. Checkpoint positions are approximately ±0.30 m; lower-floor extensions and full transfer routes remain reconstruction assumptions.",
+      "Clear-opening rectangle unions avoid the original column centres and conservative representative steel-section envelopes where the drawings show corner wraps. Local width uses the dimensioned typical clear-hoistway width; depth-wall readings and notch sizes remain approximate. This method is an explicit conservative reconstruction, not a complete dimensioned survey of shaft-wall polygons. Applying Tower A data to WTC 2 by a 90-degree rotation remains a documented assumption and does not establish separate South Tower as-built coordinates."
+    ]
+  },
+  {
+    "id": "vitro-bronze-optical-comparison",
+    "title": "Solarbronze Technical Product Data — Vitro Architectural Glass, April 2020",
+    "url": "https://www.vitroglazings.com/media/er0mhmut/vitro-solarbronze-vitro-technical-pds.pdf",
+    "pages": [
+      1,
+      2
+    ],
+    "facts": [
+      "p. 1: modern 6 mm Solarbronze glass has 53% visible-light transmittance and about 6% visible-light reflectance; p. 2 supplies spectral transmission data. Used only as a comparison for plausible thin bronze-glass filtering. This does not identify the historical WTC glass supplier, product, or optical spectrum. The renderer uses approximate RGB filtering at two interfaces rather than spectral or path-length-dependent volume absorption."
+    ]
+  },
+  {
+    "id": "pa-18324-site",
+    "title": "Port Authority FOI 18324 — World Trade Center site and plaza plans, SKA 54/84 and SKA 55/84",
+    "url": "https://pacorpredevblobstorage.blob.core.windows.net/board-documents/uploads/documents/freedom-of-information/foi-fulfilled-requests/18324-WTC.pdf",
+    "pages": [
+      "PDF 327, SKA 55/84, Plaza Level EL 332",
+      "PDF 328, SKA 54/84, Site Plan"
+    ],
+    "facts": [
+      "PDF 328 title block identifies SKA 54/84 as SITE PLAN at 1 in. = 40 ft., dated December 1, 1968. The sheet shows WTC 3/Hotel's southwest site footprint relative to the West Side Highway, the two tower footprints, and the plaza blocks. It predates the hotel's 1978–1981 design; use it for site placement, not as a substitute for the later typical hotel-floor plan.",
+      "PDF 327 is SKA 55/84, Plaza Level Elevation 332. It identifies the EL 332 plaza-level arrangement and hotel plan in the larger complex; it is not a dimensioned stair/escalator section or complete 2001 as-built survey.",
+      "The normalized hotel outline currently digitized from SKA 54/84 is [[918,713],[972,713],[972,805],[1037,989],[983,989],[918,805]] on the 2048 x 1220 site raster. This six-corner outline follows the source's single obtuse bend; scan registration and line-width uncertainty are larger than a few normalized pixels, so these coordinates are a reconstruction, not surveyed coordinates."
+    ]
+  },
+  {
+    "id": "fema-403-3",
+    "title": "FEMA 403, World Trade Center Building Performance Study, Chapter 3: WTC 3",
+    "url": "https://www.govinfo.gov/content/pkg/GOVPUB-FEM1-PURL-LPS18973/pdf/GOVPUB-FEM1-PURL-LPS18973.pdf",
+    "pages": [
+      "3-1–3-5; Figures 3-1–3-5"
+    ],
+    "facts": [
+      "p. 3-1: the hotel is a long, bent plan with an obtuse angle change about one-third of the length from the north; the typical floor is approximately 64 ft wide by 330 ft long. FEMA states that elevators are on the east side, roughly centered north-to-south, opposite the west-side building entry. These are approximate narrative dimensions and a plan-location description, not shaft-center dimensions.",
+      "p. 3-1: the building had 22 above-grade floors and six below-grade floors; its roof parapet was about 242 ft above West Street. Guestroom storeys are typically 9 ft 6 in high. The ground floor contained lobby/ballroom; the floors above contained meeting, guest, and top-floor health-club/mechanical functions.",
+      "p. 3-2, Figures 3-1/3-2: developed north/west and south/east elevations are attributed to SOM 1979. p. 3-3, Figure 3-3 is a typical hotel plan attributed to SOM 1981; p. 3-4, Figure 3-4 is a hotel floor-framing plan by Weiskopf & Pickworth 1979a. These drawings support the hotel bend, room/corridor arrangement, and east-side service/lift protrusion; the figures are not a 2001 as-built survey.",
+      "p. 3-5, Figure 3-5 separates floors 2–3 (meeting rooms), floors 4–21 (guest rooms), and floor 22 (mechanical); the lobby/ballroom is below. The report says the 1993 bombing was followed by extensive hotel renovation and additional transfer girders above the lobby, and explicitly says the 2nd-floor transfer details are not included. Do not project an undocumented post-1993 lobby/core fit-out from this chapter."
+    ]
+  },
+  {
+    "id": "fema-403-4",
+    "title": "FEMA 403, Chapter 4: WTC 4, 5 and 6",
+    "url": "https://www.govinfo.gov/content/pkg/GOVPUB-FEM1-PURL-LPS18973/pdf/GOVPUB-FEM1-PURL-LPS18973.pdf",
+    "pages": [
+      "4-1–4-4; Figures 4-1–4-3"
+    ],
+    "facts": [
+      "WTC 5 has a 30 ft grid and 15 ft floor cantilevers, paired W27 outer beams, and column-tree connections on floors 4–8; floor 9 and the roof use conventional connections. WTC 4 and 6 are described as similar systems, which does not verify their individual member sizes or grid registration."
+    ]
+  },
+  {
+    "id": "pa-18324-low-elevations",
+    "title": "Port Authority Northeast Plaza Building sections and elevations A-E101–A-E107",
+    "url": "https://pacorpredevblobstorage.blob.core.windows.net/board-documents/uploads/documents/freedom-of-information/foi-fulfilled-requests/18324-WTC.pdf",
+    "pages": [
+      "PDF 244–250"
+    ],
+    "facts": [
+      "WTC 5 lower arcade, vertical fin rhythm, varied bulkheads and distinct floor elevations are reconstructed from these original sheets. A-E101 supplies EL310 concourse and EL332 plaza; A-E104 labels a Vesey doorway at EL320. The December 28, 1990 stamp says RECEIVED, not revised. The digitized entrance positions and fin profiles retain scan and interpretation uncertainty."
+    ]
+  },
+  {
+    "id": "wtc-low-rise-photos",
+    "title": "Pre-2001 photographs of WTC 4 street arcade and WTC 5 plaza facade",
+    "url": "https://commons.wikimedia.org/wiki/File:Pre-9-11_WTC_4_in_NYC_(2001-08-21).jpg",
+    "relatedUrl": "https://commons.wikimedia.org/wiki/File:5_World_Trade_Center_from_WTC_Plaza.jpg",
+    "facts": [
+      "Used to compare projecting continuous fins, dark recessed glazing and large lower arcade bays. These photographs do not measure profiles, material parameters, exact core positions or the WTC 6 facade."
+    ]
+  }
+]

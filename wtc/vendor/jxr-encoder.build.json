@@ -1,0 +1,17 @@
+{
+  "storage": "IEEE binary16 RGBA; 8 bytes/pixel; planar alpha; lossless against FP16 input",
+  "input": "Float32 straight RGBA; linear scRGB",
+  "colorEncoding": "linear scRGB; BT.709 primaries; 1.0 = 80 cd/m2",
+  "license": "BSD-2-Clause; see JXR-LICENSE.txt",
+  "wasmSha256": "ca8f58ab2a3f4d86f39312c073d2d0a3476f4bd718299bf65c46cb81e62bc265",
+  "bridgeSha256": "6d7ffe0e2464b362e335e68b04b81eb87a54cdfb92fa93bdeab002d22715a3ec",
+  "emscripten": "emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 4.0.21 (d6f42310010ddec0753a69bab01a4b33aae255b7)",
+  "compatibilityCheck": "tests/jxr-codec.test.mjs; independent Windows WIC CopyPixels",
+  "outputs": [
+    "jxr-encoder.js",
+    "jxr-encoder.wasm"
+  ],
+  "revision": "f7521879862b9085318e814c6157490dd9dbbdb4",
+  "upstream": "https://github.com/4creators/jxrlib",
+  "encodedPixelFormat": "GUID_PKPixelFormat64bppRGBAHalf"
+}

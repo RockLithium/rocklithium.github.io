@@ -1,0 +1,14 @@
+# Local visual reviews and reference photos are not published.
+/review/
+
+# Development checks, construction tools and research records stay local.
+/tests/
+/tools/
+/data/*
+!/data/sources.json
+
+# Generated checks and transient scene snapshots.
+*.log
+**/__pycache__/
+**/*-baseline.json
+**/*-scene.json
