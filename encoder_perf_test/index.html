@@ -406,6 +406,48 @@
                 font-size: 11px;
             }
         }
+.model-switch {
+    display: inline-flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    border: 1px solid #505050;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #444444;
+}
+
+.model-button {
+    min-height: 35px;
+    padding: 5px 12px;
+    border: none;
+    border-radius: 0;
+    background-color: #444444;
+    color: #E0E0E0;
+    font-family: inherit;
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.model-button + .model-button { border-left: 1px solid #505050; }
+.model-button:hover:not(.active) { background-color: #666666; }
+.model-button.active {
+    background-color: #1a73e8;
+    color: white;
+    font-weight: bold;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.4);
+}
+.model-button:focus-visible { outline: 2px solid white; outline-offset: -3px; }
+
+.global-controls { flex-wrap: wrap; align-items: center; }
+.model-controls { display: flex; justify-content: center; margin: 8px auto 0; }
+
+@media (max-width: 768px) {
+    .model-button { font-size: 12px; padding: 5px 9px; }
+}
+
+.model-panel { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.model-panel[hidden] { display: none; }
     </style>
 </head>
 <body>
@@ -429,6 +471,10 @@
     </div>
 
     <div class="global-controls">
+        <div class="model-switch" role="group" aria-label="VMAF 模型">
+            <button type="button" class="model-button" data-model="v0.6.1" aria-pressed="false">v0.6.1</button>
+            <button type="button" class="model-button active" data-model="v1.0.16_hfr" aria-pressed="true">v1.0.16_hfr</button>
+        </div>
         <button id="globalShowAllBtn" class="global-btn active">显示全部</button>
         <button id="toggleCrosshairBtn" class="global-btn">显示十字光标</button>
         <button id="saveImageBtn" class="global-btn">保存图片</button>
@@ -441,7 +487,28 @@
     <div id="customLegendContainer" class="custom-legend-container"></div>
 
     <script>
-        const rawData = {
+        const DEFAULT_MODEL = 'v1.0.16_hfr';
+        function updateModelButtons(model) {
+            document.querySelectorAll('.model-button').forEach(button => {
+                const selected = button.dataset.model === model;
+                button.classList.toggle('active', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
+            document.documentElement.dataset.vmafModel = model;
+        }
+        function bindModelButtons(model, onChange) {
+            updateModelButtons(model);
+            document.querySelectorAll('.model-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const selected = button.dataset.model;
+                    onChange(selected);
+                    updateModelButtons(selected);
+                });
+            });
+        }
+
+        let currentModel = DEFAULT_MODEL;
+        const rawDataV0 = {
             'x264': [
                 { x: 2051, y: 62.637434 }, { x: 4018, y: 76.805625 }, { x: 6991, y: 85.771349 },
                 { x: 10034, y: 89.595873 }, { x: 15223, y: 92.457483 }, { x: 20028, y: 93.709954 },
@@ -508,24 +575,24 @@
                 { x: 24933, y: 94.443743 }, { x: 40353, y: 95.815575 }, { x: 60039, y: 96.881854 }
             ],
             'VP9_QSV_V8': [
-                { x: 2044, y: 75.811863 }, { x: 4007, y: 83.306006 }, { x: 7016, y: 87.957360 },
-                { x: 10274, y: 90.458046 }, { x: 15056, y: 92.524749 }, { x: 20111, y: 93.802932 },
-                { x: 24974, y: 94.641206 }, { x: 39980, y: 96.230816 }, { x: 59956, y: 97.308766 }
+                { x: 2044, y: 75.029186 }, { x: 4007, y: 82.430057 }, { x: 7016, y: 87.029135 },
+                { x: 10274, y: 89.508864 }, { x: 15056, y: 91.560585 }, { x: 20111, y: 92.830232 },
+                { x: 24974, y: 93.666047 }, { x: 39980, y: 95.259960 }, { x: 59956, y: 96.388502 }
             ],
             'VP9_QSV_V9': [
-                { x: 2053, y: 77.607525 }, { x: 4011, y: 84.126348 }, { x: 7024, y: 88.430629 },
-                { x: 10281, y: 90.768720 }, { x: 15063, y: 92.745718 }, { x: 20141, y: 93.962451 },
-                { x: 24990, y: 94.798140 }, { x: 40027, y: 96.266697 }, { x: 60000, y: 97.253803 }
+                { x: 2053, y: 76.791079 }, { x: 4011, y: 83.227725 }, { x: 7024, y: 87.487789 },
+                { x: 10281, y: 89.807693 }, { x: 15063, y: 91.772008 }, { x: 20141, y: 92.986168 },
+                { x: 24990, y: 93.819128 }, { x: 40027, y: 95.290634 }, { x: 60000, y: 96.321630 }
             ],
             'VP9_QSV_V10': [
-                { x: 2053, y: 77.237558 }, { x: 4013, y: 83.941758 }, { x: 7018, y: 88.266658 },
-                { x: 10057, y: 90.495894 }, { x: 15045, y: 92.628899 }, { x: 20014, y: 93.853835 },
-                { x: 25093, y: 94.734000 }, { x: 40040, y: 96.223335 }, { x: 60038, y: 97.228606 }
+                { x: 2053, y: 76.429281 }, { x: 4013, y: 83.050830 }, { x: 7018, y: 87.330821 },
+                { x: 10057, y: 89.542374 }, { x: 15045, y: 91.661553 }, { x: 20014, y: 92.881558 },
+                { x: 25093, y: 93.757712 }, { x: 40040, y: 95.250512 }, { x: 60038, y: 96.296487 }
             ],
             'VP9_QSV_V11': [
-                { x: 2052, y: 76.941305 }, { x: 4013, y: 83.790538 }, { x: 7017, y: 88.201590 },
-                { x: 10262, y: 90.563615 }, { x: 15041, y: 92.607242 }, { x: 20107, y: 93.869393 },
-                { x: 25009, y: 94.699585 }, { x: 40004, y: 96.235812 }, { x: 59996, y: 97.238139 }
+                { x: 2052, y: 76.139211 }, { x: 4013, y: 82.900579 }, { x: 7017, y: 87.267003 },
+                { x: 10262, y: 89.609628 }, { x: 15041, y: 91.639528 }, { x: 20107, y: 92.898182 },
+                { x: 25009, y: 93.725950 }, { x: 40004, y: 95.262839 }, { x: 59996, y: 96.306268 }
             ],
             'SVT-AV1': [
                 { x: 2001, y: 86.666084 }, { x: 4025, y: 91.271287 }, { x: 7023, y: 93.621896 },
@@ -575,12 +642,152 @@
             '哔哩哔哩': [
                 { x: 19118, y: 94.274003 }
             ],
-            'YouTube_VP9': [
+            'YouTube': [
                 { x: 28771, y: 94.453657 }
             ]
         };
 
         
+        const rawDataV1 = {
+            'x264': [
+                { x: 2051, y: 47.936175 }, { x: 4018, y: 68.648787 }, { x: 6991, y: 80.482050 },
+                { x: 10034, y: 85.449350 }, { x: 15223, y: 89.292694 }, { x: 20028, y: 91.076090 },
+                { x: 25263, y: 92.237792 }, { x: 40115, y: 93.884212 }, { x: 60140, y: 95.040486 }
+            ],
+            'H264_NVENC_9th': [
+                { x: 2098, y: 49.326248 }, { x: 4638, y: 68.582468 }, { x: 6632, y: 78.692638 },
+                { x: 10782, y: 85.666086 }, { x: 15020, y: 88.713055 }, { x: 19068, y: 90.375100 },
+                { x: 25183, y: 91.983138 }, { x: 39489, y: 93.954955 }, { x: 59826, y: 95.330484 }
+            ],
+            'x265': [
+                { x: 2012, y: 73.720320 }, { x: 4011, y: 81.803428 }, { x: 7009, y: 86.706216 },
+                { x: 10013, y: 89.196629 }, { x: 15012, y: 91.432123 }, { x: 20067, y: 92.721564 },
+                { x: 25136, y: 93.613128 }, { x: 40004, y: 95.135228 }, { x: 60194, y: 96.264815 }
+            ],
+            'HEVC_NVENC_7th': [
+                { x: 2055, y: 67.031058 }, { x: 4086, y: 76.670119 }, { x: 6991, y: 84.973540 },
+                { x: 10227, y: 87.916820 }, { x: 15450, y: 90.682363 }, { x: 20090, y: 92.028177 },
+                { x: 25066, y: 93.055795 }, { x: 40028, y: 94.556034 }, { x: 60022, y: 95.785519 }
+            ],
+            'HEVC_NVENC_8th': [
+                { x: 2067, y: 66.769811 }, { x: 3918, y: 77.145268 }, { x: 7001, y: 84.891268 },
+                { x: 10200, y: 88.070541 }, { x: 15497, y: 90.636278 }, { x: 20010, y: 91.967367 },
+                { x: 25049, y: 93.003288 }, { x: 40071, y: 94.540043 }, { x: 60038, y: 95.768431 }
+            ],
+            'HEVC_NVENC_9th': [
+                { x: 1987, y: 68.204096 }, { x: 3952, y: 76.631106 }, { x: 6899, y: 85.338749 },
+                { x: 10271, y: 88.427244 }, { x: 15454, y: 91.076580 }, { x: 20045, y: 92.400048 },
+                { x: 24981, y: 93.310660 }, { x: 39980, y: 94.771759 }, { x: 60066, y: 95.895204 }
+            ],
+            'HEVC_QSV_V8': [
+                { x: 2002, y: 69.234980 }, { x: 4010, y: 79.088976 }, { x: 6996, y: 84.424157 },
+                { x: 10060, y: 87.677392 }, { x: 15003, y: 90.469946 }, { x: 20032, y: 91.882216 },
+                { x: 25010, y: 92.945113 }, { x: 39969, y: 94.945215 }, { x: 60094, y: 96.330413 }
+            ],
+            'HEVC_QSV_V9': [
+                { x: 2063, y: 72.779897 }, { x: 4074, y: 81.658801 }, { x: 7090, y: 86.657043 },
+                { x: 10209, y: 89.216745 }, { x: 15104, y: 91.468413 }, { x: 20233, y: 92.799119 },
+                { x: 25337, y: 93.769351 }, { x: 40195, y: 95.344413 }, { x: 60243, y: 96.501053 }
+            ],
+            'HEVC_QSV_V10': [
+                { x: 2058, y: 73.178991 }, { x: 4006, y: 81.590461 }, { x: 7002, y: 86.588165 },
+                { x: 10012, y: 89.122262 }, { x: 15028, y: 91.381056 }, { x: 20012, y: 92.719182 },
+                { x: 25050, y: 93.682390 }, { x: 40036, y: 95.319662 }, { x: 59933, y: 96.483934 }
+            ],
+            'HEVC_QSV_V11': [
+                { x: 2022, y: 72.814356 }, { x: 4018, y: 81.677589 }, { x: 7047, y: 86.630093 },
+                { x: 9994, y: 89.073402 }, { x: 15131, y: 91.452263 }, { x: 20188, y: 92.770119 },
+                { x: 25161, y: 93.662823 }, { x: 40197, y: 95.319077 }, { x: 60032, y: 96.511435 }
+            ],
+            'HEVC_VCN_3.1': [
+                { x: 2001, y: 62.455934 }, { x: 4007, y: 73.628355 }, { x: 7006, y: 80.296587 },
+                { x: 10008, y: 84.105322 }, { x: 15019, y: 87.383426 }, { x: 20003, y: 89.115778 },
+                { x: 24997, y: 90.374086 }, { x: 39987, y: 92.663605 }, { x: 60055, y: 94.445070 }
+            ],
+            'HEVC_VCN_4.0': [
+                { x: 2007, y: 55.822396 }, { x: 4007, y: 71.208958 }, { x: 7010, y: 79.050031 },
+                { x: 10014, y: 82.965349 }, { x: 15017, y: 86.508835 }, { x: 20033, y: 88.543735 },
+                { x: 25043, y: 90.016355 }, { x: 40045, y: 92.611896 }, { x: 60043, y: 94.323076 }
+            ],
+            'VP9': [
+                { x: 2007, y: 66.756584 }, { x: 4043, y: 74.319810 }, { x: 6860, y: 80.676412 },
+                { x: 10041, y: 84.690606 }, { x: 14991, y: 87.847399 }, { x: 20277, y: 89.699705 },
+                { x: 24933, y: 91.020452 }, { x: 40353, y: 93.301655 }, { x: 60039, y: 95.024338 }
+            ],
+            'VP9_QSV_V8': [
+                { x: 2044, y: 60.217318 }, { x: 4007, y: 71.450242 }, { x: 7016, y: 78.087100 },
+                { x: 10274, y: 81.792038 }, { x: 15056, y: 84.968969 }, { x: 20111, y: 87.062349 },
+                { x: 24974, y: 88.474631 }, { x: 39980, y: 91.257636 }, { x: 59956, y: 93.378824 }
+            ],
+            'VP9_QSV_V9': [
+                { x: 2053, y: 63.460798 }, { x: 4011, y: 72.949123 }, { x: 7024, y: 79.028658 },
+                { x: 10281, y: 82.394255 }, { x: 15063, y: 85.409444 }, { x: 20141, y: 87.350998 },
+                { x: 24990, y: 88.762651 }, { x: 40027, y: 91.280173 }, { x: 60000, y: 93.021667 }
+            ],
+            'VP9_QSV_V10': [
+                { x: 2053, y: 62.709426 }, { x: 4013, y: 72.724918 }, { x: 7018, y: 78.849987 },
+                { x: 10057, y: 82.069269 }, { x: 15045, y: 85.349353 }, { x: 20014, y: 87.348210 },
+                { x: 25093, y: 88.772489 }, { x: 40040, y: 91.294186 }, { x: 60038, y: 92.983881 }
+            ],
+            'VP9_QSV_V11': [
+                { x: 2052, y: 62.231914 }, { x: 4013, y: 72.519873 }, { x: 7017, y: 78.784545 },
+                { x: 10262, y: 82.239425 }, { x: 15041, y: 85.345870 }, { x: 20107, y: 87.356425 },
+                { x: 25009, y: 88.753121 }, { x: 40004, y: 91.354594 }, { x: 59996, y: 93.063585 }
+            ],
+            'SVT-AV1': [
+                { x: 2001, y: 80.780503 }, { x: 4025, y: 87.433170 }, { x: 7023, y: 90.639493 },
+                { x: 9994, y: 92.392111 }, { x: 15143, y: 93.930187 }, { x: 20053, y: 94.727369 },
+                { x: 25099, y: 95.314571 }, { x: 40097, y: 96.316397 }, { x: 60004, y: 96.876951 }
+            ],
+            'AV1_NVENC_8th': [
+                { x: 2064, y: 63.207277 }, { x: 3807, y: 78.888341 }, { x: 7061, y: 85.698305 },
+                { x: 10166, y: 88.505971 }, { x: 15280, y: 90.882479 }, { x: 20077, y: 92.273312 },
+                { x: 25166, y: 93.294570 }, { x: 40134, y: 94.995402 }, { x: 60190, y: 96.159451 }
+            ],
+            'AV1_NVENC_9th': [
+                { x: 2034, y: 65.528898 }, { x: 3520, y: 79.476277 }, { x: 7019, y: 87.041842 },
+                { x: 10102, y: 89.582828 }, { x: 15281, y: 91.914719 }, { x: 20236, y: 93.178274 },
+                { x: 25067, y: 93.943770 }, { x: 40147, y: 95.481318 }, { x: 60083, y: 96.535483 }
+            ],
+            'AV1_QSV_V9': [
+                { x: 2046, y: 70.954309 }, { x: 4053, y: 80.148681 }, { x: 7047, y: 85.386488 },
+                { x: 10116, y: 87.818924 }, { x: 15254, y: 90.154056 }, { x: 20118, y: 91.501208 },
+                { x: 25266, y: 92.456616 }, { x: 40106, y: 94.333260 }, { x: 60075, y: 95.759450 }
+            ],
+            'AV1_QSV_V10': [
+                { x: 2000, y: 70.301589 }, { x: 4012, y: 80.228222 }, { x: 7080, y: 86.026943 },
+                { x: 10103, y: 88.367427 }, { x: 15165, y: 90.745386 }, { x: 20095, y: 92.059236 },
+                { x: 25020, y: 92.846896 }, { x: 40399, y: 94.626710 }, { x: 60566, y: 95.860795 }
+            ],
+            'AV1_QSV_V11': [
+                { x: 2035, y: 72.617089 }, { x: 4031, y: 81.177573 }, { x: 7000, y: 85.623508 },
+                { x: 10114, y: 88.166901 }, { x: 15191, y: 90.461098 }, { x: 20151, y: 91.807876 },
+                { x: 25119, y: 92.650129 }, { x: 40136, y: 94.353906 }, { x: 60168, y: 95.580159 }
+            ],
+            'AV1_VCN_4.0': [
+                { x: 2014, y: 58.804653 }, { x: 4017, y: 71.743682 }, { x: 7021, y: 80.263797 },
+                { x: 10035, y: 84.258517 }, { x: 15004, y: 87.467608 }, { x: 19574, y: 89.203198 },
+                { x: 25162, y: 90.474053 }, { x: 40083, y: 92.460839 }, { x: 60085, y: 94.102124 }
+            ],
+            'VVenC': [
+                { x: 2010, y: 82.556590 }, { x: 4024, y: 87.912147 }, { x: 7004, y: 91.042526 },
+                { x: 10050, y: 92.616285 }, { x: 15028, y: 94.082741 }, { x: 19979, y: 94.846584 },
+                { x: 24993, y: 95.315920 }, { x: 40033, y: 96.466192 }, { x: 59355, y: 97.164481 }
+            ],
+            'HEVC_VPU_8E': [
+                { x: 2017, y: 59.468911 }, { x: 4034, y: 71.677986 }, { x: 7000, y: 78.696965 },
+                { x: 10013, y: 82.398128 }, { x: 15003, y: 85.903016 }, { x: 20039, y: 88.056826 },
+                { x: 25020, y: 89.304415 }, { x: 40036, y: 91.515489 }, { x: 59994, y: 93.762512 }
+            ],
+            '哔哩哔哩': [
+                { x: 19118, y: 91.479263 }
+            ],
+            'YouTube': [
+                { x: 28771, y: 90.847521 }
+            ]
+        };
+        const rawData = currentModel === 'v1.0.16_hfr' ? rawDataV1 : rawDataV0;
+
         const COLOR_MAP = {
             /* ------------------- CPU ------------------- */
             'VP9':     '#CC66FF',
@@ -598,13 +805,13 @@
             /* ------------------- 其他 ------------------- */
             'HEVC_VPU_8E': '#FF4A19',
             /* ------------------- 流媒体 ------------------- */
-            '哔哩哔哩': '#00A2E8', 'YouTube_VP9': '#FF4D4D'
+            '哔哩哔哩': '#00A2E8', 'YouTube': '#FF4D4D'
         };
 
         const ENCODER_MATRIX = {
             'H.264': { 'CPU': ['x264'], 'NVENC': ['H264_NVENC_9th'], 'QSV': [], 'VCN': [], '其他': [], '流媒体': [] }, 
             'H.265': { 'CPU': ['x265'], 'NVENC': ['HEVC_NVENC_7th', 'HEVC_NVENC_8th', 'HEVC_NVENC_9th'], 'QSV': ['HEVC_QSV_V8', 'HEVC_QSV_V9', 'HEVC_QSV_V10', 'HEVC_QSV_V11'], 'VCN': ['HEVC_VCN_3.1', 'HEVC_VCN_4.0'], '其他': ['HEVC_VPU_8E'], '流媒体': ['哔哩哔哩'] },
-            'VP9': { 'CPU': ['VP9'], 'NVENC': [], 'QSV': ['VP9_QSV_V8', 'VP9_QSV_V9', 'VP9_QSV_V10', 'VP9_QSV_V11'], 'VCN': [], '其他': [], '流媒体': ['YouTube_VP9'] },
+            'VP9': { 'CPU': ['VP9'], 'NVENC': [], 'QSV': ['VP9_QSV_V8', 'VP9_QSV_V9', 'VP9_QSV_V10', 'VP9_QSV_V11'], 'VCN': [], '其他': [], '流媒体': ['YouTube'] },
             'AV1': { 'CPU': ['SVT-AV1'], 'NVENC': ['AV1_NVENC_8th', 'AV1_NVENC_9th'], 'QSV': ['AV1_QSV_V9', 'AV1_QSV_V10', 'AV1_QSV_V11'], 'VCN': ['AV1_VCN_4.0'], '其他': [], '流媒体': [] },
             'H.266': { 'CPU': ['VVenC'], 'NVENC': [], 'QSV': [], 'VCN': [], '其他': [], '流媒体': [] }
         };
@@ -615,7 +822,7 @@
         function getSimplifiedName(label) {
             if (label === 'x264' || label === 'x265' || label === 'SVT-AV1' || label === 'VVenC') return label;
             if (label === '哔哩哔哩') return 'BiliBili';
-            if (label === 'YouTube_VP9') return 'YouTube';
+            if (label === 'YouTube') return 'YouTube';
             if (label === 'HEVC_VPU_8E') return 'VPU_8E';
 
             if (label.includes('_NVENC_')) {
@@ -722,6 +929,7 @@
                 pointRadius: initialParams.pointRadius,               
                 tension: 0.4,                
                 borderWidth: initialParams.borderWidth,
+                spanGaps: false,
                 showLine: !isSinglePoint,    
                 hidden: false,               
                 datasetIndex: -1,
@@ -853,7 +1061,7 @@
             container.innerHTML = ''; 
 
             chartDatasets.forEach(dataset => {
-                if (dataset.data.length === 0) return; 
+                if (!hasScores(dataset.data)) return;
 
                 const item = document.createElement('div');
                 item.className = 'legend-item';
@@ -893,6 +1101,7 @@
 
                 container.appendChild(item);
             });
+            syncControlButtons();
         }
 
 
@@ -994,14 +1203,14 @@
                             type: 'linear', 
                             title: { 
                                 display: true, 
-                                text: '平均VMAF', 
+                                text: axisTitle(currentModel),
                                 color: '#E0E0E0', 
                                 font: { 
                                     size: currentParams.titleSize, 
                                     family: CHART_FONT_FAMILY 
                                 } 
                             }, 
-                            min: 60, max: 100, 
+                            min: currentModel === 'v1.0.16_hfr' ? 45 : 60, max: 100,
                             ticks: { 
                                 color: '#E0E0E0', 
                                 font: { 
@@ -1199,7 +1408,7 @@
                 });
 
                 const dataURL = canvas.toDataURL('image/png');
-                const filename = `Encoder_Perf_Curve.png`;
+                const filename = `Encoder_Perf_Curve_${currentModel}.png`;
                 downloadURI(dataURL, filename);
 
             } catch (error) {
@@ -1208,6 +1417,44 @@
             } finally {
                 document.body.removeChild(tempDiv);
             }
+        }
+
+        function hasScores(points) {
+            return points.some(point => Number.isFinite(point.y));
+        }
+        function axisTitle(model) {
+            return model === 'v1.0.16_hfr' ? '平均VMAF (v1)' : '平均VMAF (v0.6.1)';
+        }
+        function syncControlButtons() {
+            if (!rateVMAFChart) return;
+            chartDatasets.forEach(dataset => {
+                const button = document.querySelector(`.control-button[data-index="${dataset.datasetIndex}"]`);
+                if (!button) return;
+                const available = hasScores(dataset.data);
+                button.classList.toggle('no-data', !available);
+                button.classList.toggle('active', available && rateVMAFChart.isDatasetVisible(dataset.datasetIndex));
+                button.setAttribute('aria-disabled', String(!available));
+                button.firstChild.textContent = dataset.simplifiedName + (available ? '' : ' —');
+            });
+            document.querySelectorAll('.toggle-all-btn').forEach(button => {
+                const indices = JSON.parse(button.dataset.indices || '[]');
+                button.classList.toggle('active', indices.length > 0 && indices.every(index => rateVMAFChart.isDatasetVisible(index)));
+            });
+            document.getElementById('globalShowAllBtn').classList.toggle('active',
+                chartDatasets.every(dataset => rateVMAFChart.isDatasetVisible(dataset.datasetIndex)));
+        }
+        function applyModel(model) {
+            rateVMAFChart.stop();
+            currentModel = model;
+            const points = model === 'v1.0.16_hfr' ? rawDataV1 : rawDataV0;
+            chartDatasets.forEach(dataset => { dataset.data = points[dataset.label]; });
+            rateVMAFChart.options.scales.y.title.text = axisTitle(model);
+            rateVMAFChart.options.scales.y.min = model === 'v1.0.16_hfr' ? 45 : 60;
+            rateVMAFChart.crosshairCoords = null;
+            rateVMAFChart.setActiveElements([]);
+            document.getElementById('rateVMAFChart').setAttribute('aria-label', axisTitle(model) + '：编码器性能曲线');
+            rateVMAFChart.update('none');
+            renderCustomLegend();
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1242,32 +1489,19 @@
                                 button.textContent = dataset.simplifiedName;
                                 button.dataset.index = dataset.datasetIndex; 
 
-                                const hasData = dataset.data.length > 0;
                                 button.classList.add('control-button');
-
-                                if (hasData) {
-                                    button.classList.add('active'); 
-                                    const colorIndicator = document.createElement('span');
-                                    colorIndicator.className = 'color-indicator';
-                                    
-                                    colorIndicator.style.backgroundColor = dataset.backgroundColor; 
-                                    colorIndicator.style.borderColor = dataset.color; 
-                                    
-                                    button.appendChild(colorIndicator);
-
-                                    button.addEventListener('click', function() {
-                                        const index = parseInt(this.dataset.index);
-                                        const isVisible = rateVMAFChart.isDatasetVisible(index);
-                                        
-                                        rateVMAFChart.setDatasetVisibility(index, !isVisible);
-                                        rateVMAFChart.update();
-                                        this.classList.toggle('active', !isVisible);
-                                        renderCustomLegend();
-                                    });
-                                } else {
-                                    button.classList.add('no-data');
-                                    button.textContent += ' —'; 
-                                }
+                                const colorIndicator = document.createElement('span');
+                                colorIndicator.className = 'color-indicator';
+                                colorIndicator.style.backgroundColor = dataset.backgroundColor;
+                                colorIndicator.style.borderColor = dataset.color;
+                                button.appendChild(colorIndicator);
+                                button.addEventListener('click', function() {
+                                    if (!hasScores(dataset.data)) return;
+                                    const index = dataset.datasetIndex;
+                                    rateVMAFChart.setDatasetVisibility(index, !rateVMAFChart.isDatasetVisible(index));
+                                    rateVMAFChart.update();
+                                    renderCustomLegend();
+                                });
                                 container.appendChild(button);
                             }
                         });
@@ -1357,6 +1591,9 @@
 
             const saveImageBtn = document.getElementById('saveImageBtn');
             saveImageBtn.addEventListener('click', saveImage);
+            syncControlButtons();
+            document.getElementById('rateVMAFChart').setAttribute('aria-label', axisTitle(currentModel) + '：编码器性能曲线');
+            bindModelButtons(currentModel, applyModel);
         });
     </script>
 

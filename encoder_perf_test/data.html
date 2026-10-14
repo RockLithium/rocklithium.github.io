@@ -167,6 +167,48 @@
             
         }
         
+.model-switch {
+    display: inline-flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    border: 1px solid #505050;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #444444;
+}
+
+.model-button {
+    min-height: 35px;
+    padding: 5px 12px;
+    border: none;
+    border-radius: 0;
+    background-color: #444444;
+    color: #E0E0E0;
+    font-family: inherit;
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.model-button + .model-button { border-left: 1px solid #505050; }
+.model-button:hover:not(.active) { background-color: #666666; }
+.model-button.active {
+    background-color: #1a73e8;
+    color: white;
+    font-weight: bold;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.4);
+}
+.model-button:focus-visible { outline: 2px solid white; outline-offset: -3px; }
+
+.global-controls { flex-wrap: wrap; align-items: center; }
+.model-controls { display: flex; justify-content: center; margin: 8px auto 0; }
+
+@media (max-width: 768px) {
+    .model-button { font-size: 12px; padding: 5px 9px; }
+}
+
+.model-panel { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.model-panel[hidden] { display: none; }
     </style>
 </head>
 <body>
@@ -180,6 +222,14 @@
         <a href="presets" class="nav-button">查看编码器参数</a>
     </div>
 
+    <div class="model-controls">
+        <div class="model-switch" role="group" aria-label="VMAF 模型">
+            <button type="button" class="model-button" data-model="v0.6.1" aria-pressed="false">v0.6.1</button>
+            <button type="button" class="model-button active" data-model="v1.0.16_hfr" aria-pressed="true">v1.0.16_hfr</button>
+        </div>
+    </div>
+
+    <div class="model-panel" data-vmaf-panel="v0.6.1" hidden>
     <div class="data-table-container">
         <table class="data-table">
             <thead>
@@ -366,31 +416,31 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>1460</td><td>2007</td><td>41.039</td><td>97.461</td><td>78.329</td><td>76.134</td><td><span class="small-rate">1950/<br>10000</span></td><td>2044</td><td>35.984</td><td>95.691</td><td>75.812</td><td>72.984</td><td><span class="small-rate">1950/<br>10000</span></td><td>2053</td><td>38.463</td><td>96.121</td><td>77.608</td><td>75.116</td><td><span class="small-rate">1950/<br>10000</span></td><td>2053</td><td>33.874</td><td>96.041</td><td>77.238</td><td>74.593</td>
+                    <td>1460</td><td>2007</td><td>41.039</td><td>97.461</td><td>78.329</td><td>76.134</td><td><span class="small-rate">1950/<br>10000</span></td><td>2044</td><td>35.792</td><td>94.292</td><td>75.029</td><td>72.281</td><td><span class="small-rate">1950/<br>10000</span></td><td>2053</td><td>38.341</td><td>94.713</td><td>76.791</td><td>74.376</td><td><span class="small-rate">1950/<br>10000</span></td><td>2053</td><td>33.815</td><td>94.623</td><td>76.429</td><td>73.864</td>
                 </tr>
                 <tr>
-                    <td>2500</td><td>4043</td><td>47.731</td><td>99.479</td><td>83.392</td><td>81.818</td><td><span class="small-rate">3850/<br>12000</span></td><td>4007</td><td>37.612</td><td>96.791</td><td>83.306</td><td>81.829</td><td><span class="small-rate">3850/<br>12000</span></td><td>4011</td><td>40.810</td><td>97.033</td><td>84.126</td><td>82.764</td><td><span class="small-rate">3850/<br>12000</span></td><td>4013</td><td>40.346</td><td>96.995</td><td>83.942</td><td>82.542</td>
+                    <td>2500</td><td>4043</td><td>47.731</td><td>99.479</td><td>83.392</td><td>81.818</td><td><span class="small-rate">3850/<br>12000</span></td><td>4007</td><td>37.420</td><td>95.427</td><td>82.430</td><td>81.003</td><td><span class="small-rate">3850/<br>12000</span></td><td>4011</td><td>40.714</td><td>95.655</td><td>83.228</td><td>81.915</td><td><span class="small-rate">3850/<br>12000</span></td><td>4013</td><td>40.301</td><td>95.686</td><td>83.051</td><td>81.701</td>
                 </tr>
                 <tr>
-                    <td>4480</td><td>6860</td><td>50.063</td><td>100.000</td><td>87.709</td><td>86.873</td><td><span class="small-rate">6800/<br>30000</span></td><td>7016</td><td>46.059</td><td>98.189</td><td>87.957</td><td>87.206</td><td><span class="small-rate">6800/<br>30000</span></td><td>7024</td><td>47.675</td><td>98.457</td><td>88.431</td><td>87.701</td><td><span class="small-rate">6800/<br>30000</span></td><td>7018</td><td>47.829</td><td>97.811</td><td>88.267</td><td>87.508</td>
+                    <td>4480</td><td>6860</td><td>50.063</td><td>100.000</td><td>87.709</td><td>86.873</td><td><span class="small-rate">6800/<br>30000</span></td><td>7016</td><td>45.907</td><td>96.899</td><td>87.029</td><td>86.305</td><td><span class="small-rate">6800/<br>30000</span></td><td>7024</td><td>47.489</td><td>96.760</td><td>87.488</td><td>86.787</td><td><span class="small-rate">6800/<br>30000</span></td><td>7018</td><td>47.685</td><td>96.694</td><td>87.331</td><td>86.601</td>
                 </tr>
                 <tr>
-                    <td>7300</td><td>10041</td><td>56.948</td><td>100.000</td><td>90.458</td><td>90.002</td><td><span class="small-rate">10000/<br>40000</span></td><td>10274</td><td>52.156</td><td>99.275</td><td>90.458</td><td>89.992</td><td><span class="small-rate">10000/<br>40000</span></td><td>10281</td><td>53.698</td><td>100.000</td><td>90.769</td><td>90.313</td><td><span class="small-rate">9800/<br>40000</span></td><td>10057</td><td>54.457</td><td>99.420</td><td>90.496</td><td>89.983</td>
+                    <td>7300</td><td>10041</td><td>56.948</td><td>100.000</td><td>90.458</td><td>90.002</td><td><span class="small-rate">10000/<br>40000</span></td><td>10274</td><td>51.985</td><td>98.114</td><td>89.509</td><td>89.061</td><td><span class="small-rate">10000/<br>40000</span></td><td>10281</td><td>53.576</td><td>98.842</td><td>89.808</td><td>89.371</td><td><span class="small-rate">9800/<br>40000</span></td><td>10057</td><td>54.319</td><td>98.037</td><td>89.542</td><td>89.050</td>
                 </tr>
                 <tr>
-                    <td>11500</td><td>14991</td><td>63.509</td><td>100.000</td><td>92.464</td><td>92.200</td><td><span class="small-rate">14700/<br>60000</span></td><td>15056</td><td>56.305</td><td>100.000</td><td>92.525</td><td>92.236</td><td><span class="small-rate">14700/<br>60000</span></td><td>15063</td><td>58.702</td><td>100.000</td><td>92.746</td><td>92.468</td><td><span class="small-rate">14700/<br>60000</span></td><td>15045</td><td>60.919</td><td>100.000</td><td>92.629</td><td>92.339</td>
+                    <td>11500</td><td>14991</td><td>63.509</td><td>100.000</td><td>92.464</td><td>92.200</td><td><span class="small-rate">14700/<br>60000</span></td><td>15056</td><td>56.054</td><td>99.051</td><td>91.561</td><td>91.282</td><td><span class="small-rate">14700/<br>60000</span></td><td>15063</td><td>58.483</td><td>99.830</td><td>91.772</td><td>91.506</td><td><span class="small-rate">14700/<br>60000</span></td><td>15045</td><td>60.669</td><td>99.300</td><td>91.662</td><td>91.383</td>
                 </tr>
                 <tr>
-                    <td>15500</td><td>20277</td><td>68.504</td><td>100.000</td><td>93.627</td><td>93.449</td><td><span class="small-rate">19700/<br>80000</span></td><td>20111</td><td>62.632</td><td>100.000</td><td>93.803</td><td>93.615</td><td><span class="small-rate">19700/<br>80000</span></td><td>20141</td><td>63.633</td><td>100.000</td><td>93.962</td><td>93.781</td><td><span class="small-rate">19600/<br>80000</span></td><td>20014</td><td>67.542</td><td>100.000</td><td>93.854</td><td>93.667</td>
+                    <td>15500</td><td>20277</td><td>68.504</td><td>100.000</td><td>93.627</td><td>93.449</td><td><span class="small-rate">19700/<br>80000</span></td><td>20111</td><td>62.427</td><td>99.841</td><td>92.830</td><td>92.647</td><td><span class="small-rate">19700/<br>80000</span></td><td>20141</td><td>63.389</td><td>100.000</td><td>92.986</td><td>92.811</td><td><span class="small-rate">19600/<br>80000</span></td><td>20014</td><td>67.198</td><td>99.763</td><td>92.882</td><td>92.701</td>
                 </tr>
                 <tr>
-                    <td>20500</td><td>24933</td><td>73.242</td><td>100.000</td><td>94.444</td><td>94.321</td><td><span class="small-rate">24500/<br>100000</span></td><td>24974</td><td>64.069</td><td>100.000</td><td>94.641</td><td>94.501</td><td><span class="small-rate">24500/<br>100000</span></td><td>24990</td><td>69.397</td><td>100.000</td><td>94.798</td><td>94.674</td><td><span class="small-rate">24600/<br>100000</span></td><td>25093</td><td>72.905</td><td>100.000</td><td>94.734</td><td>94.607</td>
+                    <td>20500</td><td>24933</td><td>73.242</td><td>100.000</td><td>94.444</td><td>94.321</td><td><span class="small-rate">24500/<br>100000</span></td><td>24974</td><td>63.905</td><td>100.000</td><td>93.666</td><td>93.528</td><td><span class="small-rate">24500/<br>100000</span></td><td>24990</td><td>69.174</td><td>100.000</td><td>93.819</td><td>93.699</td><td><span class="small-rate">24600/<br>100000</span></td><td>25093</td><td>72.540</td><td>100.000</td><td>93.758</td><td>93.634</td>
                 </tr>
                 <tr>
-                    <td>35000</td><td>40353</td><td>82.074</td><td>100.000</td><td>95.816</td><td>95.747</td><td><span class="small-rate">39400/<br>120000</span></td><td>39980</td><td>76.160</td><td>100.000</td><td>96.231</td><td>96.167</td><td><span class="small-rate">39400/<br>120000</span></td><td>40027</td><td>79.215</td><td>100.000</td><td>96.267</td><td>96.212</td><td><span class="small-rate">39500/<br>120000</span></td><td>40040</td><td>81.515</td><td>100.000</td><td>96.223</td><td>96.167</td>
+                    <td>35000</td><td>40353</td><td>82.074</td><td>100.000</td><td>95.816</td><td>95.747</td><td><span class="small-rate">39400/<br>120000</span></td><td>39980</td><td>75.890</td><td>100.000</td><td>95.260</td><td>95.194</td><td><span class="small-rate">39400/<br>120000</span></td><td>40027</td><td>79.005</td><td>100.000</td><td>95.291</td><td>95.236</td><td><span class="small-rate">39500/<br>120000</span></td><td>40040</td><td>81.330</td><td>100.000</td><td>95.251</td><td>95.194</td>
                 </tr>
                 <tr>
-                    <td>59200</td><td>60039</td><td>88.769</td><td>100.000</td><td>96.882</td><td>96.841</td><td><span class="small-rate">59250/<br>160000</span></td><td>59956</td><td>85.706</td><td>100.000</td><td>97.309</td><td>97.278</td><td><span class="small-rate">59250/<br>160000</span></td><td>60000</td><td>87.077</td><td>100.000</td><td>97.254</td><td>97.223</td><td><span class="small-rate">59450/<br>160000</span></td><td>60038</td><td>87.031</td><td>100.000</td><td>97.229</td><td>97.197</td>
+                    <td>59200</td><td>60039</td><td>88.769</td><td>100.000</td><td>96.882</td><td>96.841</td><td><span class="small-rate">59250/<br>160000</span></td><td>59956</td><td>85.306</td><td>100.000</td><td>96.389</td><td>96.353</td><td><span class="small-rate">59250/<br>160000</span></td><td>60000</td><td>86.684</td><td>100.000</td><td>96.322</td><td>96.288</td><td><span class="small-rate">59450/<br>160000</span></td><td>60038</td><td>86.647</td><td>100.000</td><td>96.296</td><td>96.262</td>
                 </tr>
             </tbody>
         </table>
@@ -420,31 +470,31 @@
             </thead>
             <tbody>
                 <tr>
-                    <td><span class="small-rate">1950/<br>10000</span></td><td>2052</td><td>33.812</td><td>96.016</td><td>76.941</td><td>74.185</td><td>2800</td><td>2001</td><td>48.522</td><td>97.329</td><td>86.666</td><td>85.626</td><td>720</td><td>2064</td><td>32.030</td><td>93.572</td><td>73.801</td><td>70.385</td><td>720</td><td>2034</td><td>31.747</td><td>94.746</td><td>75.010</td><td>71.658</td>
+                    <td><span class="small-rate">1950/<br>10000</span></td><td>2052</td><td>33.754</td><td>94.679</td><td>76.139</td><td>73.468</td><td>2800</td><td>2001</td><td>48.522</td><td>97.329</td><td>86.666</td><td>85.626</td><td>720</td><td>2064</td><td>32.030</td><td>93.572</td><td>73.801</td><td>70.385</td><td>720</td><td>2034</td><td>31.747</td><td>94.746</td><td>75.010</td><td>71.658</td>
                 </tr>
                 <tr>
-                    <td><span class="small-rate">3850/<br>12000</span></td><td>4013</td><td>40.398</td><td>97.037</td><td>83.791</td><td>82.348</td><td>4970</td><td>4025</td><td>52.392</td><td>97.614</td><td>91.271</td><td>90.858</td><td>3900</td><td>3807</td><td>43.881</td><td>97.603</td><td>84.905</td><td>84.003</td><td>3900</td><td>3520</td><td>43.007</td><td>97.679</td><td>85.185</td><td>84.204</td>
+                    <td><span class="small-rate">3850/<br>12000</span></td><td>4013</td><td>40.274</td><td>95.685</td><td>82.901</td><td>81.510</td><td>4970</td><td>4025</td><td>52.392</td><td>97.614</td><td>91.271</td><td>90.858</td><td>3900</td><td>3807</td><td>43.881</td><td>97.603</td><td>84.905</td><td>84.003</td><td>3900</td><td>3520</td><td>43.007</td><td>97.679</td><td>85.185</td><td>84.204</td>
                 </tr>
                 <tr>
-                    <td><span class="small-rate">6800/<br>30000</span></td><td>7017</td><td>47.047</td><td>97.834</td><td>88.202</td><td>87.427</td><td>8510</td><td>7023</td><td>67.582</td><td>98.819</td><td>93.622</td><td>93.426</td><td>6100</td><td>7061</td><td>66.278</td><td>98.963</td><td>89.948</td><td>89.728</td><td>6100</td><td>7019</td><td>66.722</td><td>99.717</td><td>90.970</td><td>90.744</td>
+                    <td><span class="small-rate">6800/<br>30000</span></td><td>7017</td><td>46.912</td><td>96.685</td><td>87.267</td><td>86.522</td><td>8510</td><td>7023</td><td>67.582</td><td>98.819</td><td>93.622</td><td>93.426</td><td>6100</td><td>7061</td><td>66.278</td><td>98.963</td><td>89.948</td><td>89.728</td><td>6100</td><td>7019</td><td>66.722</td><td>99.717</td><td>90.970</td><td>90.744</td>
                 </tr>
                 <tr>
-                    <td><span class="small-rate">10000/<br>40000</span></td><td>10262</td><td>54.635</td><td>100.000</td><td>90.564</td><td>90.057</td><td>12350</td><td>9994</td><td>72.328</td><td>99.470</td><td>94.868</td><td>94.749</td><td>9000</td><td>10166</td><td>71.569</td><td>99.576</td><td>91.935</td><td>91.775</td><td>9000</td><td>10102</td><td>72.703</td><td>100.000</td><td>92.819</td><td>92.669</td>
+                    <td><span class="small-rate">10000/<br>40000</span></td><td>10262</td><td>54.444</td><td>98.547</td><td>89.610</td><td>89.123</td><td>12350</td><td>9994</td><td>72.328</td><td>99.470</td><td>94.868</td><td>94.749</td><td>9000</td><td>10166</td><td>71.569</td><td>99.576</td><td>91.935</td><td>91.775</td><td>9000</td><td>10102</td><td>72.703</td><td>100.000</td><td>92.819</td><td>92.669</td>
                 </tr>
                 <tr>
-                    <td><span class="small-rate">14700/<br>60000</span></td><td>15041</td><td>60.921</td><td>100.000</td><td>92.607</td><td>92.313</td><td>20500</td><td>15143</td><td>84.510</td><td>100.000</td><td>95.944</td><td>95.886</td><td>13800</td><td>15280</td><td>76.799</td><td>100.000</td><td>93.580</td><td>93.485</td><td>14000</td><td>15281</td><td>79.766</td><td>100.000</td><td>94.468</td><td>94.383</td>
+                    <td><span class="small-rate">14700/<br>60000</span></td><td>15041</td><td>60.638</td><td>99.330</td><td>91.640</td><td>91.357</td><td>20500</td><td>15143</td><td>84.510</td><td>100.000</td><td>95.944</td><td>95.886</td><td>13800</td><td>15280</td><td>76.799</td><td>100.000</td><td>93.580</td><td>93.485</td><td>14000</td><td>15281</td><td>79.766</td><td>100.000</td><td>94.468</td><td>94.383</td>
                 </tr>
                 <tr>
-                    <td><span class="small-rate">19700/<br>80000</span></td><td>20107</td><td>66.751</td><td>100.000</td><td>93.869</td><td>93.680</td><td>27000</td><td>20053</td><td>86.834</td><td>100.000</td><td>96.464</td><td>96.420</td><td>18500</td><td>20077</td><td>82.069</td><td>100.000</td><td>94.544</td><td>94.478</td><td>18750</td><td>20236</td><td>83.828</td><td>100.000</td><td>95.351</td><td>95.288</td>
+                    <td><span class="small-rate">19700/<br>80000</span></td><td>20107</td><td>66.467</td><td>99.714</td><td>92.898</td><td>92.715</td><td>27000</td><td>20053</td><td>86.834</td><td>100.000</td><td>96.464</td><td>96.420</td><td>18500</td><td>20077</td><td>82.069</td><td>100.000</td><td>94.544</td><td>94.478</td><td>18750</td><td>20236</td><td>83.828</td><td>100.000</td><td>95.351</td><td>95.288</td>
                 </tr>
                 <tr>
-                    <td><span class="small-rate">24500/<br>100000</span></td><td>25009</td><td>71.356</td><td>100.000</td><td>94.700</td><td>94.568</td><td>33600</td><td>25099</td><td>88.484</td><td>100.000</td><td>96.896</td><td>96.864</td><td>23350</td><td>25166</td><td>85.065</td><td>100.000</td><td>95.237</td><td>95.185</td><td>23400</td><td>25067</td><td>85.517</td><td>100.000</td><td>95.891</td><td>95.837</td>
+                    <td><span class="small-rate">24500/<br>100000</span></td><td>25009</td><td>70.992</td><td>100.000</td><td>93.726</td><td>93.598</td><td>33600</td><td>25099</td><td>88.484</td><td>100.000</td><td>96.896</td><td>96.864</td><td>23350</td><td>25166</td><td>85.065</td><td>100.000</td><td>95.237</td><td>95.185</td><td>23400</td><td>25067</td><td>85.517</td><td>100.000</td><td>95.891</td><td>95.837</td>
                 </tr>
                 <tr>
-                    <td><span class="small-rate">39400/<br>120000</span></td><td>40004</td><td>81.177</td><td>100.000</td><td>96.236</td><td>96.179</td><td>52700</td><td>40097</td><td>90.544</td><td>100.000</td><td>97.598</td><td>97.574</td><td>37200</td><td>40134</td><td>89.615</td><td>100.000</td><td>96.402</td><td>96.364</td><td>37500</td><td>40147</td><td>89.865</td><td>100.000</td><td>96.929</td><td>96.890</td>
+                    <td><span class="small-rate">39400/<br>120000</span></td><td>40004</td><td>80.995</td><td>100.000</td><td>95.263</td><td>95.205</td><td>52700</td><td>40097</td><td>90.544</td><td>100.000</td><td>97.598</td><td>97.574</td><td>37200</td><td>40134</td><td>89.615</td><td>100.000</td><td>96.402</td><td>96.364</td><td>37500</td><td>40147</td><td>89.865</td><td>100.000</td><td>96.929</td><td>96.890</td>
                 </tr>
                 <tr>
-                    <td><span class="small-rate">59300/<br>160000</span></td><td>59996</td><td>87.115</td><td>100.000</td><td>97.238</td><td>97.207</td><td>71000</td><td>60004</td><td>91.663</td><td>100.000</td><td>98.003</td><td>97.981</td><td>56400</td><td>60190</td><td>91.516</td><td>100.000</td><td>97.231</td><td>97.201</td><td>56650</td><td>60083</td><td>91.283</td><td>100.000</td><td>97.644</td><td>97.613</td>
+                    <td><span class="small-rate">59300/<br>160000</span></td><td>59996</td><td>86.745</td><td>100.000</td><td>96.306</td><td>96.272</td><td>71000</td><td>60004</td><td>91.663</td><td>100.000</td><td>98.003</td><td>97.981</td><td>56400</td><td>60190</td><td>91.516</td><td>100.000</td><td>97.231</td><td>97.201</td><td>56650</td><td>60083</td><td>91.283</td><td>100.000</td><td>97.644</td><td>97.613</td>
                 </tr>
             </tbody>
         </table>
@@ -559,9 +609,428 @@
             </tbody>
         </table>
     </div>
+    </div>
+
+    <div class="model-panel" data-vmaf-panel="v1.0.16_hfr">
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th colspan="6">x264</th>
+                    <th colspan="6">H264_NVENC_9th</th>
+                    <th colspan="6">x265</th>
+                    <th colspan="6">HEVC_NVENC_7th</th>
+                </tr>
+                <tr>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                </tr>
+                <tr>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1800</td><td>2051</td><td>8.463</td><td>83.306</td><td>47.936</td><td>37.096</td><td>700</td><td>2098</td><td>0.000</td><td>85.279</td><td>49.326</td><td>18.598</td><td>1760</td><td>2012</td><td>33.478</td><td>92.090</td><td>73.720</td><td>71.433</td><td>700</td><td>2055</td><td>0.000</td><td>88.744</td><td>67.031</td><td>45.165</td>
+                </tr>
+                <tr>
+                    <td>3600</td><td>4018</td><td>35.219</td><td>92.445</td><td>68.649</td><td>65.207</td><td>4000</td><td>4638</td><td>8.645</td><td>97.513</td><td>68.582</td><td>64.569</td><td>3600</td><td>4011</td><td>50.642</td><td>95.362</td><td>81.803</td><td>80.939</td><td>3900</td><td>4086</td><td>19.757</td><td>98.094</td><td>76.670</td><td>74.419</td>
+                </tr>
+                <tr>
+                    <td>6450</td><td>6991</td><td>55.274</td><td>95.666</td><td>80.482</td><td>79.356</td><td>7500</td><td>6632</td><td>28.514</td><td>97.489</td><td>78.693</td><td>77.333</td><td>6400</td><td>7009</td><td>62.819</td><td>97.814</td><td>86.706</td><td>86.290</td><td>6000</td><td>6991</td><td>48.048</td><td>97.837</td><td>84.974</td><td>84.294</td>
+                </tr>
+                <tr>
+                    <td>9400</td><td>10034</td><td>64.692</td><td>96.928</td><td>85.449</td><td>84.886</td><td>10000</td><td>10782</td><td>47.955</td><td>98.287</td><td>85.666</td><td>85.114</td><td>9200</td><td>10013</td><td>68.014</td><td>100.000</td><td>89.197</td><td>88.911</td><td>9000</td><td>10227</td><td>56.856</td><td>99.049</td><td>87.917</td><td>87.476</td>
+                </tr>
+                <tr>
+                    <td>14400</td><td>15223</td><td>71.405</td><td>100.000</td><td>89.293</td><td>89.016</td><td>14000</td><td>15020</td><td>57.881</td><td>99.475</td><td>88.713</td><td>88.383</td><td>13800</td><td>15012</td><td>68.888</td><td>100.000</td><td>91.432</td><td>91.230</td><td>14000</td><td>15450</td><td>67.061</td><td>100.000</td><td>90.682</td><td>90.402</td>
+                </tr>
+                <tr>
+                    <td>18900</td><td>20028</td><td>73.701</td><td>100.000</td><td>91.076</td><td>90.879</td><td>19000</td><td>19068</td><td>64.250</td><td>100.000</td><td>90.375</td><td>90.117</td><td>18400</td><td>20067</td><td>69.993</td><td>100.000</td><td>92.722</td><td>92.550</td><td>18600</td><td>20090</td><td>72.242</td><td>100.000</td><td>92.028</td><td>91.816</td>
+                </tr>
+                <tr>
+                    <td>23700</td><td>25263</td><td>74.402</td><td>100.000</td><td>92.238</td><td>92.067</td><td>23500</td><td>25183</td><td>71.400</td><td>100.000</td><td>91.983</td><td>91.792</td><td>23000</td><td>25136</td><td>73.120</td><td>100.000</td><td>93.613</td><td>93.464</td><td>23200</td><td>25066</td><td>70.976</td><td>100.000</td><td>93.056</td><td>92.863</td>
+                </tr>
+                <tr>
+                    <td>37200</td><td>40115</td><td>72.081</td><td>100.000</td><td>93.884</td><td>93.692</td><td>38500</td><td>39489</td><td>80.433</td><td>100.000</td><td>93.955</td><td>93.816</td><td>36500</td><td>40004</td><td>76.758</td><td>100.000</td><td>95.135</td><td>95.018</td><td>40200</td><td>40028</td><td>74.912</td><td>100.000</td><td>94.556</td><td>94.401</td>
+                </tr>
+                <tr>
+                    <td>55400</td><td>60140</td><td>71.994</td><td>100.000</td><td>95.040</td><td>94.832</td><td>58000</td><td>59826</td><td>82.695</td><td>100.000</td><td>95.330</td><td>95.224</td><td>54800</td><td>60194</td><td>79.081</td><td>100.000</td><td>96.265</td><td>96.170</td><td>60000</td><td>60022</td><td>82.893</td><td>100.000</td><td>95.786</td><td>95.678</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th colspan="6">HEVC_NVENC_8th</th>
+                    <th colspan="6">HEVC_NVENC_9th</th>
+                    <th colspan="6">HEVC_QSV_V8</th>
+                    <th colspan="6">HEVC_QSV_V9</th>
+                </tr>
+                <tr>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                </tr>
+                <tr>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>700</td><td>2067</td><td>0.000</td><td>88.814</td><td>66.770</td><td>44.638</td><td>700</td><td>1987</td><td>0.000</td><td>89.918</td><td>68.204</td><td>56.662</td><td><span class="small-rate">2020/<br>10000</span></td><td>2002</td><td>1.810</td><td>90.125</td><td>69.235</td><td>57.952</td><td><span class="small-rate">2000/<br>10000</span></td><td>2063</td><td>10.919</td><td>91.347</td><td>72.780</td><td>66.917</td>
+                </tr>
+                <tr>
+                    <td>3900</td><td>3918</td><td>19.152</td><td>98.357</td><td>77.145</td><td>74.994</td><td>3900</td><td>3952</td><td>25.443</td><td>98.413</td><td>76.631</td><td>74.453</td><td><span class="small-rate">4060/<br>12000</span></td><td>4010</td><td>15.973</td><td>95.585</td><td>79.089</td><td>76.195</td><td><span class="small-rate">4020/<br>12000</span></td><td>4074</td><td>27.663</td><td>99.495</td><td>81.659</td><td>79.823</td>
+                </tr>
+                <tr>
+                    <td>6000</td><td>7001</td><td>48.026</td><td>97.873</td><td>84.891</td><td>84.207</td><td>6100</td><td>6899</td><td>51.614</td><td>97.576</td><td>85.339</td><td>84.744</td><td><span class="small-rate">7130/<br>30000</span></td><td>6996</td><td>25.576</td><td>97.065</td><td>84.424</td><td>82.909</td><td><span class="small-rate">7000/<br>30000</span></td><td>7090</td><td>42.592</td><td>100.000</td><td>86.657</td><td>85.812</td>
+                </tr>
+                <tr>
+                    <td>9000</td><td>10200</td><td>57.203</td><td>98.220</td><td>88.071</td><td>87.614</td><td>9000</td><td>10271</td><td>60.754</td><td>99.499</td><td>88.427</td><td>88.018</td><td><span class="small-rate">10350/<br>40000</span></td><td>10060</td><td>41.370</td><td>99.135</td><td>87.677</td><td>86.926</td><td><span class="small-rate">10200/<br>40000</span></td><td>10209</td><td>53.825</td><td>100.000</td><td>89.217</td><td>88.756</td>
+                </tr>
+                <tr>
+                    <td>14000</td><td>15497</td><td>65.796</td><td>100.000</td><td>90.636</td><td>90.355</td><td>14000</td><td>15454</td><td>68.980</td><td>100.000</td><td>91.077</td><td>90.824</td><td><span class="small-rate">15950/<br>60000</span></td><td>15003</td><td>54.412</td><td>100.000</td><td>90.470</td><td>90.087</td><td><span class="small-rate">15300/<br>60000</span></td><td>15104</td><td>62.867</td><td>100.000</td><td>91.468</td><td>91.199</td>
+                </tr>
+                <tr>
+                    <td>18500</td><td>20010</td><td>71.803</td><td>100.000</td><td>91.967</td><td>91.755</td><td>18500</td><td>20045</td><td>72.125</td><td>100.000</td><td>92.400</td><td>92.200</td><td><span class="small-rate">20700/<br>80000</span></td><td>20032</td><td>62.017</td><td>100.000</td><td>91.882</td><td>91.619</td><td><span class="small-rate">20400/<br>80000</span></td><td>20233</td><td>70.783</td><td>100.000</td><td>92.799</td><td>92.621</td>
+                </tr>
+                <tr>
+                    <td>23100</td><td>25049</td><td>71.412</td><td>100.000</td><td>93.003</td><td>92.810</td><td>23100</td><td>24981</td><td>74.816</td><td>100.000</td><td>93.311</td><td>93.136</td><td><span class="small-rate">25600/<br>100000</span></td><td>25010</td><td>68.683</td><td>100.000</td><td>92.945</td><td>92.749</td><td><span class="small-rate">25500/<br>100000</span></td><td>25337</td><td>77.009</td><td>100.000</td><td>93.769</td><td>93.620</td>
+                </tr>
+                <tr>
+                    <td>40200</td><td>40071</td><td>74.855</td><td>100.000</td><td>94.540</td><td>94.385</td><td>40100</td><td>39980</td><td>76.344</td><td>100.000</td><td>94.772</td><td>94.618</td><td><span class="small-rate">40700/<br>120000</span></td><td>39969</td><td>80.395</td><td>100.000</td><td>94.945</td><td>94.829</td><td><span class="small-rate">40500/<br>120000</span></td><td>40195</td><td>81.720</td><td>100.000</td><td>95.344</td><td>95.243</td>
+                </tr>
+                <tr>
+                    <td>60000</td><td>60038</td><td>83.116</td><td>100.000</td><td>95.768</td><td>95.660</td><td>60000</td><td>60066</td><td>83.237</td><td>100.000</td><td>95.895</td><td>95.786</td><td><span class="small-rate">60600/<br>160000</span></td><td>60094</td><td>83.019</td><td>100.000</td><td>96.330</td><td>96.256</td><td><span class="small-rate">61000/<br>160000</span></td><td>60243</td><td>86.119</td><td>100.000</td><td>96.501</td><td>96.423</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th colspan="6">HEVC_QSV_V10</th>
+                    <th colspan="6">HEVC_QSV_V11</th>
+                    <th colspan="6">HEVC_VCN_3.1</th>
+                    <th colspan="6">HEVC_VCN_4.0</th>
+                </tr>
+                <tr>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                </tr>
+                <tr>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="small-rate">2000/<br>10000</span></td><td>2058</td><td>8.758</td><td>91.347</td><td>73.179</td><td>67.138</td><td><span class="small-rate">1880/<br>10000</span></td><td>2022</td><td>9.008</td><td>92.400</td><td>72.814</td><td>66.396</td><td>2000</td><td>2001</td><td>0.000</td><td>93.121</td><td>62.456</td><td>29.181</td><td>2000</td><td>2007</td><td>0.000</td><td>81.505</td><td>55.822</td><td>40.528</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">3960/<br>12000</span></td><td>4006</td><td>30.917</td><td>98.361</td><td>81.590</td><td>79.872</td><td><span class="small-rate">3800/<br>12000</span></td><td>4018</td><td>29.546</td><td>95.962</td><td>81.678</td><td>79.785</td><td>4010</td><td>4007</td><td>0.000</td><td>95.831</td><td>73.628</td><td>38.553</td><td>4000</td><td>4007</td><td>1.281</td><td>87.171</td><td>71.209</td><td>65.389</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">6950/<br>30000</span></td><td>7002</td><td>42.253</td><td>100.000</td><td>86.588</td><td>85.725</td><td><span class="small-rate">6700/<br>30000</span></td><td>7047</td><td>43.240</td><td>99.836</td><td>86.630</td><td>85.774</td><td>7020</td><td>7006</td><td>14.536</td><td>97.458</td><td>80.297</td><td>76.442</td><td>7000</td><td>7010</td><td>19.716</td><td>92.438</td><td>79.050</td><td>77.177</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">10000/<br>40000</span></td><td>10012</td><td>53.363</td><td>100.000</td><td>89.122</td><td>88.627</td><td><span class="small-rate">9650/<br>40000</span></td><td>9994</td><td>53.484</td><td>100.000</td><td>89.073</td><td>88.575</td><td>10020</td><td>10008</td><td>25.839</td><td>98.180</td><td>84.105</td><td>82.357</td><td>10000</td><td>10014</td><td>29.851</td><td>94.092</td><td>82.965</td><td>81.890</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">15200/<br>60000</span></td><td>15028</td><td>61.591</td><td>100.000</td><td>91.381</td><td>91.096</td><td><span class="small-rate">14500/<br>60000</span></td><td>15131</td><td>64.693</td><td>100.000</td><td>91.452</td><td>91.186</td><td>15020</td><td>15019</td><td>35.618</td><td>99.194</td><td>87.383</td><td>86.503</td><td>15000</td><td>15017</td><td>43.688</td><td>96.427</td><td>86.509</td><td>85.907</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">20200/<br>80000</span></td><td>20012</td><td>70.772</td><td>100.000</td><td>92.719</td><td>92.532</td><td><span class="small-rate">19200/<br>80000</span></td><td>20188</td><td>71.060</td><td>100.000</td><td>92.770</td><td>92.568</td><td>20010</td><td>20003</td><td>45.424</td><td>99.815</td><td>89.116</td><td>88.555</td><td>20000</td><td>20033</td><td>51.692</td><td>97.738</td><td>88.544</td><td>88.149</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">25200/<br>100000</span></td><td>25050</td><td>77.237</td><td>100.000</td><td>93.682</td><td>93.534</td><td><span class="small-rate">23800/<br>100000</span></td><td>25161</td><td>74.370</td><td>100.000</td><td>93.663</td><td>93.503</td><td>25010</td><td>24997</td><td>53.964</td><td>100.000</td><td>90.374</td><td>89.978</td><td>25000</td><td>25043</td><td>55.121</td><td>99.411</td><td>90.016</td><td>89.712</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">40400/<br>120000</span></td><td>40036</td><td>81.895</td><td>100.000</td><td>95.320</td><td>95.217</td><td><span class="small-rate">38000/<br>120000</span></td><td>40197</td><td>81.853</td><td>100.000</td><td>95.319</td><td>95.213</td><td>40050</td><td>39987</td><td>65.412</td><td>100.000</td><td>92.664</td><td>92.451</td><td>39950</td><td>40045</td><td>67.886</td><td>100.000</td><td>92.612</td><td>92.441</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">60800/<br>160000</span></td><td>59933</td><td>86.165</td><td>100.000</td><td>96.484</td><td>96.405</td><td><span class="small-rate">57500/<br>160000</span></td><td>60032</td><td>84.460</td><td>100.000</td><td>96.511</td><td>96.434</td><td>60100</td><td>60055</td><td>75.239</td><td>100.000</td><td>94.445</td><td>94.322</td><td>59900</td><td>60043</td><td>78.374</td><td>100.000</td><td>94.323</td><td>94.213</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th colspan="6">VP9</th>
+                    <th colspan="6">VP9_QSV_V8</th>
+                    <th colspan="6">VP9_QSV_V9</th>
+                    <th colspan="6">VP9_QSV_V10</th>
+                </tr>
+                <tr>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                </tr>
+                <tr>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1460</td><td>2007</td><td>14.799</td><td>94.122</td><td>66.757</td><td>61.163</td><td><span class="small-rate">1950/<br>10000</span></td><td>2044</td><td>0.000</td><td>88.344</td><td>60.217</td><td>45.893</td><td><span class="small-rate">1950/<br>10000</span></td><td>2053</td><td>0.000</td><td>89.076</td><td>63.461</td><td>50.735</td><td><span class="small-rate">1950/<br>10000</span></td><td>2053</td><td>0.000</td><td>88.940</td><td>62.709</td><td>45.295</td>
+                </tr>
+                <tr>
+                    <td>2500</td><td>4043</td><td>15.340</td><td>97.545</td><td>74.320</td><td>70.246</td><td><span class="small-rate">3850/<br>12000</span></td><td>4007</td><td>0.000</td><td>90.882</td><td>71.450</td><td>61.701</td><td><span class="small-rate">3850/<br>12000</span></td><td>4011</td><td>1.792</td><td>90.815</td><td>72.949</td><td>66.580</td><td><span class="small-rate">3850/<br>12000</span></td><td>4013</td><td>0.000</td><td>91.046</td><td>72.725</td><td>61.770</td>
+                </tr>
+                <tr>
+                    <td>4480</td><td>6860</td><td>21.242</td><td>99.418</td><td>80.676</td><td>78.546</td><td><span class="small-rate">6800/<br>30000</span></td><td>7016</td><td>15.686</td><td>95.477</td><td>78.087</td><td>75.967</td><td><span class="small-rate">6800/<br>30000</span></td><td>7024</td><td>19.139</td><td>95.357</td><td>79.029</td><td>77.056</td><td><span class="small-rate">6800/<br>30000</span></td><td>7018</td><td>18.903</td><td>95.155</td><td>78.850</td><td>76.701</td>
+                </tr>
+                <tr>
+                    <td>7300</td><td>10041</td><td>32.745</td><td>100.000</td><td>84.691</td><td>83.589</td><td><span class="small-rate">10000/<br>40000</span></td><td>10274</td><td>27.131</td><td>97.844</td><td>81.792</td><td>80.576</td><td><span class="small-rate">10000/<br>40000</span></td><td>10281</td><td>30.885</td><td>97.962</td><td>82.394</td><td>81.293</td><td><span class="small-rate">9800/<br>40000</span></td><td>10057</td><td>29.077</td><td>97.539</td><td>82.069</td><td>80.809</td>
+                </tr>
+                <tr>
+                    <td>11500</td><td>14991</td><td>43.610</td><td>100.000</td><td>87.847</td><td>87.203</td><td><span class="small-rate">14700/<br>60000</span></td><td>15056</td><td>33.095</td><td>99.624</td><td>84.969</td><td>84.193</td><td><span class="small-rate">14700/<br>60000</span></td><td>15063</td><td>38.396</td><td>99.702</td><td>85.409</td><td>84.744</td><td><span class="small-rate">14700/<br>60000</span></td><td>15045</td><td>42.561</td><td>99.534</td><td>85.349</td><td>84.650</td>
+                </tr>
+                <tr>
+                    <td>15500</td><td>20277</td><td>51.437</td><td>100.000</td><td>89.700</td><td>89.250</td><td><span class="small-rate">19700/<br>80000</span></td><td>20111</td><td>43.824</td><td>100.000</td><td>87.062</td><td>86.553</td><td><span class="small-rate">19700/<br>80000</span></td><td>20141</td><td>46.308</td><td>100.000</td><td>87.351</td><td>86.908</td><td><span class="small-rate">19600/<br>80000</span></td><td>20014</td><td>51.246</td><td>100.000</td><td>87.348</td><td>86.881</td>
+                </tr>
+                <tr>
+                    <td>20500</td><td>24933</td><td>58.615</td><td>100.000</td><td>91.020</td><td>90.690</td><td><span class="small-rate">24500/<br>100000</span></td><td>24974</td><td>45.303</td><td>100.000</td><td>88.475</td><td>88.077</td><td><span class="small-rate">24500/<br>100000</span></td><td>24990</td><td>54.552</td><td>100.000</td><td>88.763</td><td>88.434</td><td><span class="small-rate">24600/<br>100000</span></td><td>25093</td><td>57.696</td><td>100.000</td><td>88.772</td><td>88.436</td>
+                </tr>
+                <tr>
+                    <td>35000</td><td>40353</td><td>69.829</td><td>100.000</td><td>93.302</td><td>93.087</td><td><span class="small-rate">39400/<br>120000</span></td><td>39980</td><td>62.852</td><td>100.000</td><td>91.258</td><td>91.042</td><td><span class="small-rate">39400/<br>120000</span></td><td>40027</td><td>67.388</td><td>100.000</td><td>91.280</td><td>91.098</td><td><span class="small-rate">39500/<br>120000</span></td><td>40040</td><td>69.338</td><td>100.000</td><td>91.294</td><td>91.109</td>
+                </tr>
+                <tr>
+                    <td>59200</td><td>60039</td><td>77.950</td><td>100.000</td><td>95.024</td><td>94.892</td><td><span class="small-rate">59250/<br>160000</span></td><td>59956</td><td>76.152</td><td>100.000</td><td>93.379</td><td>93.245</td><td><span class="small-rate">59250/<br>160000</span></td><td>60000</td><td>78.015</td><td>100.000</td><td>93.022</td><td>92.878</td><td><span class="small-rate">59450/<br>160000</span></td><td>60038</td><td>77.953</td><td>100.000</td><td>92.984</td><td>92.842</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th colspan="6">VP9_QSV_V11</th>
+                    <th colspan="6">SVT-AV1</th>
+                    <th colspan="6">AV1_NVENC_8th</th>
+                    <th colspan="6">AV1_NVENC_9th</th>
+                </tr>
+                <tr>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                </tr>
+                <tr>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="small-rate">1950/<br>10000</span></td><td>2052</td><td>0.000</td><td>88.892</td><td>62.232</td><td>43.791</td><td>2800</td><td>2001</td><td>22.529</td><td>94.721</td><td>80.781</td><td>78.621</td><td>720</td><td>2064</td><td>0.000</td><td>89.672</td><td>63.207</td><td>41.432</td><td>720</td><td>2034</td><td>0.000</td><td>90.353</td><td>65.529</td><td>45.188</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">3850/<br>12000</span></td><td>4013</td><td>0.000</td><td>90.930</td><td>72.520</td><td>59.940</td><td>4970</td><td>4025</td><td>31.808</td><td>97.051</td><td>87.433</td><td>86.615</td><td>3900</td><td>3807</td><td>21.576</td><td>94.006</td><td>78.888</td><td>76.597</td><td>3900</td><td>3520</td><td>19.773</td><td>93.676</td><td>79.476</td><td>77.061</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">6800/<br>30000</span></td><td>7017</td><td>17.753</td><td>95.379</td><td>78.785</td><td>76.567</td><td>8510</td><td>7023</td><td>50.922</td><td>98.634</td><td>90.639</td><td>90.236</td><td>6100</td><td>7061</td><td>54.606</td><td>97.073</td><td>85.698</td><td>85.199</td><td>6100</td><td>7019</td><td>54.974</td><td>97.754</td><td>87.042</td><td>86.543</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">10000/<br>40000</span></td><td>10262</td><td>28.591</td><td>97.826</td><td>82.239</td><td>81.002</td><td>12350</td><td>9994</td><td>57.413</td><td>99.804</td><td>92.392</td><td>92.124</td><td>9000</td><td>10166</td><td>59.554</td><td>99.005</td><td>88.506</td><td>88.125</td><td>9000</td><td>10102</td><td>59.837</td><td>99.713</td><td>89.583</td><td>89.229</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">14700/<br>60000</span></td><td>15041</td><td>41.224</td><td>99.668</td><td>85.346</td><td>84.629</td><td>20500</td><td>15143</td><td>71.680</td><td>100.000</td><td>93.930</td><td>93.783</td><td>13800</td><td>15280</td><td>65.176</td><td>100.000</td><td>90.882</td><td>90.630</td><td>14000</td><td>15281</td><td>66.585</td><td>100.000</td><td>91.915</td><td>91.694</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">19700/<br>80000</span></td><td>20107</td><td>50.691</td><td>100.000</td><td>87.356</td><td>86.886</td><td>27000</td><td>20053</td><td>75.826</td><td>100.000</td><td>94.727</td><td>94.611</td><td>18500</td><td>20077</td><td>68.385</td><td>100.000</td><td>92.273</td><td>92.084</td><td>18750</td><td>20236</td><td>68.928</td><td>100.000</td><td>93.178</td><td>93.002</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">24500/<br>100000</span></td><td>25009</td><td>57.575</td><td>100.000</td><td>88.753</td><td>88.408</td><td>33600</td><td>25099</td><td>78.914</td><td>100.000</td><td>95.315</td><td>95.224</td><td>23350</td><td>25166</td><td>71.958</td><td>100.000</td><td>93.295</td><td>93.137</td><td>23400</td><td>25067</td><td>71.727</td><td>100.000</td><td>93.944</td><td>93.788</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">39400/<br>120000</span></td><td>40004</td><td>69.369</td><td>100.000</td><td>91.355</td><td>91.167</td><td>52700</td><td>40097</td><td>83.330</td><td>100.000</td><td>96.316</td><td>96.247</td><td>37200</td><td>40134</td><td>79.990</td><td>100.000</td><td>94.995</td><td>94.882</td><td>37500</td><td>40147</td><td>79.218</td><td>100.000</td><td>95.481</td><td>95.367</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">59300/<br>160000</span></td><td>59996</td><td>77.941</td><td>100.000</td><td>93.064</td><td>92.921</td><td>71000</td><td>60004</td><td>84.785</td><td>100.000</td><td>96.877</td><td>96.815</td><td>56400</td><td>60190</td><td>84.609</td><td>100.000</td><td>96.159</td><td>96.071</td><td>56650</td><td>60083</td><td>83.436</td><td>100.000</td><td>96.535</td><td>96.445</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th colspan="6">AV1_QSV_V9</th>
+                    <th colspan="6">AV1_QSV_V10</th>
+                    <th colspan="6">AV1_QSV_V11</th>
+                    <th colspan="6">AV1_VCN_4.0</th>
+                </tr>
+                <tr>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                </tr>
+                <tr>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="small-rate">1900/<br>10000</span></td><td>2046</td><td>13.857</td><td>93.176</td><td>70.954</td><td>66.234</td><td><span class="small-rate">1990/<br>10000</span></td><td>2000</td><td>20.341</td><td>91.087</td><td>70.302</td><td>65.990</td><td><span class="small-rate">2500/<br>10000</span></td><td>2035</td><td>15.768</td><td>92.098</td><td>72.617</td><td>70.094</td><td>2000</td><td>2014</td><td>0.000</td><td>82.853</td><td>58.805</td><td>40.974</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">3900/<br>12000</span></td><td>4053</td><td>33.678</td><td>98.327</td><td>80.149</td><td>78.418</td><td><span class="small-rate">4000/<br>12000</span></td><td>4012</td><td>36.478</td><td>96.798</td><td>80.228</td><td>78.731</td><td><span class="small-rate">4250/<br>12000</span></td><td>4031</td><td>42.270</td><td>96.472</td><td>81.178</td><td>80.279</td><td>4000</td><td>4017</td><td>5.827</td><td>89.181</td><td>71.744</td><td>66.888</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">7100/<br>30000</span></td><td>7047</td><td>52.602</td><td>100.000</td><td>85.386</td><td>84.728</td><td><span class="small-rate">7100/<br>30000</span></td><td>7080</td><td>56.776</td><td>100.000</td><td>86.027</td><td>85.576</td><td><span class="small-rate">6800/<br>30000</span></td><td>7000</td><td>53.490</td><td>98.289</td><td>85.624</td><td>85.147</td><td>7000</td><td>7021</td><td>32.036</td><td>92.192</td><td>80.264</td><td>79.014</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">10200/<br>40000</span></td><td>10116</td><td>64.377</td><td>100.000</td><td>87.819</td><td>87.435</td><td><span class="small-rate">10150/<br>40000</span></td><td>10103</td><td>65.072</td><td>100.000</td><td>88.367</td><td>88.074</td><td><span class="small-rate">9800/<br>40000</span></td><td>10114</td><td>63.512</td><td>99.889</td><td>88.167</td><td>87.882</td><td>10000</td><td>10035</td><td>45.829</td><td>94.281</td><td>84.259</td><td>83.713</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">15400/<br>60000</span></td><td>15254</td><td>68.926</td><td>100.000</td><td>90.154</td><td>89.928</td><td><span class="small-rate">15100/<br>60000</span></td><td>15165</td><td>68.573</td><td>100.000</td><td>90.745</td><td>90.547</td><td><span class="small-rate">14700/<br>60000</span></td><td>15191</td><td>53.452</td><td>100.000</td><td>90.461</td><td>90.226</td><td>17700</td><td>15004</td><td>58.428</td><td>97.892</td><td>87.468</td><td>87.202</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">20300/<br>80000</span></td><td>20118</td><td>71.398</td><td>100.000</td><td>91.501</td><td>91.334</td><td><span class="small-rate">20250/<br>80000</span></td><td>20095</td><td>71.567</td><td>100.000</td><td>92.059</td><td>91.900</td><td><span class="small-rate">19500/<br>80000</span></td><td>20151</td><td>70.549</td><td>100.000</td><td>91.808</td><td>91.647</td><td>22000</td><td>19574</td><td>63.629</td><td>99.043</td><td>89.203</td><td>89.002</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">25300/<br>100000</span></td><td>25266</td><td>74.093</td><td>100.000</td><td>92.457</td><td>92.313</td><td><span class="small-rate">25000/<br>100000</span></td><td>25020</td><td>74.651</td><td>100.000</td><td>92.847</td><td>92.698</td><td><span class="small-rate">24300/<br>100000</span></td><td>25119</td><td>73.578</td><td>100.000</td><td>92.650</td><td>92.506</td><td>26200</td><td>25162</td><td>67.410</td><td>99.790</td><td>90.474</td><td>90.306</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">41100/<br>120000</span></td><td>40106</td><td>77.001</td><td>100.000</td><td>94.333</td><td>94.234</td><td><span class="small-rate">40600/<br>120000</span></td><td>40399</td><td>77.631</td><td>100.000</td><td>94.627</td><td>94.516</td><td><span class="small-rate">38700/<br>120000</span></td><td>40136</td><td>77.924</td><td>100.000</td><td>94.354</td><td>94.242</td><td>40000</td><td>40083</td><td>72.993</td><td>100.000</td><td>92.461</td><td>92.321</td>
+                </tr>
+                <tr>
+                    <td><span class="small-rate">64100/<br>160000</span></td><td>60075</td><td>79.171</td><td>100.000</td><td>95.759</td><td>95.686</td><td><span class="small-rate">65800/<br>160000</span></td><td>60566</td><td>80.019</td><td>100.000</td><td>95.861</td><td>95.781</td><td><span class="small-rate">58400/<br>160000</span></td><td>60168</td><td>79.416</td><td>100.000</td><td>95.580</td><td>95.488</td><td>60000</td><td>60085</td><td>72.993</td><td>100.000</td><td>94.102</td><td>94.005</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="data-table-container">
+        <table class="data-table data-table--final">
+            <thead>
+                <tr>
+                    <th colspan="6">VVenC (VVC)</th>
+                    <th colspan="6">HEVC_VPU_8E</th>
+                    <th colspan="6"></th>
+                    <th colspan="6" class="lossless-header-top">无损</th>
+                </tr>
+                <tr>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2">设定码率<br>/kbps</th><th rowspan="2">实际码率<br>/kbps</th><th colspan="4">VMAF</th>
+                    <th rowspan="2"></th><th rowspan="2"></th><th colspan="4"></th>
+                    <th rowspan="2" class="lossless-header-top">设定码率<br>/kbps</th>
+                    <th rowspan="2" class="lossless-header-top">实际码率<br>/kbps</th>
+                    <th colspan="4" class="lossless-header-top">VMAF</th>
+                </tr>
+                <tr>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td>Min.</td><td>Max</td><td>Mean</td><td>HM</td>
+                    <td></td><td></td><td></td><td></td>
+                    <td class="lossless-header-top">Min.</td><td class="lossless-header-top">Max</td><td class="lossless-header-top">Mean</td><td class="lossless-header-top">HM</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1720</td><td>2010</td><td>27.550</td><td>99.558</td><td>82.557</td><td>80.672</td><td>1600</td><td>2017</td><td>2.841</td><td>86.847</td><td>59.469</td><td>47.762</td><td></td><td></td><td></td><td></td><td></td><td></td><td class="lossless-data" rowspan="9">-</td><td class="lossless-data" rowspan="9">2997680</td><td class="lossless-data" rowspan="9">100.000</td><td class="lossless-data" rowspan="9">100.000</td><td class="lossless-data" rowspan="9">100.000</td><td class="lossless-data" rowspan="9">100.000</td>
+                </tr>
+                <tr>
+                    <td>3500</td><td>4024</td><td>39.994</td><td>100.000</td><td>87.912</td><td>87.082</td><td>3200</td><td>4034</td><td>1.740</td><td>88.187</td><td>71.678</td><td>62.774</td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+                <tr>
+                    <td>6350</td><td>7004</td><td>56.078</td><td>100.000</td><td>91.043</td><td>90.638</td><td>5550</td><td>7000</td><td>3.719</td><td>90.859</td><td>78.697</td><td>73.902</td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+                <tr>
+                    <td>9200</td><td>10050</td><td>70.352</td><td>100.000</td><td>92.616</td><td>92.375</td><td>7950</td><td>10013</td><td>14.399</td><td>93.601</td><td>82.398</td><td>80.538</td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+                <tr>
+                    <td>14000</td><td>15028</td><td>77.366</td><td>100.000</td><td>94.083</td><td>93.937</td><td>11950</td><td>15003</td><td>33.203</td><td>95.446</td><td>85.903</td><td>85.181</td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+                <tr>
+                    <td>18850</td><td>19979</td><td>79.310</td><td>100.000</td><td>94.847</td><td>94.719</td><td>16100</td><td>20039</td><td>54.818</td><td>95.415</td><td>88.057</td><td>87.757</td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+                <tr>
+                    <td>23850</td><td>24993</td><td>80.920</td><td>100.000</td><td>95.316</td><td>95.202</td><td>20680</td><td>25020</td><td>69.075</td><td>95.780</td><td>89.304</td><td>89.134</td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+                <tr>
+                    <td>39900</td><td>40033</td><td>88.241</td><td>100.000</td><td>96.466</td><td>96.405</td><td>36700</td><td>40036</td><td>80.773</td><td>99.567</td><td>91.515</td><td>91.378</td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+                <tr>
+                    <td>66100</td><td>59355</td><td>89.995</td><td>100.000</td><td>97.164</td><td>97.119</td><td>55900</td><td>59994</td><td>83.208</td><td>100.000</td><td>93.763</td><td>93.676</td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    </div>
     
 
 
 
+    <script>
+        const DEFAULT_MODEL = 'v1.0.16_hfr';
+        function updateModelButtons(model) {
+            document.querySelectorAll('.model-button').forEach(button => {
+                const selected = button.dataset.model === model;
+                button.classList.toggle('active', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
+            document.documentElement.dataset.vmafModel = model;
+        }
+        function bindModelButtons(model, onChange) {
+            updateModelButtons(model);
+            document.querySelectorAll('.model-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const selected = button.dataset.model;
+                    onChange(selected);
+                    updateModelButtons(selected);
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            function showModel(model) {
+                const panels = [...document.querySelectorAll('[data-vmaf-panel]')];
+                const visible = panels.find(panel => !panel.hidden);
+                const scrolls = visible ? [...visible.querySelectorAll('.data-table-container')].map(table => table.scrollLeft) : [];
+                const target = panels.find(panel => panel.dataset.vmafPanel === model);
+                target.hidden = false;
+                panels.forEach(panel => { if (panel !== target) panel.hidden = true; });
+                target.querySelectorAll('.data-table-container').forEach((table, index) => { table.scrollLeft = scrolls[index] || 0; });
+            }
+            const model = DEFAULT_MODEL;
+            showModel(model);
+            bindModelButtons(model, showModel);
+        });
+    </script>
 </body>
 </html>
