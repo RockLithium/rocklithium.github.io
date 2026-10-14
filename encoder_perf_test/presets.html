@@ -234,14 +234,14 @@
     <p>以下表格展示了性能测试中所使用的各编码器详细配置参数和对应的 FFmpeg 命令行。</p>
 
     <div class="intro-text-container">
-    <p>FFmpeg版本 N-120856-g9893d66add-20250831。安卓手机测试结果基于<a href="https://github.com/JohanBlome/encapp" target="_blank">encapp</a>。</p>
-    <p>本实验在测完x265、SVT-AV1和VVenC后才进行VP9的测试，在预实验中发现VPX-VP9编码器的速度与VVenC几乎处于同一水平，而质量却显著低于x265，故不做测试。SVT-VP9编码器理论上能提供快于x265的速度，但发行版FFmpeg并没有原生支持该编码器，故也不进行测试。</p>
-    <p>预设的选择：由于硬件编码和x264软件编码速度较快，故使用最慢的Preset并尽可能使用两次编码。而x265、 AV1、VVC的软件编码速度很慢，故采用质量尽可能接近最慢档时较快的Preset，x265使用slower而不是veryslow，AV1使用3而不是0，VVC使用slow而不是slower。</p>
-    <p>所有视频均由使用Prores 422 HQ压缩的3840x2160 60fps HDR 10bit 422原片压制而来，故全部使用了 -pix_fmt yuv420p10le/p010le 指令将其转为10bit 420 HDR。</p>
+    <p>FFmpeg版本 N-127252-ga25ba44c0c-20261008。安卓手机测试结果基于<a href="https://github.com/JohanBlome/encapp" target="_blank">encapp</a>。</p>
+    <p>预设的选择：由于硬件编码和x264软件编码速度较快，故使用最慢的Preset并尽可能使用两次编码。而x265、VP9、AV1、VVC的软件编码速度很慢，故采用质量尽可能接近最慢档时较快的Preset，x265使用slower而不是veryslow，VP9使用good而不是best，AV1使用3而不是0，VVC使用slow而不是slower。</p>
+    <p>所有视频均由使用Prores 422 HQ压缩的3840x2160 60fps HDR 10bit 422原片压制而来，故全部使用了 -pix_fmt yuv420p10le/p010le指令将其转为10bit 420 HDR。</p>
     <p>部分数据可能遇到了CPU解码瓶颈、访存瓶颈或核显的3D瓶颈，标注速度可能比搭载同代编码器的其他设备更慢，速率仅供参考。</p>
     <p>测试视频为DJI 悟3与索尼FX3、FX6拍摄的的ProRes 422 HQ素材，包含大量复杂运动，细节极多，压缩难度较大，得到的VMAF分数相较于普通视频和电影的结果偏低。曲线主要反映不同编码器的相对质量，并不能作为视频压制码率选择的绝对参考。</p>
     <p><br></p>
     <p>素材来源：<a href="https://www.ysjf.com/material" target="_blank">影视飓风官网</a>&ensp;&ensp;&ensp;&ensp;流媒体：<a href="https://www.bilibili.com/video/BV1YmpRzEE38/" target="_blank">哔哩哔哩</a>&ensp;&ensp;<a href="https://youtu.be/OHoMmjgSc4U" target="_blank">YouTube</a></p>
+
     </div>
 
     <div class="nav-buttons-container">
@@ -288,8 +288,8 @@
                     <td>-</td>
                     <td>前向预测帧=100; 两次编码; 慢速第一次编码</td>
                     <td>ABR</td>
-                    <td>Ryzen 9 7950X@118W -5mV</td>
-                    <td>0.252x</td>
+                    <td>Ryzen 9 7950X@118W -20mV</td>
+                    <td>0.279x</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
@@ -310,14 +310,14 @@
                     <td>high10</td>
                     <td>5.2</td>
                     <td>-</td>
-                    <td>高质量; 完全分辨率多次编码; AQ强度=12</td>
+                    <td>高质量; 完全分辨率多次编码</td>
                     <td>VBR</td>
                     <td>GeForce RTX 5090</td>
                     <td>1.17x (9th)</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> h264_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-tune</span> hq <span class="code-param">-level</span> 5.2 <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> h264_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-tune</span> hq <span class="code-param">-level</span> 5.2 <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
                 
@@ -336,8 +336,8 @@
                     <td>(自动)</td>
                     <td>-</td>
                     <td>ABR</td>
-                    <td>Ryzen 9 7950X@118W -5mV</td>
-                    <td>0.0448x</td>
+                    <td>Ryzen 9 7950X@118W -20mV</td>
+                    <td>0.0524x</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
@@ -358,14 +358,14 @@
                     <td>main10</td>
                     <td>5.1</td>
                     <td>high</td>
-                    <td>完全分辨率多次编码; RC前向预测=50; AQ强度=12</td>
+                    <td>完全分辨率多次编码; RC前向预测=50</td>
                     <td>VBR</td>
                     <td>GeForce RTX 3080 Ti (7th)<br>GeForce RTX 4060 Laptop GPU (8th)<br>GeForce RTX 5090 (9th)</td>
                     <td>0.537x (7th)<br>0.672x (8th)<br>0.645x (9th)</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-tier</span> high <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-tier</span> high <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -382,14 +382,14 @@
                     <td>main10</td>
                     <td>(自动)</td>
                     <td>high</td>
-                    <td>前向预测帧=100; 节能 关</td>
+                    <td>节能 关</td>
                     <td>VBR</td>
                     <td>Intel UHD Graphics (Core i9-13900HX) (V8)<br>Intel Arc 140T (Core Ultra 9 285H) (V9)<br>Intel Arc 140V (Core Ultra 7 258V) (V10)<br>Intel Graphics (Core Ultra 7 356H) (V11)</td>
                     <td>0.332x (V8)<br>0.974x (V9)<br>0.988x (V10)<br>1.14x (V11)</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_qsv <span class="code-param">-bitrate_limit</span> 0 <span class="code-param">-look_ahead_depth</span> 100 <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-profile:v</span> main10 <span class="code-param">-tier</span> high <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_qsv <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-profile:v</span> main10 <span class="code-param">-tier</span> high <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -406,14 +406,14 @@
                     <td>main10</td>
                     <td>(自动)</td>
                     <td>high</td>
-                    <td>预编码 开; 前向预测帧=41</td>
+                    <td>预编码 开</td>
                     <td>VBR</td>
                     <td>Radeon Graphics (Ryzen 9 7950X) (3.1)<br>Radeon 780M (Ryzen 7 7840H) (4.0)</td>
                     <td>1.17x (3.1)<br>1.06x (4.0)</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-profile_tier</span> high <span class="code-param">-preset</span> quality <span class="code-param">-preencode</span> true <span class="code-param">-pa_lookahead_buffer_depth</span> 41 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-profile_tier</span> high <span class="code-param">-preset</span> quality <span class="code-param">-preencode</span> true <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -432,12 +432,12 @@
                     <td>-</td>
                     <td>CPU占用=0; 前向预测帧=25; 线程数=16</td>
                     <td>ABR</td>
-                    <td>Ryzen 9 7950X@118W -5mV</td>
-                    <td>-</td>
+                    <td>Ryzen 9 7950X@118W -20mV</td>
+                    <td>0.0271x</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> libvpx-vp9 <span class="code-param">-profile:v</span> 2 <span class="code-param">-deadline</span> best <span class="code-param">-level</span> 5.1 <span class="code-param">-cpu-used</span> 0 <span class="code-param">-rc_lookahead</span> 25 <span class="code-param">-threads</span> 16 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> libvpx-vp9 <span class="code-param">-profile:v</span> 2 <span class="code-param">-deadline</span> good <span class="code-param">-level</span> 5.1 <span class="code-param">-cpu-used</span> 0 <span class="code-param">-rc_lookahead</span> 25 <span class="code-param">-threads</span> 16 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -480,8 +480,8 @@
                     <td>-</td>
                     <td>前向预测帧=50</td>
                     <td>VBR</td>
-                    <td>Ryzen 9 7950X@118W -5mV</td>
-                    <td>0.0587x</td>
+                    <td>Ryzen 9 7950X@118W -20mV</td>
+                    <td>0.0718x</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
@@ -502,14 +502,14 @@
                     <td>(自动)</td>
                     <td>5.1</td>
                     <td>1</td>
-                    <td>完全分辨率多次编码; RC前向预测=50; AQ强度=12</td>
+                    <td>完全分辨率多次编码; RC前向预测=50</td>
                     <td>VBR</td>
                     <td>GeForce RTX 4060 Laptop GPU (8th)<br>GeForce RTX 5090 (9th)</td>
                     <td>1.12x (8th)<br>1.13x (9th)</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> av1_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-level</span> 5.1 <span class="code-param">-tier</span> 1 <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> av1_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-level</span> 5.1 <span class="code-param">-tier</span> 1 <span class="code-param">-rc</span> vbr <span class="code-param">-multipass</span> 2 <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -522,18 +522,18 @@
                     <td>YUV 4:2:0</td>
                     <td>10bpc</td>
                     <td>BT.2020 PQ</td>
-                    <td>p7(slowest)</td>
+                    <td>veryslow</td>
                     <td>(自动)</td>
                     <td>(自动)</td>
                     <td>-</td>
-                    <td>前向预测帧=100; 节能 关</td>
+                    <td>节能 关</td>
                     <td>VBR</td>
                     <td>Intel Arc 140T (Core Ultra 9 285H) (V9)<br>Intel Arc 140V (Core Ultra 7 258V) (V10)<br>Intel Graphics (Core Ultra 7 356H) (V11)</td>
                     <td>0.928x (V9)<br>1.03x (V10)<br>0.517x (V11)</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> av1_qsv <span class="code-param">-look_ahead_depth</span> 100 <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> av1_qsv <span class="code-param">-low_power</span> 0 <span class="code-param">-preset</span> veryslow <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-maxrate</span> (最大码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -550,14 +550,14 @@
                     <td>(自动)</td>
                     <td>5.1</td>
                     <td>(自动)</td>
-                    <td>质量 高质量; 预编码 开; 前向预测帧=41</td>
+                    <td>质量 高质量; 预编码 开</td>
                     <td>VBR</td>
                     <td>Radeon 780M (Ryzen 7 7840H) (4.0)</td>
                     <td>0.457x (4.0)</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-I</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> av1_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-level</span> 5.1 <span class="code-param">-quality</span> high_quality <span class="code-param">-preset</span> high_quality <span class="code-param">-preencode</span> true <span class="code-param">-pa_lookahead_buffer_depth</span> 41 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> av1_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-level</span> 5.1 <span class="code-param">-quality</span> high_quality <span class="code-param">-preset</span> high_quality <span class="code-param">-preencode</span> true <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -574,14 +574,14 @@
                     <td>(自动)</td>
                     <td>(自动)</td>
                     <td>(自动)</td>
-                    <td>线程数=16</td>
+                    <td>线程数=16; 帧内刷新周期=5</td>
                     <td>VBR</td>
-                    <td>Ryzen 9 7950X@118W -5mV</td>
-                    <td>0.00485x</td>
+                    <td>Ryzen 9 7950X@118W -20mV</td>
+                    <td>0.00649x</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> libvvenc <span class="code-param">-preset</span> slow <span class="code-param">-threads</span> 16 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-c:v</span> libvvenc <span class="code-param">-preset</span> slow <span class="code-param">-period</span> 5 <span class="code-param">-threads</span> 16 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -622,14 +622,14 @@
                     <td>main10</td>
                     <td>6.2</td>
                     <td>high</td>
-                    <td>Tune=无损; RC前向预测=50; AQ强度=12</td>
+                    <td>Tune=无损; RC前向预测=50</td>
                     <td>VBR</td>
                     <td>GeForce RTX 5090</td>
                     <td>0.777x (9th)</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-profile:v</span> main10 <span class="code-param">-tune</span> lossless <span class="code-param">-level</span> 6.2 <span class="code-param">-tier</span> high <span class="code-param">-rc</span> vbr <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-aq-strength</span> 12 <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_nvenc <span class="code-param">-preset</span> p7 <span class="code-param">-profile:v</span> main10 <span class="code-param">-tune</span> lossless <span class="code-param">-level</span> 6.2 <span class="code-param">-tier</span> high <span class="code-param">-rc-lookahead</span> 50 <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
             </tbody>
