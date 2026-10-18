@@ -402,18 +402,18 @@
                     <td>YUV 4:2:0</td>
                     <td>10bpc</td>
                     <td>BT.2020 PQ</td>
-                    <td>quality</td>
+                    <td>high_quality</td>
                     <td>main10</td>
-                    <td>(自动)</td>
+                    <td>5.1</td>
                     <td>high</td>
-                    <td>预编码 开</td>
+                    <td>预编码 开; GOP=240</td>
                     <td>VBR</td>
-                    <td>Radeon Graphics (Ryzen 9 7950X) (3.1)<br>Radeon 780M (Ryzen 7 7840H) (4.0)</td>
-                    <td>1.17x (3.1)<br>1.06x (4.0)</td>
+                    <td>Radeon Graphics (Ryzen 9 7950X) (3.1)<br>Radeon 780M (Ryzen 7 7840H) (4.0)<br>Radeon RX 9070 XT (5.0)</td>
+                    <td>1.15x (3.1)<br>1.06x (4.0)<br>0.443x (5.0)</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> hevc_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-profile_tier</span> high <span class="code-param">-preset</span> quality <span class="code-param">-preencode</span> true <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-vcodec</span> hevc_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-profile:v</span> main10 <span class="code-param">-level</span> 5.1 <span class="code-param">-profile_tier</span> high <span class="code-param">-preset</span> high_quality <span class="code-param">-preencode</span> true <span class="code-param">-g</span> 240 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
@@ -550,14 +550,14 @@
                     <td>(自动)</td>
                     <td>5.1</td>
                     <td>(自动)</td>
-                    <td>质量 高质量; 预编码 开</td>
+                    <td>预编码 开; GOP=240</td>
                     <td>VBR</td>
-                    <td>Radeon 780M (Ryzen 7 7840H) (4.0)</td>
-                    <td>0.457x (4.0)</td>
+                    <td>Radeon 780M (Ryzen 7 7840H) (4.0)<br>Radeon RX 9070 XT (5.0)</td>
+                    <td>0.457x (4.0)<br>0.42x (5.0)</td>
                 </tr>
                 <tr class="command-row">
                     <td colspan="15">
-                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> p010le <span class="code-param">-c:v</span> av1_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-level</span> 5.1 <span class="code-param">-quality</span> high_quality <span class="code-param">-preset</span> high_quality <span class="code-param">-preencode</span> true <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
+                        <code><span class="code-ffmpeg">ffmpeg</span> <span class="code-param">-i</span> (原视频) <span class="code-param">-pix_fmt</span> yuv420p10le <span class="code-param">-vcodec</span> av1_amf <span class="code-param">-bitdepth</span> 10 <span class="code-param">-level</span> 5.1 <span class="code-param">-preset</span> high_quality <span class="code-param">-preencode</span> true <span class="code-param">-g</span> 240 <span class="code-param">-b:v</span> (目标码率) <span class="code-param">-an</span> (输出视频)</code>
                     </td>
                 </tr>
 
