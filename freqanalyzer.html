@@ -947,6 +947,9 @@
         let rtSource = null;
         let rtAnalyser = null;
         let rtAnimationId = null;
+        let rtResizeListener = null;
+        let rtWindowUpdater = null;
+        let rtModeVersion = 0;
         let savedParams = {};
 
         let isRecording = false;
@@ -991,6 +994,7 @@
         });
 
         async function enableRealTimeMode() {
+            const modeVersion = ++rtModeVersion;
             const t = translations[currentLang];
             resetUIOnOptionChange();
             previewTitle.textContent = t.spectrum;
@@ -1034,9 +1038,14 @@
                     }
                 };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                if (modeVersion !== rtModeVersion || !optRealTime.classList.contains('active')) {
+                    stream.getTracks().forEach(track => track.stop());
+                    return;
+                }
                 statusText.textContent = t.realTime;
                 startRealTimeVisualizer(stream);
             } catch (err) {
+                if (modeVersion !== rtModeVersion) return;
                 console.error(err);
                 statusText.textContent = t.error + "Mic denied.";
                 optRealTime.classList.remove('active');
@@ -1045,6 +1054,7 @@
         }
 
         function disableRealTimeMode() {
+            ++rtModeVersion;
             const t = translations[currentLang];
             previewTitle.textContent = t.preview;
             stopRealTimeVisualizer();
@@ -1052,6 +1062,7 @@
             if (isRecording) {
                 recordBtn.click(); 
             }
+            recordBtn.disabled = true;
 
             if (rtStream) {
                 rtStream.getTracks().forEach(track => track.stop());
@@ -1112,7 +1123,13 @@
         }
 
         function stopRealTimeVisualizer() {
-            if (rtAnimationId) cancelAnimationFrame(rtAnimationId);
+            if (rtAnimationId !== null) cancelAnimationFrame(rtAnimationId);
+            rtAnimationId = null;
+            rtWindowUpdater = null;
+            if (rtResizeListener) {
+                window.removeEventListener('resize', rtResizeListener);
+                rtResizeListener = null;
+            }
             
             if (processorNode) { processorNode.disconnect(); processorNode = null; }
             if (silentNodeRec) { silentNodeRec.disconnect(); silentNodeRec = null; }
@@ -1124,6 +1141,7 @@
             
             if (rtContext && rtContext.state !== 'closed') rtContext.close();
             rtContext = null;
+            rtAnalyser = null;
             if (recContext && recContext.state !== 'closed') recContext.close();
             recContext = null;
 
@@ -1174,6 +1192,7 @@
             rtAnalyser.minDecibels = -140;
             visGainNode.connect(rtAnalyser);
 
+            recordBtn.disabled = true;
             try {
                 recContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
                 recSource = recContext.createMediaStreamSource(stream);
@@ -1184,12 +1203,35 @@
                 
                 const blob = new Blob([recorderWorkletCode], { type: 'application/javascript' });
                 const workletUrl = URL.createObjectURL(blob);
-                recContext.audioWorklet.addModule(workletUrl).catch(e => console.error(e));
+                const recordingContext = recContext;
+                (async () => {
+                    try {
+                        await recordingContext.audioWorklet.addModule(workletUrl);
+                        if (recContext === recordingContext && recordingContext.state !== 'closed') {
+                            recordBtn.disabled = false;
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    } finally {
+                        URL.revokeObjectURL(workletUrl);
+                    }
+                })();
             } catch (e) {
                 console.error("Failed to initialize recording context:", e);
             }
 
-            const dataArray = new Float32Array(rtAnalyser.frequencyBinCount);
+            let dataArray = new Float32Array(rtAnalyser.frequencyBinCount);
+            rtWindowUpdater = () => {
+                const winMs = parseFloat(inputWindow.value) || 33;
+                const targetSamples = (rtContext.sampleRate * winMs) / 1000;
+                let n_fft = 2048;
+                while (n_fft < targetSamples * 4) n_fft *= 2;
+                const fftSize = Math.min(n_fft, 32768);
+                if (rtAnalyser.fftSize !== fftSize) {
+                    rtAnalyser.fftSize = fftSize;
+                    dataArray = new Float32Array(rtAnalyser.frequencyBinCount);
+                }
+            };
 
             visContainer.addEventListener('dblclick', () => {
                 if (!document.fullscreenElement) {
@@ -1232,7 +1274,8 @@
                 canvas.height = visContainer.clientHeight * scale;
                 ctx.scale(scale, scale);
             }
-            window.addEventListener('resize', resize);
+            rtResizeListener = resize;
+            window.addEventListener('resize', rtResizeListener);
             resize();
 
             function draw() {
@@ -2386,12 +2429,10 @@
             }
         }
 
-        [inputWindow, inputHighPass, inputDB].forEach(input => {
-            input.addEventListener('change', () => {
-                if (optRealTime.classList.contains('active') && rtStream) {
-                    startRealTimeVisualizer(rtStream);
-                }
-            });
+        inputWindow.addEventListener('change', () => {
+            if (optRealTime.classList.contains('active') && rtStream && rtWindowUpdater) {
+                rtWindowUpdater();
+            }
         });
 
         changeLanguage('en-US');
